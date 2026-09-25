@@ -360,6 +360,43 @@
     return coef + ' \\times 10^{' + exp + '}';
   }
 
+  /* Insert thin-space grouping into an ordinary-number string.
+     "54600"     -> "54\,600"
+     "1234567"   -> "1\,234\,567"
+     "0.000083"  -> "0.000\,083"
+     "0.00546"   -> "0.005\,46"
+     Groups in threes from the decimal point outwards, using a thin
+     space (\,) so the digits stay close together. */
+  function groupLatex(s) {
+    const parts = s.split('.');
+    let intPart = parts[0];
+    const fracPart = parts.length > 1 ? parts[1] : '';
+
+    /* Integer part: group from the right in threes. */
+    if (intPart.length > 3) {
+      let grouped = '';
+      for (let i = 0; i < intPart.length; i++) {
+        const posFromRight = intPart.length - i;
+        if (i > 0 && posFromRight % 3 === 0) grouped += '\\,';
+        grouped += intPart[i];
+      }
+      intPart = grouped;
+    }
+
+    /* Fractional part: group from the left in threes. */
+    let fracGrouped = '';
+    if (fracPart.length > 3) {
+      for (let i = 0; i < fracPart.length; i++) {
+        if (i > 0 && i % 3 === 0) fracGrouped += '\\,';
+        fracGrouped += fracPart[i];
+      }
+    } else {
+      fracGrouped = fracPart;
+    }
+
+    return fracGrouped ? intPart + '.' + fracGrouped : intPart;
+  }
+
   /* ============================================================
      QUESTION GENERATORS
      ============================================================ */
@@ -391,7 +428,7 @@
 
       const coef = coefStr(digits);
       const sig = 'TS|' + digits + '|' + exp;
-      const lhs = tex(ordinary);
+      const lhs = tex(groupLatex(ordinary));
       const correctLatex = stdFormLatex(coef, exp);
 
       const cands = [
@@ -402,20 +439,19 @@
         { latex: stdFormLatex(moveDecimal(coef, -1), exp + 1) }
       ];
 
-      const seen = new Set([correctLatex]);
+     const seen = new Set([correctOrdinary]);
       const pool = [];
-      for (const c of cands) {
-        if (seen.has(c.latex)) continue;
-        seen.add(c.latex);
-        pool.push(c);
+      for (const s of [d1, d2, d3]) {
+        if (seen.has(s)) continue;
+        seen.add(s);
+        pool.push({ latex: groupLatex(s) });
       }
       if (pool.length < 3) continue;
 
       const opts = shuffle([
-        { latex: correctLatex, ok: true },
+        { latex: groupLatex(correctOrdinary), ok: true },
         ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
       ]);
-
       return {
         sig,
         prompt: 'Write this number in standard form.',
