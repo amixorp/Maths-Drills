@@ -414,7 +414,7 @@
     return digits;
   }
 
-  /* Type 1: ordinary number shown, standard form is the answer. */
+   /* Type 1: ordinary number shown, standard form is the answer. */
   function genToStdForm() {
     for (let t = 0; t < 400; t++) {
       const digits = pickDigits();
@@ -439,19 +439,20 @@
         { latex: stdFormLatex(moveDecimal(coef, -1), exp + 1) }
       ];
 
-     const seen = new Set([correctOrdinary]);
+      const seen = new Set([correctLatex]);
       const pool = [];
-      for (const s of [d1, d2, d3]) {
-        if (seen.has(s)) continue;
-        seen.add(s);
-        pool.push({ latex: groupLatex(s) });
+      for (const c of cands) {
+        if (seen.has(c.latex)) continue;
+        seen.add(c.latex);
+        pool.push(c);
       }
       if (pool.length < 3) continue;
 
       const opts = shuffle([
-        { latex: groupLatex(correctOrdinary), ok: true },
+        { latex: correctLatex, ok: true },
         ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
       ]);
+
       return {
         sig,
         prompt: 'Write this number in standard form.',
@@ -488,12 +489,12 @@
       for (const s of [d1, d2, d3]) {
         if (seen.has(s)) continue;
         seen.add(s);
-        pool.push({ latex: s });
+        pool.push({ latex: groupLatex(s) });
       }
       if (pool.length < 3) continue;
 
       const opts = shuffle([
-        { latex: correctOrdinary, ok: true },
+        { latex: groupLatex(correctOrdinary), ok: true },
         ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
       ]);
 
