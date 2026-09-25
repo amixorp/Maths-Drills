@@ -250,7 +250,8 @@
 
 <div class="toolbar no-print">
   <div class="tb-title">🧮 Indices &amp; Surds Worksheet</div>
-  <label>Seed <input id="seedInput" type="number" min="0" step="1" value="20250925"></label>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+ </label>
   <label>Questions
     <select id="countSelect">
       <option>4</option>
@@ -1067,14 +1068,66 @@
     render();
   });
 
+  /* --- seed handling --- */
+
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function setSeedInURL(seed) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url);
+  }
+
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+
+  /* --- event wiring --- */
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
   document.getElementById('resetBtn').addEventListener('click', resetAnswers);
-  seedInput.addEventListener('change', () => { applySeed(); render(); });
+
+  seedInput.addEventListener('change', () => {
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
   countSel.addEventListener('change', () => { applySeed(); render(); });
   topicSel.addEventListener('change', () => { applySeed(); render(); });
   answersChk.addEventListener('change', toggleKey);
   document.getElementById('printBtn').addEventListener('click', () => window.print());
 
-  function boot() { applySeed(); render(); }
+  /* --- boot --- */
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  }
   if (document.readyState === 'complete') boot();
   else window.addEventListener('load', boot, { once: true });
 })();
