@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Easy IQ Worksheet Generator</title>
+<style>
+  :root{--ink:#111827;--muted:#6b7280;--line:#d1d5db;--accent:#2563eb;}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+       color:var(--ink);background:#eef1f5;-webkit-text-size-adjust:100%;
+       -webkit-print-color-adjust:exact;print-color-adjust:exact;}
+
+  .err-box{margin:12px auto 0;max-width:1080px;padding:10px 14px;border-radius:8px;
+    background:#fee2e2;border:1px solid #dc2626;color:#7f1d1d;font-size:13px;font-weight:600;
+    white-space:pre-wrap;position:relative;z-index:60;}
+
+  .loading-note{padding:30px 10px;text-align:center;color:#6b7280;font-size:14px;}
+
+  .toolbar{position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;
+    gap:14px;padding:12px 20px;background:#111827;color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:14px;}
+  .tb-title{font-weight:700;margin-right:auto;letter-spacing:.3px}
+  .toolbar label{display:flex;align-items:center;gap:6px;color:#e5e7eb}
+  .toolbar input[type=number]{width:110px;padding:6px 8px;border-radius:6px;
+    border:1px solid #374151;background:#1f2937;color:#f9fafb;font:inherit;}
+  .toolbar select{padding:6px 8px;border-radius:6px;border:1px solid #374151;
+    background:#1f2937;color:#f9fafb;font:inherit;}
+  .toolbar button{padding:8px 14px;border-radius:8px;border:1px solid #374151;
+    background:#1f2937;color:#f9fafb;font:inherit;font-weight:600;cursor:pointer;
+    -webkit-appearance:none;appearance:none;}
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent);border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{padding:6px 12px;border-radius:999px;background:#1f2937;
+    border:1px solid #374151;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;}
+
+  .sheet{background:#fff;max-width:1080px;margin:22px auto 60px;padding:30px 34px 42px;
+    border-radius:10px;box-shadow:0 6px 24px rgba(15,23,42,.10);}
+  .sheet-head{display:flex;flex-wrap:wrap;align-items:flex-end;gap:16px;
+    border-bottom:3px solid var(--ink);padding-bottom:10px;}
+  .sheet-head h1{margin:0;font-size:26px;letter-spacing:.5px}
+  .meta{margin-left:auto;display:flex;gap:18px;font-size:13px;color:#374151}
+  .meta .line{display:inline-block;width:110px;border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px;font-size:14px;color:var(--muted)}
+
+  .questions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
+  @media (max-width:760px){.questions{grid-template-columns:1fr}}
+
+  .q{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px 12px;background:#fff;
+     break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column;}
+  .q-head{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .q-num{flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;
+    font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .q-prompt{font-size:13.5px;line-height:1.35;font-weight:600}
+
+  .diagram{display:flex;align-items:flex-end;justify-content:center;gap:8px;min-height:70px;
+    margin:2px 0 12px;}
+  .item{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .item-label{font-size:11px;font-weight:700;color:var(--muted)}
+  .item-visual{width:60px;height:60px;display:flex;align-items:center;justify-content:center;}
+  .item-visual svg{display:block}
+
+  .qmark{width:54px;height:54px;border:2.5px dashed #9ca3af;border-radius:9px;display:flex;
+    align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#9ca3af;}
+
+  .grid2{display:grid;grid-template-columns:repeat(2,auto);gap:6px;justify-content:center;}
+
+  .options{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:auto;
+    padding-top:6px;border-top:1px dashed #e5e7eb;}
+  .option{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .opt-visual{width:60px;height:60px;border:1.5px solid var(--line);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;background:#fafafa;}
+  .opt-visual svg{display:block}
+  .opt-letter{font-size:11px;font-weight:700;color:var(--muted)}
+  .opt-text{font-size:22px;font-weight:800;color:var(--ink)}
+
+  .option{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+    -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;border-radius:10px;
+    padding:4px 4px 2px;transition:background .12s ease,box-shadow .12s ease,transform .12s ease;}
+  .option:focus-visible{outline:2.5px solid var(--accent);outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7;box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2;box-shadow:0 0 0 2px #dc2626;animation:shake .3s ease}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}80%{transform:translateX(-3px)}}
+
+  .drop-zone{border-radius:12px;transition:transform .15s ease,background .15s ease}
+  .drop-zone.over{background:#dbeafe;transform:scale(1.08)}
+  .drop-zone.over .qmark{border-color:var(--accent);color:var(--accent);background:#eff6ff}
+
+  .qmark{overflow:visible;transition:border-color .15s,background .15s,color .15s;}
+  .qmark svg{width:54px;height:54px;display:block}
+  .qmark .opt-text{font-size:22px}
+  .qmark.filled{border-style:solid;border-color:var(--ink);color:var(--ink)}
+
+  body.dragging-active{user-select:none;-webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{border-color:var(--accent);color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+  .drag-ghost{position:fixed;left:0;top:0;z-index:9999;pointer-events:none;
+    width:64px;height:64px;border-radius:10px;background:#fff;border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);display:flex;align-items:center;justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);}
+  .drag-ghost svg{width:54px;height:54px;display:block}
+  .drag-ghost .opt-text{font-size:22px;font-weight:800}
+
+  .q-feedback{margin-top:8px;min-height:15px;text-align:center;font-size:12.5px;
+    font-weight:700;letter-spacing:.2px;}
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  .key{margin-top:26px;border-top:3px solid var(--ink);padding-top:12px;break-inside:avoid;}
+  .key h2{margin:0 0 10px;font-size:16px;letter-spacing:.5px}
+  .key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
+    gap:6px 10px;font-size:13px;color:#374151;}
+  .key-grid b{color:var(--ink)}
+
+  @page{size:A4;margin:12mm;}
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0;padding:0;max-width:none;box-shadow:none;border-radius:0}
+    .q{border-color:#9ca3af}
+    .opt-visual{background:#fff}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<noscript>
+  <div style="margin:12px;padding:14px;border-radius:8px;background:#fee2e2;
+              border:2px solid #dc2626;color:#7f1d1d;font-weight:700;">
+    JavaScript is switched off or blocked in this browser, so the worksheet cannot be built.
+    On iPad: Settings → Safari → Advanced → JavaScript (turn ON).
+  </div>
+</noscript>
+
+<div id="errBox" class="err-box no-print" style="display:none"></div>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🧠 Easy IQ Worksheet Generator</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value="12345"></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>6</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+      <option>15</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary" type="button">🎲 Generate New</button>
+  <button id="resetBtn" type="button">↺ Reset answers</button>
+  <button id="printBtn" type="button">🖨️ Print</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="sheet" id="sheet">
+  <p class="loading-note" id="loadingNote">⏳ Loading questions…</p>
+</div>
+
+<!-- ============ Script #1: independent error reporter ============ -->
+<script>
+  window.__showErr = function (msg) {
+    var b = document.getElementById('errBox');
+    if (!b) return;
+    b.style.display = 'block';
+    b.textContent = '⚠️ ' + msg;
+  };
+  window.onerror = function (message, src, line, col, err) {
+    var text = message || (err && err.message) || 'unknown error';
+    if (src) text += '\n' + src + ':' + line + ':' + col;
+    window.__showErr(text);
+    return false;
+  };
+</script>
+
+<!-- ============ Script #2: main application ============ -->
+<script>
+(function () {
+  'use strict';
+
+  var rng = Math.random;
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function ri(n)   { return Math.floor(rng() * n); }
+  function pick(a) { return a[Math.floor(rng() * a.length)]; }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rng() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  var SHAPES = ['circle','square','triangle','diamond','star','pentagon','hexagon'];
+  var COLORS = ['#ef4444','#3b82f6','#22c55e','#f59e0b','#a855f7','#14b8a6'];
+  var SIZES  = [0.55, 0.78, 1.0, 1.25];
+  var CELL = 54;
+  var OPT  = 54;
+
+  function poly(n, cx, cy, r) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      pts.push((cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+  function starPts(cx, cy, outer, inner) {
+    var pts = [];
+    for (var i = 0; i < 10; i++) {
+      var rr = (i % 2) ? inner : outer;
+      var a = -Math.PI / 2 + i * Math.PI / 5;
+      pts.push((cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+  function arrowPts(cx, cy, r) {
+    var P = [[0,-1],[0.60,-0.12],[0.24,-0.12],[0.24,0.92],
+             [-0.24,0.92],[-0.24,-0.12],[-0.60,-0.12]];
+    var out = [];
+    for (var i = 0; i < P.length; i++) {
+      out.push((cx + P[i][0] * r).toFixed(1) + ',' + (cy + P[i][1] * r).toFixed(1));
+    }
+    return out.join(' ');
+  }
+  function shapeInner(kind, cx, cy, r) {
+    switch (kind) {
+      case 'circle':
+        return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
+      case 'square': {
+        var s = r * 0.92;
+        return '<rect x="' + (cx - s).toFixed(1) + '" y="' + (cy - s).toFixed(1) +
+               '" width="' + (2 * s).toFixed(1) + '" height="' + (2 * s).toFixed(1) +
+               '" rx="' + (s * 0.14).toFixed(1) + '"/>';
+      }
+      case 'triangle': return '<polygon points="' + poly(3, cx, cy, r * 1.12) + '"/>';
+      case 'diamond': {
+        var rx = r * 0.76, ry = r * 1.16;
+        var d = [[0,-1],[1,0],[0,1],[-1,0]];
+        var dp = [];
+        for (var i = 0; i < d.length; i++) {
+          dp.push((cx + d[i][0] * rx).toFixed(1) + ',' + (cy + d[i][1] * ry).toFixed(1));
+        }
+        return '<polygon points="' + dp.join(' ') + '"/>';
+      }
+      case 'pentagon': return '<polygon points="' + poly(5, cx, cy, r * 1.05) + '"/>';
+      case 'hexagon':  return '<polygon points="' + poly(6, cx, cy, r * 1.00) + '"/>';
+      case 'star':     return '<polygon points="' + starPts(cx, cy, r * 1.12, r * 0.48) + '"/>';
+      case 'arrow':    return '<polygon points="' + arrowPts(cx, cy, r * 1.05) + '"/>';
+      default:         return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
+    }
+  }
+  function shapeSVG(spec, px) {
+    px = px || CELL;
+    var c = px / 2;
+    var r = px * 0.33 * (spec.size == null ? 1 : spec.size);
+    var rot = (spec.shape === 'square') ? 0 : (spec.rot || 0);
+    var sw = Math.max(1.6, px * 0.030);
+    return '<svg viewBox="0 0 ' + px + ' ' + px + '" width="' + px + '" height="' + px +
+           '" aria-hidden="true" focusable="false">' +
+      '<g transform="rotate(' + rot + ' ' + c + ' ' + c + ')"' +
+      ' fill="' + (spec.color || '#3b82f6') + '"' +
+      ' stroke="#111827" stroke-width="' + sw.toFixed(2) + '"' +
+      ' stroke-linejoin="round" stroke-linecap="round">' +
+      shapeInner(spec.shape, c, c, r) + '</g></svg>';
+  }
+
+  function itemHTML(visual, label) {
+    return '<div class="item">' +
+      (label ? '<div class="item-label">' + label + '</div>' : '') +
+      '<div class="item-visual">' + visual + '</div></div>';
+  }
+  function qmarkHTML() {
+    return '<div class="item drop-zone">' +
+      '<div class="item-visual"><div class="qmark">?</div></div></div>';
+  }
+
+  /* -------- generators -------- */
+  function genSequence() {
+    var mode = pick(['shape','color','size']);
+    var cycleLen = 2 + ri(2);
+    var baseShape = pick(SHAPES);
+    var baseColor = pick(COLORS);
+    var cycle, i;
+
+    if (mode === 'shape') {
+      cycle = shuffle(SHAPES).slice(0, cycleLen);
+    } else if (mode === 'color') {
+      cycle = shuffle(COLORS).slice(0, cycleLen);
+    } else {
+      if (cycleLen === 2) {
+        var pairs = [[0,3],[0,2],[1,3]];
+        var p = pairs[ri(pairs.length)];
+        var asc = rng() < 0.5;
+        cycle = asc ? [SIZES[p[0]], SIZES[p[1]]] : [SIZES[p[1]], SIZES[p[0]]];
+      } else {
+        var a2 = rng() < 0.5;
+        var st = ri(2);
+        cycle = [SIZES[st], SIZES[st + 1], SIZES[st + 2]];
+        if (!a2) cycle.reverse();
+      }
+    }
+
+    function at(k) {
+      var v = cycle[k % cycle.length];
+      if (mode === 'shape') return { shape: v, color: baseColor, size: 1 };
+      if (mode === 'color') return { shape: baseShape, color: v, size: 1 };
+      return { shape: baseShape, color: baseColor, size: v };
+    }
+
+    var shown = 4, items = [];
+    for (i = 0; i < shown; i++) items.push(at(i));
+    var answerSpec = at(shown);
+
+    var pool;
+    if (mode === 'shape') {
+      pool = [];
+      for (i = 0; i < SHAPES.length; i++) {
+        if (SHAPES[i] !== answerSpec.shape)
+          pool.push({ shape: SHAPES[i], color: baseColor, size: 1 });
+      }
+    } else if (mode === 'color') {
+      pool = [];
+      for (i = 0; i < COLORS.length; i++) {
+        if (COLORS[i] !== answerSpec.color)
+          pool.push({ shape: baseShape, color: COLORS[i], size: 1 });
+      }
+    } else {
+      pool = [];
+      for (i = 0; i < SIZES.length; i++) {
+        if (SIZES[i] !== answerSpec.size)
+          pool.push({ shape: baseShape, color: baseColor, size: SIZES[i] });
+      }
+    }
+
+    var distractors = shuffle(pool).slice(0, 3);
+    var rawOpts = [{ spec: answerSpec, ok: true }];
+    for (i = 0; i < distractors.length; i++)
+      rawOpts.push({ spec: distractors[i], ok: false });
+    var opts = shuffle(rawOpts);
+
+    var diagram = '';
+    for (i = 0; i < items.length; i++) diagram += itemHTML(shapeSVG(items[i], OPT));
+    diagram += qmarkHTML();
+
+    var answerIdx = 0;
+    for (i = 0; i < opts.length; i++) if (opts[i].ok) { answerIdx = i; break; }
+
+    var optionList = [];
+    for (i = 0; i < opts.length; i++) optionList.push({ svg: shapeSVG(opts[i].spec, OPT) });
+
+    return { prompt: 'What comes next in the pattern?',
+             diagram: diagram, options: optionList, answer: answerIdx };
+  }
+
+  function genOddOneOut() {
+    var baseShape = pick(SHAPES);
+    var baseColor = pick(COLORS);
+    var base = { shape: baseShape, color: baseColor, size: 1 };
+    var odd;
+    if (pick(['shape','color']) === 'shape') {
+      var otherShapes = [];
+      for (var i = 0; i < SHAPES.length; i++) if (SHAPES[i] !== baseShape) otherShapes.push(SHAPES[i]);
+      odd = { shape: pick(otherShapes), color: baseColor, size: 1 };
+    } else {
+      var otherColors = [];
+      for (var j = 0; j < COLORS.length; j++) if (COLORS[j] !== baseColor) otherColors.push(COLORS[j]);
+      odd = { shape: baseShape, color: pick(otherColors), size: 1 };
+    }
+
+    var items = shuffle([base, base, base, odd]);
+    var labels = ['A','B','C','D'];
+    var answer = 0;
+    for (var k = 0; k < items.length; k++) if (items[k] === odd) { answer = k; break; }
+
+    var diagram = '';
+    for (k = 0; k < items.length; k++) diagram += itemHTML(shapeSVG(items[k], OPT), labels[k]);
+
+    var optionList = [];
+    for (k = 0; k < labels.length; k++) optionList.push({ text: labels[k] });
+
+    return { prompt: 'Which picture is different from the others?',
+             diagram: diagram, options: optionList, hideLetters: true, answer: answer };
+  }
+
+  function genMatrix() {
+    var pair  = shuffle(SHAPES).slice(0, 2);
+    var cpair = shuffle(COLORS).slice(0, 2);
+    var sA = pair[0], sB = pair[1];
+    var cA = cpair[0], cB = cpair[1];
+
+    var tl = { shape: sA, color: cA, size: 1 };
+    var tr = { shape: sB, color: cA, size: 1 };
+    var bl = { shape: sA, color: cB, size: 1 };
+    var br = { shape: sB, color: cB, size: 1 };
+
+    var diagram = '<div class="grid2">' +
+      itemHTML(shapeSVG(tl, OPT)) + itemHTML(shapeSVG(tr, OPT)) +
+      itemHTML(shapeSVG(bl, OPT)) + qmarkHTML() + '</div>';
+
+    var raw = [
+      { spec: br,                                ok: true  },
+      { spec: { shape: sB, color: cA, size: 1 }, ok: false },
+      { spec: { shape: sA, color: cB, size: 1 }, ok: false },
+      { spec: { shape: sA, color: cA, size: 1 }, ok: false }
+    ];
+    var opts = shuffle(raw);
+
+    var answerIdx = 0;
+    for (var i = 0; i < opts.length; i++) if (opts[i].ok) { answerIdx = i; break; }
+
+    var optionList = [];
+    for (i = 0; i < opts.length; i++) optionList.push({ svg: shapeSVG(opts[i].spec, OPT) });
+
+    return { prompt: 'Which picture belongs in the empty square?',
+             diagram: diagram, options: optionList, answer: answerIdx };
+  }
+
+  function scatterSVG(specs) {
+    var W = 280, H = 168, cols = 5, rows = 3;
+    var cw = W / cols, ch = H / rows;
+    var allCellsRaw = [];
+    for (var k = 0; k < cols * rows; k++) allCellsRaw.push(k);
+    var allCells = shuffle(allCellsRaw).slice(0, specs.length);
+
+    var inner = '';
+    for (var i = 0; i < specs.length; i++) {
+      var spec = specs[i];
+      var cell = allCells[i];
+      var col = cell % cols, row = Math.floor(cell / cols);
+      var cx = cw * (col + 0.5) + (rng() - 0.5) * (cw * 0.18);
+      var cy = ch * (row + 0.5) + (rng() - 0.5) * (ch * 0.18);
+      var r  = Math.min(cw, ch) * 0.30 * (0.78 + rng() * 0.28);
+      inner += '<g transform="translate(' + cx.toFixed(1) + ',' + cy.toFixed(1) + ')"' +
+               ' fill="' + spec.color + '" stroke="#111827" stroke-width="2"' +
+               ' stroke-linejoin="round">' + shapeInner(spec.shape, 0, 0, r) + '</g>';
+    }
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H +
+           '" aria-hidden="true" focusable="false">' + inner + '</svg>';
+  }
+
+  function genCounting() {
+    var kinds = shuffle(['circle','square','triangle','star','diamond','hexagon']).slice(0, 3);
+    var target = kinds[0];
+    var others = kinds.slice(1);
+    var total = 9 + ri(4);
+    var targetCount = 3 + ri(2);
+
+    var flags = [];
+    for (var i = 0; i < total; i++) flags.push(i < targetCount);
+    var order = shuffle(flags);
+
+    var specs = [];
+    for (i = 0; i < order.length; i++) {
+      specs.push({ shape: order[i] ? target : pick(others), color: pick(COLORS), size: 1 });
+    }
+
+    var diagram = scatterSVG(specs);
+
+    var cands = [];
+    for (var d = 1; d <= total; d++) if (d !== targetCount) cands.push(d);
+    cands.sort(function (a, b) {
+      return Math.abs(a - targetCount) - Math.abs(b - targetCount);
+    });
+    var wrongs = shuffle(cands.slice(0, 5)).slice(0, 3);
+
+    var rawOpts = [{ n: targetCount, ok: true }];
+    for (i = 0; i < wrongs.length; i++) rawOpts.push({ n: wrongs[i], ok: false });
+    var opts = shuffle(rawOpts);
+
+    var answerIdx = 0;
+    for (i = 0; i < opts.length; i++) if (opts[i].ok) { answerIdx = i; break; }
+
+    var optionList = [];
+    for (i = 0; i < opts.length; i++) optionList.push({ text: String(opts[i].n) });
+
+    return { prompt: 'How many ' + target + 's can you count?',
+             diagram: diagram, options: optionList, answer: answerIdx };
+  }
+
+  function genRotation() {
+    var start = ri(4) * 90;
+    var step  = pick([90, 90, 90, -90]);
+    var clockwise = step === 90;
+    var color = pick(COLORS);
+
+    var diagram = '';
+    for (var i = 0; i < 3; i++) {
+      diagram += itemHTML(shapeSVG({
+        shape: 'arrow', color: color, rot: (start + step * i + 720) % 360, size: 1
+      }, OPT));
+    }
+    diagram += qmarkHTML();
+
+    var answerRot = (start + step * 3 + 720) % 360;
+    var rots = shuffle([0, 90, 180, 270]);
+    var optionList = [];
+    for (i = 0; i < rots.length; i++) {
+      optionList.push({ svg: shapeSVG({ shape: 'arrow', color: color, rot: rots[i], size: 1 }, OPT) });
+    }
+    var answerIdx = 0;
+    for (i = 0; i < rots.length; i++) if (rots[i] === answerRot) { answerIdx = i; break; }
+
+    return { prompt: 'The arrow turns 90° ' + (clockwise ? 'clockwise' : 'counter-clockwise') +
+                     ' each time. Which arrow comes next?',
+             diagram: diagram, options: optionList, answer: answerIdx };
+  }
+
+  var GENERATORS = {
+    sequence: genSequence,
+    odd:      genOddOneOut,
+    matrix:   genMatrix,
+    counting: genCounting,
+    rotation: genRotation
+  };
+
+  function buildTypeList(n) {
+    var all = [];
+    for (var k in GENERATORS) if (GENERATORS.hasOwnProperty(k)) all.push(k);
+    var out = [];
+    while (out.length < n) {
+      var chunk = shuffle(all);
+      for (var i = 0; i < chunk.length; i++) out.push(chunk[i]);
+    }
+    return out.slice(0, n);
+  }
+
+  var LETTERS = 'ABCD';
+  var questions = [];
+  var qState = [];
+
+  function renderQuestion(q, i) {
+    var optsHTML = '';
+    for (var j = 0; j < q.options.length; j++) {
+      var o = q.options[j];
+      var visual = o.svg ? o.svg : '<span class="opt-text">' + o.text + '</span>';
+      optsHTML +=
+        '<div class="option" data-opt="' + j + '" role="button" tabindex="0"' +
+        ' aria-label="Answer ' + LETTERS.charAt(j) + '">' +
+        '<div class="opt-visual">' + visual + '</div>' +
+        (q.hideLetters ? '' : '<div class="opt-letter">' + LETTERS.charAt(j) + '</div>') +
+        '</div>';
+    }
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="diagram">' + q.diagram + '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    var sheet = document.getElementById('sheet');
+    if (!sheet) { window.__showErr('No #sheet element found.'); return; }
+
+    var n = parseInt(document.getElementById('countSelect').value, 10);
+    if (isNaN(n) || n <= 0) n = 10;
+
+    questions = [];
+    qState = [];
+    var types = buildTypeList(n);
+    for (var i = 0; i < types.length; i++) {
+      var q = GENERATORS[types[i]]();
+      questions.push(q);
+      qState.push({ solved: false, attempts: 0 });
+    }
+
+    var keyHTML = '';
+    for (i = 0; i < questions.length; i++) {
+      keyHTML += '<span>' + (i + 1) + '. <b>' + LETTERS.charAt(questions[i].answer) + '</b></span>';
+    }
+
+    var qHTML = '';
+    for (i = 0; i < questions.length; i++) {
+      qHTML += renderQuestion(questions[i], i);
+    }
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Easy IQ Practice</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Drag the correct picture into the <b>?</b> box — or simply tap/click an answer. ' +
+        "You'll be told straight away whether you're right. (Seed: " +
+        '<span id="seedTag">' + document.getElementById('seedInput').value + '</span>)</p>' +
+      '<div class="questions">' + qHTML + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2><div class="key-grid">' + keyHTML + '</div>' +
+      '</section>';
+
+    toggleKey();
+    updateScore();
+
+    /* sanity check that the insert actually worked */
+    if (!sheet.querySelector('.q')) {
+      window.__showErr('Questions were generated but could not be inserted into the page.');
+    }
+  }
+
+  function toggleKey() {
+    var chk = document.getElementById('answersChk');
+    var key = document.getElementById('keySection');
+    if (key) key.style.display = (chk && chk.checked) ? '' : 'none';
+  }
+
+  var PRAISE = ['Correct! 🎉', 'Yes! Well done.', "That's right! ⭐", 'Great job! 👏', 'Perfect! ✅'];
+
+  var drag = null;
+
+  function pointOf(e) {
+    if (e.changedTouches && e.changedTouches.length)
+      return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    if (e.touches && e.touches.length)
+      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    return { x: e.clientX, y: e.clientY };
+  }
+  function zoneAt(qEl, x, y) {
+    var el = null;
+    try { el = document.elementFromPoint(x, y); } catch (err) { el = null; }
+    if (!el || !el.closest) return null;
+    var z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+  function startGhost() {
+    var g = document.createElement('div');
+    g.className = 'drag-ghost';
+    var src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+  function moveGhost(x, y) {
+    if (!drag || !drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+  function highlight(x, y) {
+    if (!drag) return;
+    var z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+  function onDown(e) {
+    if (drag) return;
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    var t = e.target;
+    var opt = (t && t.closest) ? t.closest('.option') : null;
+    if (!opt) return;
+    var qEl = opt.closest('.q');
+    if (!qEl || qEl.getAttribute('data-locked') === '1') return;
+
+    var p = pointOf(e);
+    drag = { opt: opt, qEl: qEl, startX: p.x, startY: p.y, moved: false, ghost: null, zone: null };
+  }
+  function onMove(e) {
+    if (!drag) return;
+    var p = pointOf(e);
+    if (!drag.moved) {
+      var dx = p.x - drag.startX, dy = p.y - drag.startY;
+      if (Math.sqrt(dx*dx + dy*dy) < 8) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    if (e.cancelable) e.preventDefault();
+    moveGhost(p.x, p.y);
+    highlight(p.x, p.y);
+  }
+  function finishDrag(commit) {
+    if (!drag) return;
+    var d = drag;
+    drag = null;
+    if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    if (d.zone) d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+    if (commit && (!d.moved || d.zone)) {
+      choose(d.qEl, parseInt(d.opt.getAttribute('data-opt'), 10));
+    }
+  }
+  function onUp(e) {
+    if (!drag) return;
+    var p = pointOf(e);
+    if (drag.moved) {
+      var z = zoneAt(drag.qEl, p.x, p.y);
+      if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+      drag.zone = z;
+    }
+    finishDrag(true);
+  }
+  function onCancel() { finishDrag(false); }
+
+  if (window.PointerEvent) {
+    document.addEventListener('pointerdown', onDown);
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+  } else {
+    document.addEventListener('touchstart', onDown, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onUp);
+    document.addEventListener('touchcancel', onCancel);
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }
+
+  function choose(qEl, idx) {
+    if (!qEl || qEl.getAttribute('data-locked') === '1') return;
+    var qi = parseInt(qEl.getAttribute('data-q'), 10);
+    var q = questions[qi];
+    if (!q) return;
+    var opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+
+    var all = qEl.querySelectorAll('.option');
+    for (var i = 0; i < all.length; i++) all[i].classList.remove('correct', 'wrong');
+
+    var state = qState[qi];
+    if (state) state.attempts++;
+
+    var slot = qEl.querySelector('.drop-zone .qmark');
+    var visual = opt.querySelector('.opt-visual');
+    if (slot && visual) {
+      slot.innerHTML = visual.innerHTML;
+      slot.classList.add('filled');
+    }
+
+    if (idx === q.answer) {
+      if (state) state.solved = true;
+      qEl.setAttribute('data-locked', '1');
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite — try again!');
+    }
+    updateScore();
+  }
+  function setFeedback(qEl, cls, msg) {
+    var fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+  function updateScore() {
+    var el = document.getElementById('scoreTag');
+    if (!el) return;
+    var solved = 0;
+    for (var i = 0; i < qState.length; i++) if (qState[i].solved) solved++;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+  function resetAnswers() {
+    var qs = document.querySelectorAll('.q');
+    for (var i = 0; i < qs.length; i++) {
+      var qEl = qs[i];
+      qEl.removeAttribute('data-locked');
+      var opts = qEl.querySelectorAll('.option');
+      for (var j = 0; j < opts.length; j++) opts[j].classList.remove('correct', 'wrong');
+      var slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.innerHTML = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    }
+    qState = [];
+    for (i = 0; i < questions.length; i++) qState.push({ solved: false, attempts: 0 });
+    updateScore();
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k !== 'Enter' && k !== ' ' && k !== 'Spacebar') return;
+    var opt = (e.target && e.target.closest) ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    var qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.getAttribute('data-opt'), 10));
+  });
+
+  var seedInput, countSel, answersChk;
+  function applySeed() {
+    var s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  function boot() {
+    seedInput  = document.getElementById('seedInput');
+    countSel   = document.getElementById('countSelect');
+    answersChk = document.getElementById('answersChk');
+
+    document.getElementById('regenBtn').addEventListener('click', function () {
+      seedInput.value = Math.floor(Math.random() * 1e9);
+      applySeed();
+      render();
+    });
+    document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+    seedInput.addEventListener('change', function () { applySeed(); render(); });
+    countSel.addEventListener('change', function () { applySeed(); render(); });
+    answersChk.addEventListener('change', toggleKey);
+    document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+
+    applySeed();
+    render();
+  }
+
+  function safeBoot() {
+    try { boot(); }
+    catch (err) { window.__showErr((err && err.message) ? err.message : String(err)); }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', safeBoot);
+  } else {
+    safeBoot();
+  }
+})();
+</script>
+
+<!-- ============ Script #3: independent "did it render?" check ============ -->
+<script>
+(function () {
+  setTimeout(function () {
+    var sheet = document.getElementById('sheet');
+    if (!sheet) {
+      window.__showErr('The #sheet container is missing from the page.');
+      return;
+    }
+    if (!sheet.querySelector('.q')) {
+      window.__showErr(
+        'The worksheet did not build.\n' +
+        'Most likely JavaScript is blocked or switched off in this browser.\n' +
+        'On iPad: Settings → Safari → Advanced → JavaScript (turn ON), then reload.'
+      );
+    }
+  }, 2500);
+})();
+</script>
+
+</body>
+</html>
