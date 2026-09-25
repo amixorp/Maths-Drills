@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fractions → Decimals — Foundation Practice</title>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    background:#fff;
+    max-width:1080px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted)}
+
+  /* ---------- questions ---------- */
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:14px;
+  }
+  @media (max-width:760px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  /* ---------- diagram:  fraction  =  ?  ---------- */
+  .diagram{
+    display:flex; align-items:center; justify-content:center; gap:16px;
+    min-height:84px;
+    margin:2px 0 12px;
+  }
+  .eq{font-size:34px; font-weight:800; color:var(--muted)}
+
+  .frac{
+    display:inline-flex; flex-direction:column; align-items:center;
+    font-weight:800; line-height:1.05; vertical-align:middle;
+  }
+  .frac > .num{
+    padding:0 .22em .04em;
+    border-bottom:2.5px solid currentColor;
+  }
+  .frac > .den{padding:.04em .22em 0}
+  .diagram .frac{font-size:42px; color:var(--ink)}
+
+  /* ---------- drop slot ---------- */
+  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:#dbeafe; transform:scale(1.08)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:92px; min-height:56px;
+    padding:0 10px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:800; color:#9ca3af;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{
+    border-style:solid;
+    border-color:var(--ink);
+    color:var(--ink);
+  }
+
+  /* ---------- options ---------- */
+  .options{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:12px;
+    margin-top:auto;
+    padding-top:6px;
+    border-top:1px dashed #e5e7eb;
+  }
+  .option{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border-radius:10px;
+    padding:4px 4px 2px;
+    transition:background .12s ease, box-shadow .12s ease, transform .12s ease;
+  }
+  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+  .opt-visual{
+    width:92px; height:60px;
+    padding:0 8px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    background:#fafafa;
+  }
+  .opt-letter{font-size:11px; font-weight:700; color:var(--muted)}
+  .opt-text{font-size:20px; font-weight:800; color:var(--ink)}
+
+  /* ---------- drag ghost ---------- */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    width:92px; height:64px; padding:0 10px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);
+  }
+  .drag-ghost .opt-text{font-size:20px; font-weight:800}
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.08)}
+  }
+
+  /* ---------- per-question feedback ---------- */
+  .q-feedback{
+    margin-top:8px; min-height:15px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* ---------- answer key ---------- */
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
+    gap:6px 10px;
+    font-size:13px;
+    color:#374151;
+  }
+  .key-grid b{color:var(--ink)}
+
+  /* ---------- print ---------- */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af}
+    .opt-visual{background:#fff}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔢 Fractions → Decimals Worksheet</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1"></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>6</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+      <option>15</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM  (same seed => same worksheet)
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     FRACTION → DECIMAL  (exact, no floats for the correct answer)
+     Only denominators that give terminating decimals are used.
+     NOTE: denominator 8 has been removed.
+     ============================================================ */
+  const DEN_TO_MULT = {
+    2:   [5,   10],
+    4:   [25,  100],
+    5:   [2,   10],
+    10:  [1,   10],
+    20:  [5,   100],
+    25:  [4,   100],
+    50:  [2,   100],
+    100: [1,   100],
+    200: [5,  1000]   /* even numerator → divide top & bottom by 2 to get /100 */
+  };
+
+  function fractionToDecimalStr(num, den) {
+    const entry = DEN_TO_MULT[den];
+    if (!entry) return null;
+    const [m, p] = entry;
+    const scaled = num * m;
+    const digits = String(p).length - 1;       // 10 → 1, 100 → 2, 1000 → 3
+    const s = String(scaled).padStart(digits + 1, '0');
+    const intPart = s.slice(0, s.length - digits) || '0';
+    const decPart = s.slice(-digits);
+    let trimmed = decPart.replace(/0+$/, '');
+    if (trimmed === '') trimmed = '0';
+    return intPart + '.' + trimmed;
+  }
+
+  /* Pretty-print a number as a decimal string ("5" → "5.0"). */
+  function fmtDecimal(v) {
+    const r = Math.round(v * 1000000) / 1000000;
+    let s = r.toString();
+    if (!s.includes('.') && !s.includes('e')) s += '.0';
+    return s;
+  }
+
+  /* Plausible wrong answers based on real misconceptions. */
+  function buildDecimalDistractors(num, den, correctStr) {
+    const correctVal = parseFloat(correctStr);
+    const pool = [];
+    const seen = new Set([correctStr]);
+
+    const add = (v) => {
+      if (!isFinite(v) || v <= 0 || v > 20) return;
+      const s = fmtDecimal(v);
+      if (seen.has(s)) return;
+      seen.add(s);
+      pool.push(s);
+    };
+
+    // Digit concatenation: 3/4 → 0.34 / 0.43
+    if (num < 10 && den < 10) {
+      add(parseFloat('0.' + num + den));
+      if (num !== den) add(parseFloat('0.' + den + num));
+    }
+    // Numerator or denominator over 10/100
+    if (num < 10)  add(num / 10);
+    if (num < 100) add(num / 100);
+    if (den < 10)  add(den / 10);
+    if (den < 100) add(den / 100);
+    // Orders of magnitude out
+    add(correctVal * 10);
+    add(correctVal / 10);
+    // Near-miss on the last decimal place: 0.75 → 0.7 / 0.76
+    const dot = correctStr.indexOf('.');
+    if (dot >= 0) {
+      const intPart = correctStr.slice(0, dot);
+      const decPart = correctStr.slice(dot + 1);
+      if (decPart.length >= 2) {
+        add(parseFloat(intPart + '.' + decPart.slice(0, -1)));
+        const last = parseInt(decPart[decPart.length - 1], 10);
+        if (last < 9) {
+          add(parseFloat(intPart + '.' + decPart.slice(0, -1) + (last + 1)));
+        }
+      }
+    }
+    // Gentle fallbacks so we always have enough to choose from
+    [0.1, -0.1, 0.05, -0.05, 0.2, -0.2, 0.5, -0.5].forEach(d => add(correctVal + d));
+
+    return pool;
+  }
+
+  /* ============================================================
+     SMALL HTML HELPERS
+     ============================================================ */
+  function fractionHTML(num, den) {
+    return '<span class="frac"><span class="num">' + num +
+           '</span><span class="den">' + den + '</span></span>';
+  }
+  const qmarkHTML = () => '<div class="drop-zone"><div class="qmark">?</div></div>';
+
+  /* ============================================================
+     QUESTION GENERATORS
+     ============================================================ */
+
+  const POOL_HALVES_QUARTERS = [[1,2],[1,4],[3,4]];
+  const POOL_TENTHS = [
+    [1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10]
+  ];
+  const POOL_HUNDREDTHS = [
+    [1,100],[3,100],[7,100],[23,100],[45,100],[57,100],[89,100]
+  ];
+  const POOL_FIFTHS = [[1,5],[2,5],[3,5],[4,5]];
+  /* Denominator 8 removed. */
+  const POOL_LARGER = [
+    [1,20],[3,20],[7,20],[9,20],[11,20],[13,20],
+    [1,25],[2,25],[3,25],[4,25],[6,25],[7,25],[8,25],[9,25],[11,25],[12,25],
+    [1,50],[3,50],[7,50],[9,50],[11,50],[13,50]
+  ];
+  /* Denominator 200 — even numerators only, so dividing top & bottom by 2
+     puts the fraction straight over 100 (a nice extra practice step).
+     Appears with a deliberately low weight (see TYPE_WEIGHTS). */
+  const POOL_TWO_HUNDREDTHS = [
+    [2,200],[6,200],[14,200],[26,200],[34,200],[46,200],
+    [58,200],[74,200],[86,200],[94,200],[110,200],[126,200],
+    [142,200],[158,200],[174,200],[190,200],[198,200]
+  ];
+
+  function makeQuestion(num, den) {
+    const correct = fractionToDecimalStr(num, den);
+    const distractors = shuffle(buildDecimalDistractors(num, den, correct)).slice(0, 3);
+
+    // Absolute safety net — should never trigger.
+    let bump = 1;
+    while (distractors.length < 3) {
+      const f = fmtDecimal(parseFloat(correct) + bump * 0.1);
+      if (f !== correct && !distractors.includes(f)) distractors.push(f);
+      bump++;
+    }
+
+    const opts = shuffle([
+      { text: correct, ok: true },
+      ...distractors.map(d => ({ text: d, ok: false }))
+    ]);
+
+    return {
+      prompt: 'Write this fraction as a decimal.',
+      num, den,
+      options: opts,
+      answer: opts.findIndex(o => o.ok)
+    };
+  }
+
+  const fromPool = pool => {
+    const [num, den] = pick(pool);
+    return makeQuestion(num, den);
+  };
+
+  const GENERATORS = {
+    halves:        () => fromPool(POOL_HALVES_QUARTERS),
+    tenths:        () => fromPool(POOL_TENTHS),
+    hundredths:    () => fromPool(POOL_HUNDREDTHS),
+    fifths:        () => fromPool(POOL_FIFTHS),
+    larger:        () => fromPool(POOL_LARGER),
+    twoHundredths: () => fromPool(POOL_TWO_HUNDREDTHS)
+  };
+
+  /* ============================================================
+     UNIQUE QUESTION SET — no fraction (and no decimal value)
+     appears twice within the same worksheet.
+     ============================================================ */
+  function generateUniqueQuestions(typeList) {
+    const usedPairs  = new Set();   // e.g. "1/2"
+    const usedValues = new Set();   // e.g. "0.5" — also stops 1/2 and 5/10 colliding
+
+    const tryGenerate = (type) => {
+      for (let i = 0; i < 40; i++) {
+        const q   = GENERATORS[type]();
+        const key = q.num + '/' + q.den;
+        const val = fractionToDecimalStr(q.num, q.den);
+        if (!usedPairs.has(key) && !usedValues.has(val)) {
+          usedPairs.add(key);
+          usedValues.add(val);
+          return q;
+        }
+      }
+      return null;   // this type's pool is exhausted
+    };
+
+    const out = [];
+    for (const type of typeList) {
+      let q = tryGenerate(type);
+
+      // If the assigned type is exhausted, borrow from any other type.
+      if (!q) {
+        for (const alt of shuffle(Object.keys(GENERATORS))) {
+          q = tryGenerate(alt);
+          if (q) break;
+        }
+      }
+
+      // Truly exhausted (never happens with the current pool sizes) — accept.
+      if (!q) q = GENERATORS[type]();
+      out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     ASSEMBLY — weighted so denominator-200 questions are rare
+     ============================================================ */
+  const TYPE_WEIGHTS = {
+    halves:        3,
+    tenths:        3,
+    hundredths:    2,
+    fifths:        2,
+    larger:        2,
+    twoHundredths: 1     /* ~1 in 13 questions */
+  };
+
+  function buildTypeList(n) {
+    const bag = [];
+    for (const [type, w] of Object.entries(TYPE_WEIGHTS)) {
+      for (let i = 0; i < w; i++) bag.push(type);
+    }
+    const out = [];
+    while (out.length < n) out.push(...shuffle(bag));
+    return out.slice(0, n);
+  }
+
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const diagram = fractionHTML(q.num, q.den) +
+                    '<span class="eq">=</span>' +
+                    qmarkHTML();
+
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<div class="opt-visual"><span class="opt-text">' + o.text + '</span></div>' +
+        '<div class="opt-letter">' + LETTERS[j] + '</div>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="diagram">' + diagram + '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+
+    questions = generateUniqueQuestions(buildTypeList(n));
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => '<span>' + (i + 1) + '. <b>' + LETTERS[q.answer] + '</b></span>')
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Fractions → Decimals</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Drag the correct decimal into the <b>?</b> box — or simply tap/click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    document.getElementById('seedTag').textContent =
+      document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION — drag a tile into the "?" slot, or tap it
+     ============================================================ */
+  const PRAISE = ['Correct! 🎉', 'Yes! Well done.', "That's right! ⭐", 'Great job! 👏', 'Perfect! ✅'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+
+    const state = qState[qi];
+    if (state) state.attempts++;
+
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    if (slot) {
+      slot.textContent = q.options[idx].text;
+      slot.classList.add('filled');
+    }
+
+    if (idx === q.answer) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite — try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  /* ------------------------------------------------------------
+     Unpredictable starting seed.
+
+     GitHub Pages only serves the static HTML file — but this
+     script still executes inside the visitor's browser, so the
+     normal browser APIs (Web Crypto, Date, Math.random) are all
+     available.  No server-side code is needed.
+     ------------------------------------------------------------ */
+  function randomSeed() {
+    // Preferred: cryptographically strong entropy from the browser.
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;          // keep it a friendly 9-digit number
+    }
+    // Fallback: mix the clock with Math.random().
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  /* A ?seed=12345 URL parameter still wins, so a teacher can
+     bookmark / share an exact worksheet. */
+  function initialSeed() {
+    const m = /[?&]seed=(\d+)/.exec(window.location.search);
+    if (m) return parseInt(m[1], 10) >>> 0;
+    return randomSeed();
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+  seedInput.addEventListener('change', () => { applySeed(); render(); });
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  seedInput.value = initialSeed();
+  applySeed();
+  render();
+})();
+</script>
+</body>
+</html>
