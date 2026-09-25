@@ -1062,12 +1062,6 @@
     rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
   }
 
-  document.getElementById('regenBtn').addEventListener('click', () => {
-    seedInput.value = Math.floor(Math.random() * 1e9);
-    applySeed();
-    render();
-  });
-
   /* --- seed handling --- */
 
   function getSeedFromURL() {
