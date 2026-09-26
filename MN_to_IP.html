@@ -114,7 +114,7 @@
     margin:2px 0 12px;
     padding:6px 2px;
   }
-  .lhs{ font-size: 24px; }
+  .lhs{ font-size: 40px; }
   .eq{ font-size: 22px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 
   /* ---------- drop slot ---------- */
@@ -124,12 +124,12 @@
     border-color:var(--accent); color:var(--accent); background:#eff6ff;
   }
   .qmark{
-    min-width:120px; min-height:60px;
-    padding:8px 14px;
-    border:2.5px dashed #9ca3af;
-    border-radius:9px;
+    min-width:150px; min-height:84px;
+    padding:10px 18px;
+    border:3px dashed #94a3b8;
+    border-radius:12px;
     display:flex; align-items:center; justify-content:center;
-    font-size:20px; font-weight:800; color:#9ca3af;
+    font-size:26px; font-weight:800; color:#94a3b8;
     white-space:nowrap;
     transition:border-color .15s, background .15s, color .15s;
   }
@@ -179,7 +179,7 @@
   }
   .opt-visual{
     flex:1;
-    font-size:17px;
+    font-size:22px;
     display:flex; align-items:center; justify-content:center;
     min-height:32px;
     overflow-x:auto;
@@ -196,7 +196,7 @@
     box-shadow:0 10px 22px rgba(15,23,42,.28);
     display:flex; align-items:center; justify-content:center;
     transform:translate(-50%,-50%) scale(1.05);
-    font-size:17px;
+    font-size:22px;
   }
 
   body.dragging-active{user-select:none; -webkit-user-select:none}
@@ -243,6 +243,9 @@
     .q{border-color:#9ca3af}
     .q-feedback{display:none !important}
     body.dragging-active .drop-zone .qmark{animation:none}
+    .lhs{font-size:32px}
+    .qmark{min-width:130px; min-height:70px; font-size:22px}
+    .opt-visual{font-size:19px}
   }
 </style>
 </head>
@@ -351,8 +354,8 @@
       if (r === 0) continue;   /* cannot happen given gcd=1, but safe */
 
       const sig = 'IM|' + n + '|' + d;
-      const lhs = tex('\\frac{' + n + '}{' + d + '}');
-      const correctLatex = q + '\\,\\frac{' + r + '}{' + d + '}';
+      const lhs = tex('\\dfrac{' + n + '}{' + d + '}');
+      const correctLatex = q + '\\,\\dfrac{' + r + '}{' + d + '}';
 
       /* Build the distractor pool. */
       const pool = [];
@@ -361,7 +364,7 @@
       const addCand = (qq, rr) => {
         if (rr <= 0 || rr >= d) return;
         if (gcd(rr, d) !== 1) return;                 /* must be in lowest terms */
-        const latex = qq + '\\,\\frac{' + rr + '}{' + d + '}';
+        const latex = qq + '\\,\\dfrac{' + rr + '}{' + d + '}';
         if (seen.has(latex)) return;
         seen.add(latex);
         pool.push({ latex });
@@ -374,7 +377,7 @@
       }
 
       /* Fraction part only (forgot to write the whole number). */
-      const fracOnly = '\\frac{' + r + '}{' + d + '}';
+      const fracOnly = '\\dfrac{' + r + '}{' + d + '}';
       if (!seen.has(fracOnly)) {
         seen.add(fracOnly);
         pool.push({ latex: fracOnly });
@@ -504,7 +507,7 @@
       '<p class="instructions">' +
         'An <b>improper fraction</b> has a numerator larger than its denominator. ' +
         'A <b>mixed number</b> is a whole number combined with a proper fraction, like ' +
-        tex('3\\,\\frac{1}{3}') + '. ' +
+        tex('3\\,\\dfrac{1}{3}') + '. ' +
         'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
         'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
       '</p>' +
