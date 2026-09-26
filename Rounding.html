@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rounding — Practice</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --line:#cbd5e1;
+    --line-soft:#e2e8f0;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --accent-soft:#dbeafe;
+    --page:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:var(--page);
+    font-size:17px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Thin gap used between groups of three digits. */
+  .gap{ font-size: 0.55em; }
+
+  /* toolbar */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:14px 22px;
+    background:#0f172a; color:#f9fafb;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:15px;
+  }
+  .tb-title{font-weight:800; margin-right:auto; letter-spacing:.3px; font-size:16px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0}
+  .toolbar input[type=number]{
+    width:140px; padding:8px 10px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:8px 10px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:9px 16px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f9fafb; font:inherit; font-weight:700; cursor:pointer;
+  }
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:8px 14px; border-radius:999px;
+    background:#1e293b; border:1px solid #334155;
+    font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap;
+  }
+  /* Force a new toolbar row */
+  .toolbar-break{flex-basis:100%; height:0; margin:0; padding:0;}
+  .tb-sub{color:#94a3b8; font-weight:700; letter-spacing:.3px}
+  .type-chk{
+    padding:6px 12px;
+    border-radius:8px;
+    background:#1e293b;
+    border:1px solid #334155;
+    font-size:14px;
+    font-weight:600;
+  }
+  .type-chk input{margin-right:2px}
+
+  /* sheet */
+  .sheet{
+    background:#fff;
+    max-width:1180px;
+    margin:26px auto 60px;
+    padding:34px 38px 46px;
+    border-radius:14px;
+    box-shadow:0 8px 28px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:12px;
+  }
+  .sheet-head h1{margin:0; font-size:30px; letter-spacing:.4px; font-weight:800}
+  .meta{margin-left:auto; display:flex; gap:20px; font-size:14px; color:#334155}
+  .meta .line{display:inline-block; width:120px; border-bottom:1px solid #94a3b8}
+  .meta .line.short{width:90px}
+  .meta .line.tiny{width:55px}
+  .instructions{margin:16px 0 20px; font-size:15.5px; color:var(--muted); line-height:1.5}
+
+  /* questions */
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(440px, 1fr));
+    gap:18px;
+  }
+  @media (max-width:920px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:2px solid var(--line-soft);
+    border-radius:14px;
+    padding:14px 16px 16px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:center; gap:10px; margin-bottom:10px}
+  .q-num{
+    flex:none;
+    width:30px; height:30px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:15px; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .q-prompt{font-size:16px; line-height:1.3; font-weight:700; color:#1e293b}
+
+  /* diagram — big readable number */
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:20px;
+    min-height:120px;
+    margin:6px 0 16px;
+    padding:6px 2px;
+  }
+  .lhs{
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--ink);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .eq{
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  /* drop slot */
+  .drop-zone{border-radius:14px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:var(--accent-soft); transform:scale(1.06)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:170px; min-height:84px;
+    padding:0 20px;
+    border:3px dashed #94a3b8;
+    border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; font-weight:800; color:#94a3b8;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
+
+  /* options */
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    margin-top:auto;
+    padding-top:14px;
+    border-top:1px dashed var(--line-soft);
+  }
+  @media (max-width:560px){ .options{grid-template-columns:1fr} }
+
+  .option{
+    display:flex; align-items:center; gap:12px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border:2px solid var(--line-soft);
+    border-radius:12px;
+    background:#f8fafc;
+    padding:12px 14px;
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
+    min-width:0;
+  }
+  .option:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+  .option:hover{background:#f1f5f9}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 3px #16a34a}
+  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 3px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    60%{transform:translateX(6px)}
+    80%{transform:translateX(-4px)}
+  }
+  .opt-letter{
+    flex:none;
+    width:28px; height:28px; border-radius:50%;
+    background:#e2e8f0; color:#475569;
+    font-size:14px; font-weight:800;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt-visual{
+    flex:1;
+    font-size:28px;
+    font-weight:800;
+    color:var(--ink);
+    letter-spacing:.5px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:44px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+  }
+
+  /* drag ghost */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:14px 22px;
+    border-radius:12px;
+    background:#fff; border:2px solid var(--line-soft);
+    box-shadow:0 12px 26px rgba(15,23,42,.30);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.06);
+    font-size:28px; font-weight:800;
+    letter-spacing:.5px;
+  }
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.07)}
+  }
+
+  /* feedback */
+  .q-feedback{
+    margin-top:10px; min-height:20px; text-align:center;
+    font-size:15px; font-weight:800; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* answer key */
+  .key{
+    margin-top:30px;
+    border-top:3px solid var(--ink);
+    padding-top:14px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 12px; font-size:18px; letter-spacing:.5px; font-weight:800}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(80px,1fr));
+    gap:8px 12px;
+    font-size:15px;
+    color:#334155;
+  }
+  .key-grid b{color:var(--ink); font-size:17px}
+
+  /* print */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff; font-size:14px}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#94a3b8}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+    .lhs, .eq{font-size:30px}
+    .qmark{min-width:130px; min-height:60px; font-size:24px}
+    .opt-visual{font-size:22px; min-height:36px}
+    .opt-letter{width:24px; height:24px; font-size:12px}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔢 Rounding</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>6</option>
+      <option selected>8</option>
+      <option>10</option>
+      <option>12</option>
+      <option>15</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 8 correct</span>
+  <div class="toolbar-break"></div>
+  <span class="tb-sub">Round to:</span>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeWhole" checked> Whole number</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp1" checked> 1 dp</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp2" checked> 2 dp</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp3" checked> 3 dp</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf1" checked> 1 sf</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf2" checked> 2 sf</label>
+  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf3" checked> 3 sf</label>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     NUMBER FORMATTING
+     ============================================================ */
+
+  /* Insert thin-space grouping into a numeric string.
+     Groups the integer part from the right in threes and, when
+     it is long enough to warrant it, the fractional part from the
+     left in threes. Groups of exactly three digits are left
+     ungrouped, as is conventional. */
+  function groupDigits(s) {
+    const GAP = '<span class="gap">\u00A0</span>';
+    const parts = s.split('.');
+    let intPart = parts[0];
+    const fracPart = parts.length > 1 ? parts[1] : '';
+
+    if (intPart.length > 3) {
+      let out = '';
+      for (let i = 0; i < intPart.length; i++) {
+        const posFromRight = intPart.length - i;
+        if (i > 0 && posFromRight % 3 === 0) out += GAP;
+        out += intPart[i];
+      }
+      intPart = out;
+    }
+
+    let fracOut = '';
+    if (fracPart.length > 5) {
+      for (let i = 0; i < fracPart.length; i++) {
+        if (i > 0 && i % 3 === 0) fracOut += GAP;
+        fracOut += fracPart[i];
+      }
+    } else {
+      fracOut = fracPart;
+    }
+
+    return fracOut ? intPart + '.' + fracOut : intPart;
+  }
+
+  /* ============================================================
+     NUMBER REPRESENTATION
+
+     A number is represented as { digits, pos } where:
+       - digits is a string of digits (first is non-zero)
+       - pos is the exponent of the first digit
+     The value is: sum over i of digits[i] × 10^(pos - i).
+
+     Examples:
+       { digits: "47382", pos: 4 }   →  47382
+       { digits: "473",   pos: -3 }  →  0.00473
+     ============================================================ */
+
+  /* Format a (digits, pos) pair as a plain decimal string. */
+  function formatNumber(digits, pos) {
+    if (pos < 0) {
+      return '0.' + '0'.repeat(-pos - 1) + digits;
+    }
+    if (pos >= digits.length - 1) {
+      return digits + '0'.repeat(pos - digits.length + 1);
+    }
+    return digits.slice(0, pos + 1) + '.' + digits.slice(pos + 1);
+  }
+
+  /* Round a (digits, pos) pair to the nearest 10^targetPos. */
+  function roundToPos(digits, pos, targetPos) {
+    const keepCount = pos - targetPos + 1;
+    if (keepCount < 1) return { digits: digits, pos: pos };
+
+    let kept, nextDigit;
+    if (keepCount >= digits.length) {
+      kept = digits + '0'.repeat(keepCount - digits.length);
+      nextDigit = 0;
+    } else {
+      kept = digits.slice(0, keepCount);
+      nextDigit = parseInt(digits[keepCount], 10);
+    }
+
+    if (nextDigit >= 5) {
+      let n = parseInt(kept, 10) + 1;
+      let newKept = String(n);
+      if (newKept.length > keepCount) {
+        kept = newKept.slice(0, keepCount);
+        pos = pos + 1;
+      } else {
+        kept = newKept;
+        if (kept.length < keepCount) {
+          kept = '0'.repeat(keepCount - kept.length) + kept;
+        }
+      }
+    }
+
+    return { digits: kept, pos: pos };
+  }
+
+  /* Convert (intPart, fracStr) into the { digits, pos } representation,
+     stripping any leading zeros so the first digit is non-zero. */
+  function makeDigitsPos(intPart, fracStr) {
+    const s = String(intPart) + fracStr;
+    let pos = String(intPart).length - 1;
+    let i = 0;
+    while (i < s.length - 1 && s[i] === '0') {
+      i++;
+      pos--;
+    }
+    return { digits: s.slice(i), pos: pos };
+  }
+
+  /* ============================================================
+     SOURCE GENERATION
+     ============================================================ */
+
+  /* Whole number: an integer 1..maxInt with 1 or 2 decimal places. */
+  function genSourceWhole(pos) {
+    const maxInt = Math.max(9, Math.round(9 + pos * (99999 - 9)));
+    const intPart = ri(1, maxInt);
+    const dp = rng() < 0.3 ? 2 : 1;
+    let fracStr = '';
+    for (let i = 0; i < dp; i++) fracStr += ri(0, 9);
+    if (fracStr === '0'.repeat(dp)) {
+      fracStr = String(ri(1, 9)) + fracStr.slice(1);
+    }
+    return { intPart, fracStr };
+  }
+
+  /* Decimal places: an integer 0..maxInt with targetDp+1 or targetDp+2
+     decimal places. */
+  function genSourceDp(pos, targetDp) {
+    const maxInt = Math.max(9, Math.round(9 + pos * (999 - 9)));
+    const intPart = ri(0, maxInt);
+    const extraDp = ri(1, 2);
+    const dp = targetDp + extraDp;
+    let fracStr = '';
+    for (let i = 0; i < dp; i++) fracStr += ri(0, 9);
+    /* Ensure at least one non-zero digit in the fractional part. */
+    if (fracStr === '0'.repeat(dp)) {
+      const idx = ri(0, dp - 1);
+      fracStr = fracStr.slice(0, idx) + String(ri(1, 9)) + fracStr.slice(idx + 1);
+    }
+    return { intPart, fracStr };
+  }
+
+  /* Significant figures: a number with targetSf+1 or targetSf+2
+     significant figures, with the leading digit between positions
+     -3 and 5 (so the magnitude is between 0.001 and 999 999). */
+  function genSourceSf(pos, targetSf) {
+    /* For easy questions keep to middle magnitudes; for harder
+       questions allow the full range down to thousandths and up
+       to hundreds of thousands. */
+    const centre = pos < 0.5 ? 0 : 1;
+    const spread = pos < 0.5 ? 2 : 4;
+    let firstPos = ri(centre - spread, centre + spread);
+    if (firstPos < -3) firstPos = -3;
+    if (firstPos > 5) firstPos = 5;
+
+    const extraSf = ri(1, 2);
+    const numSf = targetSf + extraSf;
+    const digits = [String(ri(1, 9))];
+    for (let i = 1; i < numSf; i++) digits.push(String(ri(0, 9)));
+    /* Make the digit we round by non-zero most of the time, so the
+       question is not trivially unchanged. */
+    if (digits[targetSf] === '0' && rng() < 0.9) {
+      digits[targetSf] = String(ri(1, 9));
+    }
+    return { digits: digits.join(''), pos: firstPos };
+  }
+
+  /* ============================================================
+     DISTRACTOR POOL
+     ============================================================ */
+
+  function makeDistractors(digits, pos, targetPos) {
+    const pool = [];
+    const seen = new Set();
+
+    const correct = roundToPos(digits, pos, targetPos);
+    const correctStr = formatNumber(correct.digits, correct.pos);
+    seen.add(correctStr);
+
+    const add = (d, p) => {
+      if (!d || !d.length) return;
+      if (d === '0') return;
+      const s = formatNumber(d, p);
+      if (seen.has(s)) return;
+      seen.add(s);
+      pool.push(s);
+    };
+
+    const keepCount = pos - targetPos + 1;
+
+    /* 1. Truncated — no rounding up. */
+    if (keepCount >= 1) {
+      if (keepCount >= digits.length) {
+        add(digits + '0'.repeat(keepCount - digits.length), pos);
+      } else {
+        add(digits.slice(0, keepCount), pos);
+      }
+    }
+
+    /* 2. Rounded to one more dp (i.e. targetPos − 1). */
+    const more = roundToPos(digits, pos, targetPos - 1);
+    add(more.digits, more.pos);
+
+    /* 3. Rounded to one fewer dp (i.e. targetPos + 1). */
+    const fewer = roundToPos(digits, pos, targetPos + 1);
+    add(fewer.digits, fewer.pos);
+
+    /* 4. Off by one in the last kept digit. */
+    if (keepCount >= 1 && keepCount <= digits.length) {
+      const lastIdx = keepCount - 1;
+      const lastDigit = parseInt(digits[lastIdx], 10);
+      if (lastDigit < 9) {
+        add(digits.slice(0, lastIdx) + String(lastDigit + 1) + digits.slice(lastIdx + 1), pos);
+      }
+      if (lastDigit > 0) {
+        add(digits.slice(0, lastIdx) + String(lastDigit - 1) + digits.slice(lastIdx + 1), pos);
+      }
+    }
+
+    /* 5. Off by one in the leading digit — a magnitude error. */
+    if (digits.length > 1) {
+      const firstDigit = parseInt(digits[0], 10);
+      if (firstDigit < 9) {
+        add(String(firstDigit + 1) + digits.slice(1), pos);
+      }
+      if (firstDigit > 1) {
+        add(String(firstDigit - 1) + digits.slice(1), pos);
+      }
+    }
+
+    /* 6. Source unchanged. */
+    add(digits, pos);
+
+    return pool;
+  }
+
+  /* ============================================================
+     QUESTION GENERATOR
+     ============================================================ */
+
+  /* Difficulty of each question type. */
+  const TYPE_DIFFICULTY = {
+    whole: 1,
+    dp1:   1.5,
+    sf1:   2,
+    dp2:   2.5,
+    sf2:   3,
+    dp3:   3.5,
+    sf3:   4
+  };
+
+  function getEnabledTypes() {
+    const types = [];
+    if (document.getElementById('typeWhole').checked) types.push('whole');
+    if (document.getElementById('typeDp1').checked)   types.push('dp1');
+    if (document.getElementById('typeDp2').checked)   types.push('dp2');
+    if (document.getElementById('typeDp3').checked)   types.push('dp3');
+    if (document.getElementById('typeSf1').checked)   types.push('sf1');
+    if (document.getElementById('typeSf2').checked)   types.push('sf2');
+    if (document.getElementById('typeSf3').checked)   types.push('sf3');
+    /* If nothing is checked, default to the whole-number type. */
+    if (types.length === 0) types.push('whole');
+    return types;
+  }
+
+  function chooseType(pos, types) {
+    const target = 1 + pos * 3;   /* 1 at start, 4 at end */
+    const sigma = 1.2;
+    const weights = types.map(t => {
+      const d = TYPE_DIFFICULTY[t];
+      const z = (d - target) / sigma;
+      return Math.exp(-0.5 * z * z);
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let r = rng() * total;
+    for (let i = 0; i < types.length; i++) {
+      r -= weights[i];
+      if (r <= 0) return types[i];
+    }
+    return types[types.length - 1];
+  }
+
+  function generateQuestion(pos, types) {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const type = chooseType(pos, types);
+
+      let digits, posOfFirst, targetPos, correct, promptText, sig;
+
+      if (type === 'whole') {
+        const src = genSourceWhole(pos);
+        const dp = makeDigitsPos(src.intPart, src.fracStr);
+        digits = dp.digits;
+        posOfFirst = dp.pos;
+        targetPos = 0;
+        promptText = 'Round this number to the nearest whole number.';
+      } else if (type === 'dp1' || type === 'dp2' || type === 'dp3') {
+        const targetDp = type === 'dp1' ? 1 : type === 'dp2' ? 2 : 3;
+        const src = genSourceDp(pos, targetDp);
+        const dp = makeDigitsPos(src.intPart, src.fracStr);
+        digits = dp.digits;
+        posOfFirst = dp.pos;
+        targetPos = -targetDp;
+        promptText = 'Round this number to ' + targetDp +
+                     ' decimal place' + (targetDp > 1 ? 's' : '') + '.';
+      } else {
+        const targetSf = type === 'sf1' ? 1 : type === 'sf2' ? 2 : 3;
+        const src = genSourceSf(pos, targetSf);
+        digits = src.digits;
+        posOfFirst = src.pos;
+        targetPos = posOfFirst - targetSf + 1;
+        promptText = 'Round this number to ' + targetSf +
+                     ' significant figure' + (targetSf > 1 ? 's' : '') + '.';
+      }
+
+      /* Compute the correct answer. */
+      correct = roundToPos(digits, posOfFirst, targetPos);
+      const correctStr = formatNumber(correct.digits, correct.pos);
+
+      /* Build distractors. */
+      const pool = makeDistractors(digits, posOfFirst, targetPos);
+      if (pool.length < 3) continue;
+
+      const distractors = shuffle(pool).slice(0, 3);
+      const opts = shuffle([
+        { text: groupDigits(correctStr), ok: true },
+        ...distractors.map(t => ({ text: groupDigits(t), ok: false }))
+      ]);
+
+      /* Signature for uniqueness. */
+      sig = type + '|' + digits + '|' + posOfFirst;
+
+      const sourceStr = formatNumber(digits, posOfFirst);
+
+      return {
+        sig,
+        promptText,
+        sourceDisplay: groupDigits(sourceStr),
+        options: opts
+      };
+    }
+    return null;
+  }
+
+  /* ============================================================
+     BUILD QUESTIONS
+     ============================================================ */
+  function buildQuestions(n) {
+    const types = getEnabledTypes();
+    const out = [];
+    const seen = new Set();
+    let guard = 0;
+    while (out.length < n && guard < 5000) {
+      guard++;
+      const pos = n > 1 ? out.length / (n - 1) : 0.5;
+      let q = null;
+      try {
+        q = generateQuestion(pos, types);
+      } catch (err) {
+        if (typeof console !== 'undefined') console.warn('Generator threw:', err);
+        continue;
+      }
+      if (!q || seen.has(q.sig)) continue;
+      seen.add(q.sig);
+      out.push(q);
+    }
+    /* Safety net — allow repeats rather than render fewer questions. */
+    let g2 = 0;
+    while (out.length < n && g2 < 500) {
+      g2++;
+      const q = generateQuestion(0.5, types);
+      if (q) out.push(q);
+    }
+    return out.slice(0, n);
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
+        '<span class="opt-visual">' + o.text + '</span>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.promptText + '</span>' +
+      '</div>' +
+      '<div class="diagram">' +
+        '<span class="lhs">' + q.sourceDisplay + '</span>' +
+        '<span class="eq">\u2192</span>' +
+        '<div class="drop-zone"><div class="qmark">?</div></div>' +
+      '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+
+    questions = buildQuestions(n);
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => {
+        const idx = q.options.findIndex(o => o.ok);
+        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
+      })
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Rounding</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Round the number to the accuracy asked for. ' +
+        'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION
+     ============================================================ */
+  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+    if (cancelled) return;
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+    const state = qState[qi];
+    if (state) state.attempts++;
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const ok = !!q.options[idx].ok;
+    if (slot) {
+      slot.innerHTML = q.options[idx].text;
+      slot.classList.add('filled');
+    }
+    if (ok) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  function getSeedFromURL() {
+    const m = /[?&]seed=(\d+)/.exec(window.location.search);
+    if (m) return parseInt(m[1], 10) >>> 0;
+    return null;
+  }
+
+  function setSeedInURL(seed) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url);
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => {
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  /* Re-render whenever any of the type checkboxes changes. */
+  const typeChecks = document.querySelectorAll('.typeCheck');
+  typeChecks.forEach(cb => {
+    cb.addEventListener('change', () => { applySeed(); render(); });
+  });
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
