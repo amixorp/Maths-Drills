@@ -573,6 +573,46 @@
     return pool;
   }
 
+    /* Convert a (digits, pos) pair to an integer when the value is a
+     whole number. Used by the whole-number rounding generator. */
+  function digitsPosToInt(digits, pos) {
+    return parseInt(digits, 10) * Math.pow(10, pos - digits.length + 1);
+  }
+
+  /* Distractors for whole-number rounding. Every value returned is
+     an integer, so all four options the pupil sees are whole numbers.
+     Candidates are nearby integers (±1, ±2, ±5, ±10, ±20, ±100) —
+     which covers the common slips of rounding the wrong way, stopping
+     one step short, or overshooting by one. */
+  function makeWholeNumberDistractors(correctDigits, correctPos) {
+    const correctInt = digitsPosToInt(correctDigits, correctPos);
+    const pool = [];
+    const seen = new Set([correctInt]);
+    const add = (v) => {
+      if (!Number.isInteger(v)) return;
+      if (v < 0) return;
+      if (v > 2000000) return;
+      if (seen.has(v)) return;
+      seen.add(v);
+      pool.push(v);
+    };
+
+    add(correctInt + 1);
+    if (correctInt > 0) add(correctInt - 1);
+    add(correctInt + 2);
+    if (correctInt > 1) add(correctInt - 2);
+    add(correctInt + 5);
+    if (correctInt > 4) add(correctInt - 5);
+    add(correctInt + 10);
+    if (correctInt > 9) add(correctInt - 10);
+    add(correctInt + 20);
+    if (correctInt > 19) add(correctInt - 20);
+    add(correctInt + 100);
+    if (correctInt > 99) add(correctInt - 100);
+
+    return pool;
+  }
+
   /* ============================================================
      QUESTION GENERATOR
      ============================================================ */
@@ -655,11 +695,19 @@
       correct = roundToPos(digits, posOfFirst, targetPos);
       const correctStr = formatNumber(correct.digits, correct.pos);
 
-      /* Build distractors. */
-      const pool = makeDistractors(digits, posOfFirst, targetPos);
-      if (pool.length < 3) continue;
+      /* Build distractors. Whole-number rounding uses a dedicated
+      pool so that every option is itself a whole number. */
+      let distractors;
+      if (type === 'whole') {
+        const pool = makeWholeNumberDistractors(correct.digits, correct.pos);
+        if (pool.length < 3) continue;
+        distractors = shuffle(pool).slice(0, 3).map(n => String(n));
+      } else {
+        const pool = makeDistractors(digits, posOfFirst, targetPos);
+        if (pool.length < 3) continue;
+        distractors = shuffle(pool).slice(0, 3);
+      }
 
-      const distractors = shuffle(pool).slice(0, 3);
       const opts = shuffle([
         { text: groupDigits(correctStr), ok: true },
         ...distractors.map(t => ({ text: groupDigits(t), ok: false }))
