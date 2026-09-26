@@ -436,11 +436,16 @@
       const k = ri(2, kmax);
       const a = Math.pow(k, n);
       if (a > 1000) continue;
-      const m = ri(2, 5);
+            const m = ri(2, 5);
+      /* Reduce the index m/n to lowest terms.  Skip cases where the
+         reduced form is an integer (e.g. 4/2 = 2, 3/3 = 1). */
+      const gIdx = gcd(m, n);
+      const mm = m / gIdx, nn = n / gIdx;
+      if (nn === 1) continue;
       const ans = Math.pow(k, m);
       if (ans > 3000 || ans === a || ans < 2) continue;
-      const sig = 'E|' + a + '|' + m + '|' + n;
-      const lhs = tex(String(a) + '^{' + sFracL(m, n) + '}');
+      const sig = 'E|' + a + '|' + mm + '|' + nn;
+      const lhs = tex(String(a) + '^{' + sFracL(mm, nn) + '}');
       const cands = [
         Math.pow(k, m + 1), Math.pow(k, m - 1), k, k * m,
         a * k, Math.pow(a, m), Math.round(a / k), k + m,
@@ -467,10 +472,15 @@
       const p = Math.pow(u, n), q = Math.pow(v, n);
       if (p > 500 || q > 500) continue;
       const m = ri(2, 4);
+      /* Reduce the index m/n to lowest terms.  Skip cases where the
+         reduced form is an integer (e.g. 3/3 = 1, 4/2 = 2). */
+      const gIdx = gcd(m, n);
+      const mm = m / gIdx, nn = n / gIdx;
+      if (nn === 1) continue;
       const am = Math.pow(u, m), bm = Math.pow(v, m);
       if (am > 2000 || bm > 2000) continue;
-      const sig = 'F|' + p + '|' + q + '|' + m + '|' + n;
-      const lhs = tex('\\left(' + fracL(p, q) + '\\right)^{' + sFracL(-m, n) + '}');
+      const sig = 'F|' + p + '|' + q + '|' + mm + '|' + nn;
+      const lhs = tex('\\left(' + fracL(p, q) + '\\right)^{' + sFracL(-mm, nn) + '}');
       const correctR = R(bm, am);
       const cands = [
         R(am, bm), R(-bm, am), R(v, u), R(u, v),
@@ -662,13 +672,16 @@
       const m = pick([2, 3]);
       const A = Math.pow(u, m), B = Math.pow(v, m);
       if (A > 400 || B > 400) continue;
+      /* Reduce the right-hand side A/B to lowest terms for display. */
+      const gAB = gcd(A, B);
+      const AA = A / gAB, BB = B / gAB;
       const ansN = Math.pow(u, n), ansD = Math.pow(v, n);
       if (ansN > 3000 || ansD > 3000) continue;
       const g = gcd(m, n);
       const mm = m / g, nn = n / g;
       if (nn === 1) continue;
-      const sig = 'SP|' + mm + '|' + nn + '|' + A + '|' + B;
-      const lhs = tex('x^{' + sFracL(mm, nn) + '} = ' + fracL(A, B));
+      const sig = 'SP|' + mm + '|' + nn + '|' + AA + '|' + BB;
+      const lhs = tex('x^{' + sFracL(mm, nn) + '} = ' + fracL(AA, BB));
       const correctR = R(ansN, ansD);
       const cands = [
         R(u, v),
