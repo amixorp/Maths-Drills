@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Surds — Practice</title>
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script><style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .katex{ font-size: 1em !important; }
+
+  /* toolbar */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:130px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* sheet */
+  .sheet{
+    background:#fff;
+    max-width:1100px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted); line-height:1.55}
+
+  /* questions */
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
+    gap:14px;
+  }
+  @media (max-width:900px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  /* diagram */
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px;
+    min-height:96px;
+    margin:2px 0 12px;
+    padding:6px 2px;
+  }
+  .lhs{ font-size: 22px; }
+  .eq{ font-size: 22px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  /* drop slot */
+  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:#dbeafe; transform:scale(1.05)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:110px; min-height:60px;
+    padding:8px 14px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px; font-weight:800; color:#9ca3af;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
+
+  /* options */
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px dashed #e5e7eb;
+  }
+  @media (max-width:520px){ .options{grid-template-columns:1fr} }
+
+  .option{
+    display:flex; align-items:center; gap:8px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fafafa;
+    padding:8px 10px;
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
+    min-width:0;
+  }
+  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+  .opt-letter{
+    flex:none;
+    width:20px; height:20px; border-radius:50%;
+    background:#e5e7eb; color:#374151;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt-visual{
+    flex:1;
+    font-size:17px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:32px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+  }
+
+  /* drag ghost */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:10px 16px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);
+    font-size:17px;
+  }
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+  }
+
+  /* feedback */
+  .q-feedback{
+    margin-top:8px; min-height:15px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* answer key */
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
+    gap:6px 10px;
+    font-size:13px;
+    color:#374151;
+  }
+  .key-grid b{color:var(--ink)}
+
+  /* print */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">√ Surds Worksheet</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>4</option>
+      <option selected>8</option>
+      <option>10</option>
+      <option>12</option>
+    </select>
+  </label>
+  <label>Topic
+    <select id="topicSelect">
+      <option value="mixed" selected>Mixed</option>
+      <option value="simplify">Simplify surds</option>
+      <option value="combine">Combine &amp; compare surds</option>
+      <option value="expand">Expand brackets</option>
+      <option value="rationalise">Rationalise denominators</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 8 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; }
+
+  /* ============================================================
+     LaTeX / KaTeX  RENDERING
+     ============================================================ */
+  function tex(latex) {
+    if (typeof katex === 'undefined') {
+      return '<code>' + String(latex).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</code>';
+    }
+    try {
+      return katex.renderToString(latex, { throwOnError: false, displayMode: false });
+    } catch (e) {
+      return '<code>' + latex + '</code>';
+    }
+  }
+
+  /* ---- rendering helpers for surd expressions ---- */
+
+  /* Render "√n" for an integer n. */
+  function sqrtL(n) { return '\\sqrt{' + n + '}'; }
+  function cbrtL(n) { return '\\sqrt[3]{' + n + '}'; }
+
+  /* Render "k√n" for integers k and n, handling k = ±1. */
+  function coefSurd(k, n) {
+    if (k === 1)  return sqrtL(n);
+    if (k === -1) return '-' + sqrtL(n);
+    return k + sqrtL(n);
+  }
+
+  /* Render "p + q√n" or "q√n - |p|" or just "p"/"q√n", depending.
+     Handles p = 0, q = 0, and |q| = 1 cleanly.  When p < 0 and q > 0,
+     the surd is placed first for a more natural reading. */
+  function linSurd(p, q, n) {
+    if (q === 0) return String(p);
+    if (p === 0) return coefSurd(q, n);
+    if (p < 0 && q > 0) {
+      return coefSurd(q, n) + ' - ' + Math.abs(p);
+    }
+    const sign = q > 0 ? ' + ' : ' - ';
+    return p + sign + coefSurd(Math.abs(q), n);
+  }
+
+  /* ============================================================
+     QUESTION GENERATORS
+     Each returns { sig, prompt, lhs, eq, options, diff }
+     or null if a valid question could not be constructed in the
+     allocated number of tries.  All maths is exact integer
+     arithmetic; no floating point appears in any answer.
+     ============================================================ */
+
+  /* Common square-free radicands. */
+  const NS = [2, 3, 5, 6, 7];
+
+  /* --- 1. Simplify √N = k√m --- */
+  function genSimplifySurd() {
+    const m = pick(NS);
+    const k = ri(2, 7);
+    const N = k * k * m;
+    const correct = coefSurd(k, m);
+    const sig = 'SS|' + N;
+    const lhs = tex(sqrtL(N));
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(coefSurd(k + 1, m));
+    add(coefSurd(k - 1, m));
+    add(coefSurd(k, m + 1));
+    add(coefSurd(m, k));          /* transposed */
+    if (m > 2) add(coefSurd(k, m - 1));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Write in the form ' + tex('k\\sqrt{m}') + ' where ' + tex('m') + ' has no square factors.',
+      lhs, eq: '=', options: opts, diff: 1
+    };
+  }
+
+  /* --- 2. Collect like surds: a√n ± b√n --- */
+  function genCollectLikeSurds() {
+    const n = pick(NS);
+    const isAdd = rng() < 0.5;
+    let a, b;
+    if (isAdd) {
+      a = ri(1, 12); b = ri(1, 12);
+    } else {
+      a = ri(3, 12); b = ri(1, a - 1);
+    }
+    const result = isAdd ? a + b : a - b;
+    if (result === 0) return null;
+
+    const lhsLatex = coefSurd(a, n) + (isAdd ? ' + ' : ' - ') + coefSurd(b, n);
+    const lhs = tex(lhsLatex);
+    const correct = coefSurd(result, n);
+    const sig = 'CL|' + a + '|' + b + '|' + n + '|' + (isAdd ? '+' : '-');
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(coefSurd(a * b, n));                        /* multiplied coefficients */
+    add(coefSurd(isAdd ? Math.abs(a - b) : a + b, n)); /* opposite operation */
+    add(coefSurd(result + 1, n));
+    if (result > 1) add(coefSurd(result - 1, n));
+    add(coefSurd(result, n * 2));                   /* wrong radicand */
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Simplify.',
+      lhs, eq: '=', options: opts, diff: 1
+    };
+  }
+
+  /* --- 3. Coefficient into surd: a√b = √(a²b) --- */
+  function genIntoSurdForm() {
+    const n = pick(NS);
+    const a = ri(2, 8);
+    const N = a * a * n;
+    const lhs = tex(coefSurd(a, n));
+    const correct = sqrtL(N);
+    const sig = 'IS|' + a + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(sqrtL(a * n));                       /* forgot to square */
+    add(sqrtL(a * a * n * n));               /* squared both */
+    add(sqrtL((a + 1) * (a + 1) * n));
+    add(sqrtL((a - 1) * (a - 1) * n));
+    add(sqrtL(a * a + n));                   /* added instead of multiplied */
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Write in the form ' + tex('\\sqrt{N}') + ' where ' + tex('N') + ' is an integer.',
+      lhs, eq: '=', options: opts, diff: 1
+    };
+  }
+
+  /* --- 4. Sum of two surds as a single surd --- */
+  function genSumOfSurds() {
+    const m = pick([2, 3, 5]);
+    let k1 = ri(1, 5);
+    let k2 = ri(1, 5);
+    if (k1 === k2) k2 = k1 + 1;
+    const A = k1 * k1 * m;
+    const B = k2 * k2 * m;
+    const sum = k1 + k2;
+    const correct = sqrtL(sum * sum * m);
+    const sig = 'SO|' + k1 + '|' + k2 + '|' + m;
+    const lhs = tex(sqrtL(A) + ' + ' + sqrtL(B));
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(sqrtL(A + B));                       /* naive: √A + √B = √(A+B) */
+    add(sqrtL(sum * m));                     /* forgot to square the sum */
+    add(sqrtL(sum * sum * 2 * m));           /* doubled radicand */
+    add(sqrtL((sum + 1) * (sum + 1) * m));
+    add(sqrtL((sum - 1) * (sum - 1) * m));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Write in the form ' + tex('\\sqrt{k}') + ' where ' + tex('k') + ' is an integer.',
+      lhs, eq: '=', options: opts, diff: 2
+    };
+  }
+
+  /* --- 5. Expand (a + b√n)(c + d√n) --- */
+  function genExpandSurdBracket() {
+    const n = pick(NS);
+    const a = ri(1, 4), c = ri(1, 4);
+    const b = pick([1, -1]) * ri(1, 3);
+    const d = pick([1, -1]) * ri(1, 3);
+
+    const P = a * c + b * d * n;
+    const Q = a * d + b * c;
+    if (Q === 0) return null;
+
+    const br = (x, y) =>
+      '(' + x + (y > 0 ? ' + ' : ' - ') + coefSurd(Math.abs(y), n) + ')';
+    const lhs = tex(br(a, b) + '\\,' + br(c, d));
+    const correct = linSurd(P, Q, n);
+    const sig = 'EB|' + a + '|' + b + '|' + c + '|' + d + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(a * c + b * d, Q, n));   /* forgot to multiply bd by n */
+    add(linSurd(P, -Q, n));              /* sign flip on surd part */
+    add(linSurd(-P, Q, n));              /* sign flip on rational part */
+    add(linSurd(P, Q + 1, n));
+    if (Q > 1) add(linSurd(P, Q - 1, n));
+    add(linSurd(P + 1, Q, n));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Expand and simplify, giving your answer in the form ' + tex('p + q\\sqrt{n}') + '.',
+      lhs, eq: '=', options: opts, diff: 2
+    };
+  }
+
+  /* --- 6. Square a binomial (a ± b√n)² --- */
+  function genSquareSurdBinomial() {
+    const n = pick(NS);
+    const a = ri(1, 4);
+    const b = ri(1, 3);
+    const sign = pick([1, -1]);
+    const bS = sign * b;
+
+    const P = a * a + b * b * n;
+    const Q = 2 * a * bS;
+
+    const inner = a + (bS > 0 ? ' + ' : ' - ') + coefSurd(b, n);
+    const lhs = tex('\\left(' + inner + '\\right)^{2}');
+    const correct = linSurd(P, Q, n);
+    const sig = 'SB|' + a + '|' + bS + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(P, 0, n));                    /* forgot the cross term */
+    add(linSurd(a * a - b * b * n, Q, n));    /* sign flip on rational part */
+    add(linSurd(P, -Q, n));                   /* sign flip on surd part */
+    add(linSurd(P, Q / 2, n));                /* halved coefficient */
+    add(linSurd(P, Q + 1, n));
+    if (Q > 1) add(linSurd(P, Q - 1, n));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Expand, giving your answer in the form ' + tex('p + q\\sqrt{n}') + '.',
+      lhs, eq: '=', options: opts, diff: 2
+    };
+  }
+
+  /* --- 7. p(a + b√n) − q(c + d√n) --- */
+  function genDistributeAndCollect() {
+    const n = pick([2, 3, 5]);
+    const p = ri(2, 5), q = ri(2, 5);
+    const a = ri(1, 5), c = ri(1, 5);
+    const b = pick([1, -1]) * ri(1, 2);
+    const d = pick([1, -1]) * ri(1, 2);
+
+    const P = p * a - q * c;
+    const Q = p * b - q * d;
+    if (Q === 0 && P === 0) return null;
+
+    const br = (outer, inner, surd) =>
+      outer + '(' + inner + (surd > 0 ? ' + ' : ' - ') + coefSurd(Math.abs(surd), n) + ')';
+    const lhs = tex(br(p, a, b) + ' - ' + br(q, c, d));
+    const correct = linSurd(P, Q, n);
+    const sig = 'DC|' + p + '|' + a + '|' + b + '|' + q + '|' + c + '|' + d + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(P, -Q, n));
+    add(linSurd(-P, Q, n));
+    add(linSurd(p * a + q * c, p * b + q * d, n));  /* added instead of subtracting */
+    add(linSurd(P, Q + 1, n));
+    add(linSurd(P, Q - 1, n));
+    add(linSurd(P + 1, Q, n));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Expand and simplify, giving your answer in the form ' + tex('p + q\\sqrt{n}') + '.',
+      lhs, eq: '=', options: opts, diff: 2
+    };
+  }
+
+  /* --- 8. Rationalise the denominator of a/√n --- */
+  function genRationaliseSimple() {
+    const n = pick(NS);
+    const k = ri(2, 8);
+    const a = k * n;
+
+    const lhs = tex('\\frac{' + a + '}{' + sqrtL(n) + '}');
+    const correct = coefSurd(k, n);
+    const sig = 'RS|' + a + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(coefSurd(a, n));                       /* forgot to divide */
+    add(String(k));                            /* removed the surd */
+    add(sqrtL(n));                             /* dropped the coefficient */
+    add(coefSurd(k + 1, n));
+    if (k > 2) add(coefSurd(k - 1, n));
+    add('\\frac{' + sqrtL(n) + '}{' + k + '}'); /* divided instead of multiplied */
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Rationalise the denominator, giving your answer in its simplest form.',
+      lhs, eq: '=', options: opts, diff: 2
+    };
+  }
+
+  /* --- 9. Rationalise the denominator of a/(b + c√n) --- */
+  function genRationaliseConjugate() {
+    /* Curated combos where b² − c²n is a small non-zero integer. */
+    const combos = [
+      { b: 2, c: 1, n: 3 },   /* D = 1   */
+      { b: 1, c: 1, n: 2 },   /* D = −1  */
+      { b: 3, c: 2, n: 2 },   /* D = 1   */
+      { b: 2, c: 1, n: 2 },   /* D = 2   */
+      { b: 3, c: 1, n: 5 },   /* D = 4   */
+      { b: 1, c: 2, n: 2 },   /* D = −7  */
+      { b: 3, c: 1, n: 2 },   /* D = 7   */
+      { b: 4, c: 1, n: 3 },   /* D = 13  */
+      { b: 5, c: 1, n: 2 },   /* D = 23  */
+      { b: 2, c: 3, n: 2 },   /* D = −14 */
+      { b: 4, c: 1, n: 5 },   /* D = 11  */
+      { b: 5, c: 1, n: 3 },   /* D = 22  */
+    ];
+    const { b, c, n } = pick(combos);
+    const D = b * b - c * c * n;
+    if (D === 0) return null;
+
+    const k = pick([1, 1, 2]);
+    const a = k * Math.abs(D);
+
+    /* a/(b + c√n) = a(b − c√n)/D = k(b − c√n)·sign(D) */
+    let P, Q;
+    if (D > 0) { P =  k * b; Q = -k * c; }
+    else       { P = -k * b; Q =  k * c; }
+
+    const lhs = tex('\\frac{' + a + '}{' + b + ' + ' + c + sqrtL(n) + '}');
+    const correct = linSurd(P, Q, n);
+    const sig = 'RC|' + a + '|' + b + '|' + c + '|' + n;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(P, -Q, n));                    /* sign flip on surd part */
+    add(linSurd(-P, Q, n));                    /* sign flip on rational part */
+    add(linSurd(-P, -Q, n));                   /* negated */
+    add(linSurd(P + 1, Q, n));
+    add(linSurd(P, Q + 1, n));
+    if (Q > 1) add(linSurd(P, Q - 1, n));
+    add(linSurd(b, -c, n));                    /* forgot the k factor */
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Rationalise the denominator, giving your answer in its simplest form.',
+      lhs, eq: '=', options: opts, diff: 3
+    };
+  }
+
+  /* --- 10. (p√a − q√b)² in the form P + Q√n --- */
+  function genSurdSquareMixed() {
+    /* Curated pairs where ab is not a perfect square but has a
+       non-trivial square-free part. */
+    const pairs = [
+      { a: 15, b: 5 }, { a: 6, b: 3 }, { a: 10, b: 5 },
+      { a: 12, b: 2 }, { a: 12, b: 6 }, { a: 8, b: 6 },
+      { a: 6, b: 2 }, { a: 15, b: 10 }, { a: 7, b: 14 },
+    ];
+    const { a, b } = pick(pairs);
+    const p = pick([1, 1, 1, 2]);
+    const q = pick([1, 1, 1, 2]);
+
+    /* ab = k² m with m square-free */
+    const ab = a * b;
+    let k = 1, m = ab;
+    for (let kk = Math.floor(Math.sqrt(ab)); kk >= 2; kk--) {
+      if (ab % (kk * kk) === 0) { k = kk; m = ab / (kk * kk); break; }
+    }
+    if (m === 1) return null;
+
+    /* (p√a − q√b)² = p²a + q²b − 2pq·k√m */
+    const P = p * p * a + q * q * b;
+    const Q = -2 * p * q * k;
+
+    const inner = coefSurd(p, a) + ' - ' + coefSurd(q, b);
+    const lhs = tex('\\left(' + inner + '\\right)^{2}');
+    const correct = linSurd(P, Q, m);
+    const sig = 'SM|' + p + '|' + a + '|' + q + '|' + b;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(P, -Q, m));                 /* sign flip on surd part */
+    add(linSurd(P, 0, m));                  /* forgot the cross term */
+    add(linSurd(p * p * a - q * q * b, Q, m)); /* sign flip on rational part */
+    add(linSurd(P, -2 * p * q, m));         /* forgot the k factor */
+    add(linSurd(P, Math.round(Q / 2), m));  /* halved */
+    add(linSurd(P, Q + 1, m));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Write in the form ' + tex('p + q\\sqrt{n}') + ' where ' + tex('n') + ' is a square-free integer.',
+      lhs, eq: '=', options: opts, diff: 3
+    };
+  }
+
+    /* --- 11. Rectangle with surd dimensions, find area (Q12a) --- */
+  function genRectangleArea() {
+    /* Length a + b√2, width b − a√2.
+       Area = (a + b√2)(b − a√2) = −ab + (b² − a²)√2. */
+    const a = pick([1, 2]);
+    const bCands = a === 1 ? [3, 4, 5, 6] : [4, 5, 6, 7];
+    const b = pick(bCands);
+    const P = -a * b;
+    const Q = b * b - a * a;
+    if (Q === 0) return null;
+
+    const lhs = tex('(' + a + ' + ' + b + '\\sqrt{2})(' + b + ' - ' + a + '\\sqrt{2})');
+    const correct = linSurd(P, Q, 2);
+    const sig = 'RA|' + a + '|' + b;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(-P, Q, 2));            /* sign error on ab */
+    add(linSurd(P, -Q, 2));            /* sign error on b² */
+    add(linSurd(-P, -Q, 2));           /* both signs wrong */
+    add(linSurd(P, b * b + a * a, 2)); /* b² + a² instead of b² − a² */
+    add(linSurd(P, Q + 1, 2));
+    if (Q > 1) add(linSurd(P, Q - 1, 2));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'A rectangle has length ' + tex(a + ' + ' + b + '\\sqrt{2}') +
+              ' and width ' + tex(b + ' - ' + a + '\\sqrt{2}') +
+              '. Find its area in the form ' + tex('m + n\\sqrt{2}') + '.',
+      lhs, eq: '=', options: opts, diff: 3
+    };
+  }
+
+  /* --- 12. Compare two surd differences (Q13b) --- */
+  function genCompareSurds() {
+    /* Set up √A − √B  vs  √C − √D  where A, D share radicand m and B, C share radicand n.
+       Then (√A − √B) − (√C − √D) has the same sign as (p+s)√m − (q+r)√n
+       where A = p²m, D = s²m, B = q²n, C = r²n.
+       So compare S = (p+s)²m with T = (q+r)²n. */
+    const ms = [2, 3, 5, 6, 7];
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const m = pick(ms);
+      const n = pick(ms.filter(x => x !== m));
+      const p = ri(1, 4), s = ri(1, 4);
+      const q = ri(1, 4), r = ri(1, 4);
+      const A = p * p * m, D = s * s * m;
+      const B = q * q * n, C = r * r * n;
+      if (A > 200 || B > 200 || C > 200 || D > 200) continue;
+      const S = (p + s) * (p + s) * m;
+      const T = (q + r) * (q + r) * n;
+      if (S === T) continue;
+      if (Math.abs(S - T) > 40) continue;   /* not too easy */
+      if (S < 15 || T < 15) continue;       /* not trivially small */
+
+      const leftLatex  = sqrtL(A) + ' - ' + sqrtL(B);
+      const rightLatex = sqrtL(C) + ' - ' + sqrtL(D);
+      const lhs = tex(leftLatex + '\\quad\\text{vs}\\quad' + rightLatex);
+
+      const leftIsLarger = S > T;
+      const sig = 'CS|' + A + '|' + B + '|' + C + '|' + D;
+
+      const opts = shuffle([
+        { latex: leftLatex,  ok: leftIsLarger },
+        { latex: rightLatex, ok: !leftIsLarger },
+        { latex: '\\text{They are equal}', ok: false },
+        { latex: '\\text{Cannot be determined}', ok: false }
+      ]);
+
+      return {
+        sig,
+        prompt: 'Without using decimal approximations, decide which of the two expressions is larger.',
+        lhs, eq: tex('\\Rightarrow \\text{larger:}'), options: opts, diff: 3
+      };
+    }
+    return null;
+  }
+
+  /* --- 13. (1 ± √2)^n in the form a + b√2 (Q14b-style) --- */
+  function genPowerOfSurd() {
+    /* Precomputed values for (1 + √2)^n and (1 − √2)^n. */
+    const table = {
+      2: { a:  3, b:  2 },
+      3: { a:  7, b:  5 },
+      4: { a: 17, b: 12 }
+    };
+    const plus = rng() < 0.5;
+    const n = pick([2, 3, 4]);
+    const { a, b } = table[n];
+    const P = a;
+    const Q = plus ? b : -b;
+
+    const inner = '1 ' + (plus ? '+' : '-') + ' \\sqrt{2}';
+    const lhs = tex('\\left(' + inner + '\\right)^{' + n + '}');
+    const correct = linSurd(P, Q, 2);
+    const sig = 'PO|' + n + '|' + (plus ? '+' : '-');
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(linSurd(P, -Q, 2));        /* sign flip on surd part */
+    add(linSurd(-P, Q, 2));        /* sign flip on constant */
+    add(linSurd(-P, -Q, 2));       /* negated */
+    add(linSurd(P, Q + 1, 2));
+    if (Q > 1) add(linSurd(P, Q - 1, 2));
+    add(linSurd(P + 1, Q, 2));
+    if (P > 1) add(linSurd(P - 1, Q, 2));
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Expand and simplify, giving your answer in the form ' + tex('a + b\\sqrt{2}') + '.',
+      lhs, eq: '=', options: opts, diff: 3
+    };
+  }
+
+  /* --- 14. Rationalise 1/(∛a − ∛b) using the difference of cubes (Q15b) --- */
+  function genRationaliseCubeRoot() {
+    /* Use the identity a³ − b³ = (a − b)(a² + ab + b²), applied to cube roots:
+       1/(∛a − ∛b) = (∛a² + ∛ab + ∛b²) / (a − b).
+       Choose pairs with a − b = 1 for a clean denominator. */
+    const pairs = [[2, 1], [3, 2], [5, 4]];
+    const [a, b] = pick(pairs);
+    const A2 = a * a, AB = a * b, B2 = b * b;
+
+    const lhs = tex('\\frac{1}{' + cbrtL(a) + ' - ' + cbrtL(b) + '}');
+    const correct = cbrtL(A2) + ' + ' + cbrtL(AB) + ' + ' + cbrtL(B2);
+    const sig = 'CR|' + a + '|' + b;
+
+    const pool = [];
+    const seen = new Set([correct]);
+    const add = (latex) => {
+      if (seen.has(latex)) return;
+      seen.add(latex);
+      pool.push({ latex });
+    };
+    add(cbrtL(A2) + ' - ' + cbrtL(AB) + ' + ' + cbrtL(B2));   /* middle sign error */
+    add(cbrtL(A2) + ' + ' + cbrtL(AB) + ' - ' + cbrtL(B2));   /* last sign error */
+    add(cbrtL(A2) + ' - ' + cbrtL(AB) + ' - ' + cbrtL(B2));   /* both sign errors */
+    add(cbrtL(A2) + ' + ' + cbrtL(B2));                        /* missed the middle term */
+    add('\\frac{' + cbrtL(A2) + ' + ' + cbrtL(AB) + ' + ' + cbrtL(B2) + '}{' + (a + b) + '}'); /* wrong denominator */
+    if (pool.length < 3) return null;
+
+    const opts = shuffle([
+      { latex: correct, ok: true },
+      ...shuffle(pool).slice(0, 3).map(p => ({ latex: p.latex, ok: false }))
+    ]);
+
+    return {
+      sig,
+      prompt: 'Rationalise the denominator. ' +
+              '(Hint: ' + tex('a^{3} - b^{3} = (a - b)(a^{2} + ab + b^{2})') +
+              ', taking ' + tex('a = \\sqrt[3]{' + a + '}') + ' and ' +
+              tex('b = \\sqrt[3]{' + b + '}') + '.)',
+      lhs, eq: '=', options: opts, diff: 3
+    };
+  }
+
+  /* ============================================================
+     REGISTRY + TOPIC GROUPS
+     ============================================================ */
+    const GENERATORS = {
+    simplifySurd:      { fn: genSimplifySurd,          diff: 1 },
+    collectLike:       { fn: genCollectLikeSurds,      diff: 1 },
+    intoSurd:          { fn: genIntoSurdForm,          diff: 1 },
+    sumSurds:          { fn: genSumOfSurds,            diff: 2 },
+    expandBracket:     { fn: genExpandSurdBracket,     diff: 2 },
+    squareBinom:       { fn: genSquareSurdBinomial,    diff: 2 },
+    distribute:        { fn: genDistributeAndCollect,  diff: 2 },
+    rationaliseSimple: { fn: genRationaliseSimple,     diff: 2 },
+    rationaliseConj:   { fn: genRationaliseConjugate,  diff: 3 },
+    surdSquareMixed:   { fn: genSurdSquareMixed,       diff: 3 },
+    rectangleArea:     { fn: genRectangleArea,         diff: 3 },
+    compareSurds:      { fn: genCompareSurds,          diff: 3 },
+    powerOfSurd:       { fn: genPowerOfSurd,           diff: 3 },
+    rationaliseCube:   { fn: genRationaliseCubeRoot,   diff: 3 },
+  };
+
+  const ALL_TYPES = Object.keys(GENERATORS);
+
+  const TOPIC_TYPES = {
+    mixed:       Object.keys(GENERATORS),
+    simplify:    ['simplifySurd', 'intoSurd'],
+    combine:     ['collectLike', 'sumSurds', 'compareSurds'],
+    expand:      ['expandBracket', 'squareBinom', 'distribute', 'powerOfSurd', 'rectangleArea'],
+    rationalise: ['rationaliseSimple', 'rationaliseConj', 'rationaliseCube'],
+  };
+
+  /* ============================================================
+     BUILD QUESTIONS — with position-based difficulty gradient
+     ============================================================ */
+  function buildQuestions(n, types) {
+    const out = [];
+    const seen = new Set();
+    let guard = 0;
+    while (out.length < n && guard < 5000) {
+      guard++;
+      const pos = n > 1 ? out.length / (n - 1) : 0.5;
+      const target = 1 + 2.5 * pos;
+
+      /* Weight each type by proximity of its difficulty to the target. */
+      const weights = types.map(t => {
+        const d = GENERATORS[t].diff;
+        return Math.exp(-0.5 * (d - target) * (d - target));
+      });
+      const total = weights.reduce((a, b) => a + b, 0);
+      let r = rng() * total;
+      let idx = 0;
+      while (idx < types.length - 1 && r > weights[idx]) {
+        r -= weights[idx];
+        idx++;
+      }
+
+      let q = null;
+      try {
+        q = GENERATORS[types[idx]].fn();
+      } catch (err) {
+        if (typeof console !== 'undefined') console.warn('Generator threw:', err);
+        continue;
+      }
+      if (!q || seen.has(q.sig)) continue;
+      seen.add(q.sig);
+      out.push(q);
+    }
+    /* Safety net — allow repeats rather than render fewer questions. */
+    let g2 = 0;
+    while (out.length < n && g2 < 500) {
+      g2++;
+      const t = pick(types);
+      const q = GENERATORS[t].fn();
+      if (q) out.push(q);
+    }
+    return out.slice(0, n);
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
+        '<span class="opt-visual">' + tex(o.latex) + '</span>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="diagram">' +
+        '<span class="lhs">' + q.lhs + '</span>' +
+        '<span class="eq">' + q.eq + '</span>' +
+        '<div class="drop-zone"><div class="qmark">?</div></div>' +
+      '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+    const topic = document.getElementById('topicSelect').value;
+    const types = TOPIC_TYPES[topic] || ALL_TYPES;
+
+    questions = buildQuestions(n, types);
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => {
+        const idx = q.options.findIndex(o => o.ok);
+        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
+      })
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Surds</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'A <b>surd</b> is an expression containing the square root of a non-square number. ' +
+        'Simplify by extracting square factors, collecting like surds, and rationalising denominators. ' +
+        'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION
+     ============================================================ */
+  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+    if (cancelled) return;
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+    const state = qState[qi];
+    if (state) state.attempts++;
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const ok = !!q.options[idx].ok;
+    if (slot) {
+      slot.innerHTML = tex(q.options[idx].latex);
+      slot.classList.add('filled');
+    }
+    if (ok) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const topicSel   = document.getElementById('topicSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function setSeedInURL(seed) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url);
+  }
+
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => {
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  topicSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
