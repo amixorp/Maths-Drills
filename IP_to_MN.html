@@ -114,7 +114,7 @@
     margin:2px 0 12px;
     padding:6px 2px;
   }
-  .lhs{ font-size: 24px; }
+  .lhs{ font-size: 40px; }
   .eq{ font-size: 22px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 
   /* ---------- drop slot ---------- */
@@ -355,8 +355,8 @@
       const n = w * d + r;      /* the improper fraction numerator */
 
       const sig = 'MI|' + w + '|' + r + '|' + d;
-      const lhs = tex(w + '\\,\\frac{' + r + '}{' + d + '}');
-      const correctLatex = '\\frac{' + n + '}{' + d + '}';
+      const lhs = tex(w + '\\,\\dfrac{' + r + '}{' + d + '}');
+      const correctLatex = '\\dfrac{' + n + '}{' + d + '}';
 
       /* -------- distractor pool -------- */
       const pool = [];
@@ -366,14 +366,14 @@
       const addFrac = (p) => {
         if (p <= 0) return;
         if (gcd(p, d) !== 1) return;
-        const latex = '\\frac{' + p + '}{' + d + '}';
+        const latex = '\\dfrac{' + p + '}{' + d + '}';
         if (seen.has(latex)) return;
         seen.add(latex);
         pool.push({ latex });
       };
 
       /* The mixed number unchanged. */
-      const mixedLatex = w + '\\,\\frac{' + r + '}{' + d + '}';
+      const mixedLatex = w + '\\,\\dfrac{' + r + '}{' + d + '}';
       if (!seen.has(mixedLatex)) {
         seen.add(mixedLatex);
         pool.push({ latex: mixedLatex });
