@@ -345,10 +345,14 @@
     const out = [];
     const seen = new Set();
     let guard = 0;
+    /* If the chosen types can't make a shift this small (type B always
+       shifts by 2 or more), allow one more step after 200 misses in a row,
+       instead of spinning through thousands of attempts. */
+    let relax = 0, misses = 0;
     while (out.length < n && guard < 12000) {
       guard++;
       const pos = n > 1 ? out.length / (n - 1) : 0.5;
-      const maxShift = computeMaxShift(pos);
+      const maxShift = computeMaxShift(pos) + relax;
       const type = chooseType(pos, types);
       let q = null;
       try {
@@ -358,9 +362,13 @@
         continue;
       }
       if (!q || seen.has(q.sig)) continue;
-      if (q.shift > maxShift) continue;
+      if (q.shift > maxShift) {
+        if (++misses >= 200) { relax++; misses = 0; }
+        continue;
+      }
       seen.add(q.sig);
       out.push(q);
+      relax = 0; misses = 0;
     }
     /* Safety net — relax the shift constraint rather than render
        fewer questions than requested. */

@@ -171,6 +171,24 @@
   Drill.normSettings = normSettings;
   Drill.defaultSettings = defaultSettings;
 
+  /* The HTML for one question's prompt, body and options, using the
+     drill's render hooks or the defaults. Shared by the page and tests. */
+  function defaultBody(q) {
+    return '<div class="diagram">' +
+      '<span class="lhs">' + q.lhs + '</span>' +
+      '<span class="eq">' + (q.eq !== undefined ? q.eq : '=') + '</span>' +
+      Drill.slot() +
+    '</div>';
+  }
+  function questionParts(cfg, q, i) {
+    return {
+      prompt: cfg.renderPrompt ? cfg.renderPrompt(q, i) : (q.prompt || ''),
+      body: cfg.renderBody ? cfg.renderBody(q, i) : defaultBody(q),
+      options: q.options.map(o => cfg.renderOption ? cfg.renderOption(o, q) : (o.html !== undefined ? o.html : o.text))
+    };
+  }
+  Drill.questionParts = questionParts;
+
   /* ============================================================
      DEFINE — the one call a drill page makes
      ============================================================ */
@@ -364,32 +382,20 @@
   }
 
   /* ---------------- render ---------------- */
-  function renderOption(q, o, j) {
-    const visual = S.cfg.renderOption ? S.cfg.renderOption(o, q) : (o.html !== undefined ? o.html : o.text);
-    return '<div class="option" data-opt="' + j + '" role="button" tabindex="0" aria-label="Answer ' + LETTERS[j] + '">' +
-      (q.hideLetters ? '' : '<span class="opt-letter">' + LETTERS[j] + '</span>') +
-      '<span class="opt-visual">' + visual + '</span>' +
-    '</div>';
-  }
-
-  function defaultBody(q) {
-    return '<div class="diagram">' +
-      '<span class="lhs">' + q.lhs + '</span>' +
-      '<span class="eq">' + (q.eq !== undefined ? q.eq : '=') + '</span>' +
-      Drill.slot() +
-    '</div>';
-  }
-
   function renderQuestion(q, i) {
-    const prompt = S.cfg.renderPrompt ? S.cfg.renderPrompt(q, i) : (q.prompt || '');
-    const body = S.cfg.renderBody ? S.cfg.renderBody(q, i) : defaultBody(q);
+    const parts = questionParts(S.cfg, q, i);
+    const opts = parts.options.map((visual, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" aria-label="Answer ' + LETTERS[j] + '">' +
+        (q.hideLetters ? '' : '<span class="opt-letter">' + LETTERS[j] + '</span>') +
+        '<span class="opt-visual">' + visual + '</span>' +
+      '</div>').join('');
     return '<article class="q" data-q="' + i + '">' +
       '<div class="q-head">' +
         '<span class="q-num">' + (i + 1) + '</span>' +
-        '<span class="q-prompt">' + prompt + '</span>' +
+        '<span class="q-prompt">' + parts.prompt + '</span>' +
       '</div>' +
-      '<div class="q-body">' + body + '</div>' +
-      '<div class="options">' + q.options.map((o, j) => renderOption(q, o, j)).join('') + '</div>' +
+      '<div class="q-body">' + parts.body + '</div>' +
+      '<div class="options">' + opts + '</div>' +
       '<div class="q-feedback" aria-live="polite"></div>' +
     '</article>';
   }

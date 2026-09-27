@@ -1,0 +1,50 @@
+# Checks every drill on every upload to main and every pull request.
+# A green tick next to a commit means all checks passed; a red cross means
+# something broke — open "Details" to see which drill and why.
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  maths:
+    name: Maths checks (every drill, thousands of sheets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check the questions every drill generates
+        run: node tests/run-generators.js
+
+  browser:
+    name: Browser checks (Chrome, iPad and phone Safari)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+      - name: Install test tools
+        working-directory: tests
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium webkit
+      - name: Open every drill, answer, drag, share and print
+        working-directory: tests
+        run: npx playwright test
+      - name: Keep the report if anything failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/playwright-report
+          retention-days: 14

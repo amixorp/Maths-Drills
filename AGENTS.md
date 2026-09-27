@@ -206,7 +206,45 @@ with these variables in `:root`, rather than overriding core rules:
 4. Open the file in a browser and check: **New questions** about ten times,
    every setting, **Print** preview, a phone-sized window (browser developer
    tools) and, if possible, a real iPad.
-5. Commit with a message that says what the drill practises.
+5. Commit with a message that says what the drill practises. GitHub then runs
+   the tests: wait for the **green tick** next to the commit. A **red cross**
+   means something is wrong — click it, then **Details**, to see which drill
+   and why.
+
+## Tests
+
+Tests live in `tests/` and run automatically on GitHub (Actions → *Tests*) for
+every upload to `main` and every pull request. They find every drill by
+itself — nothing to register.
+
+- **Maths checks** (`tests/run-generators.js`, no browser): each drill is run
+  for 1,000 seeds with its default settings and 100 seeds for every other
+  question count and setting. A sheet fails if it has the wrong number of
+  questions, a question without exactly one correct option, two options that
+  look the same, `NaN`/`undefined` in the text, no **?** box, or if the same
+  seed gives a different sheet. Repeated questions are reported as warnings.
+- **Browser checks** (`tests/*.spec.js`, Playwright): every drill in desktop
+  Chrome and in Safari's engine at iPad and phone sizes — loads without errors,
+  no sideways scrolling, tapping right and wrong answers, reset, same seed after
+  reload, share link reproduces the sheet with teacher controls hidden, print
+  layout. `touch.spec.js` uses real touch input for swipe, tap and
+  press-hold-drag.
+- `index.html` must link to every drill (except `_template.html`), and every
+  link must point to a file that exists.
+
+To run them on a computer (needs Node.js):
+
+```
+cd tests
+npm install
+npx playwright install chromium webkit
+npm test                 # everything
+npm run test:maths       # maths only, fast; add a name to filter: node run-generators.js Surds
+```
+
+`tests/tools/snapshot.js` and `compare.js` record what every drill produces
+for fixed seeds and compare two recordings — use them to prove a refactor
+didn't change any questions.
 
 ## Using a browser AI chat (ChatGPT, Claude.ai, Gemini, …)
 

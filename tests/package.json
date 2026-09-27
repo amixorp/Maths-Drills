@@ -3,6 +3,9 @@
   "private": true,
   "description": "Test tooling only. The website itself has no build step and no dependencies.",
   "scripts": {
+    "test": "node run-generators.js && playwright test",
+    "test:maths": "node run-generators.js",
+    "test:browser": "playwright test",
     "snapshot": "node tools/snapshot.js",
     "compare": "node tools/compare.js"
   },

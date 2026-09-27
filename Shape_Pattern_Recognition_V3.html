@@ -16,6 +16,8 @@
   .item-visual{width:60px; height:60px; display:flex; align-items:center; justify-content:center}
   .item-visual svg{display:block}
   .grid2{display:grid; grid-template-columns:repeat(2,auto); gap:6px; justify-content:center}
+  .answer-row{display:flex; align-items:center; justify-content:center; gap:10px; margin:0 0 12px}
+  .answer-label{font-size:15px; font-weight:700; color:var(--muted)}
 
   /* Small picture answers: four in a row, letter underneath. */
   .options{grid-template-columns:repeat(4, 1fr); gap:8px}
@@ -395,7 +397,12 @@
       for (var i = 0; i < types.length; i++) out.push(GENERATORS[types[i]]());
       return out;
     },
-    renderBody: q => '<div class="diagram">' + q.diagram + '</div>',
+    /* Odd-one-out and counting questions have no ? in the picture, so they
+       get an answer box underneath for dragging into. */
+    renderBody: q => '<div class="diagram">' + q.diagram + '</div>' +
+      (q.diagram.indexOf('drop-zone') < 0
+        ? '<div class="answer-row"><span class="answer-label">Answer:</span>' + Drill.slot() + '</div>'
+        : ''),
     renderOption: o => o.svg ? o.svg : '<span class="opt-text">' + o.text + '</span>'
   });
 })();
