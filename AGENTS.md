@@ -58,8 +58,25 @@ banks.js              Shared names, countable items and currencies for word prob
 katex/                KaTeX 0.18.9 for typesetting maths (copied in, not linked).
 vendor/qrcode.js      QR code generator (MIT licence), loaded only when sharing.
 pdf-worksheets/       Stand-alone printable worksheets with their own PDF writer (not core-based).
+sw.js                 Offline support (service worker). Needs no edits when drills are added.
+manifest.webmanifest  "Add to Home Screen" app details.
+apple-touch-icon.png, icons/   App icons, made from design/icon-master.png.
 tests/                Automated checks. The website never loads anything from here.
 ```
+
+## Offline and the Home Screen app
+
+- `sw.js` saves every page linked from `index.html` and `worksheets.html`,
+  plus `core/`, `banks.js`, KaTeX and the icons. Pages and `core/` are
+  **network first**: online, students always get the newest version; offline
+  or on very slow wi-fi, the saved copy. No version number to bump.
+- `katex/`, `vendor/` and `icons/` are **cache first** — so if you ever
+  replace a file in those folders, give it a **new file name**.
+- Drill pages get the manifest, icons and service worker from
+  `core/drill.js` automatically (only when served over http/https — not when
+  opened from disk).
+- Pages must keep a way home (the 🏠 button): an app opened from the Home
+  Screen has no Back button.
 
 ## How a drill is built
 

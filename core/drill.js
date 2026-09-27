@@ -309,6 +309,32 @@
   };
   Drill.store = store;
 
+  /* ------------------------------------------------------------
+     Home Screen app + offline. Added here so every drill gets it
+     without extra lines in its own file. Only over http(s): pages
+     opened from disk can't use a manifest or a service worker.
+     ------------------------------------------------------------ */
+  if (/^https?:$/.test(global.location.protocol)) {
+    const head = document.head;
+    const add = (tag, attrs) => {
+      const sel = attrs.rel ? 'link[rel="' + attrs.rel + '"]' : 'meta[name="' + attrs.name + '"]';
+      if (head.querySelector(sel)) return;
+      const el = document.createElement(tag);
+      Object.keys(attrs).forEach(k => el.setAttribute(k, attrs[k]));
+      head.appendChild(el);
+    };
+    add('link', { rel: 'manifest', href: BASE + 'manifest.webmanifest' });
+    add('link', { rel: 'apple-touch-icon', href: BASE + 'apple-touch-icon.png' });
+    add('link', { rel: 'icon', type: 'image/png', href: BASE + 'icons/favicon-32.png' });
+    add('meta', { name: 'theme-color', content: '#0f172a' });
+    add('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'mobile-web-app-capable', content: 'yes' });
+    add('meta', { name: 'apple-mobile-web-app-title', content: 'Maths Drills' });
+    if ('serviceWorker' in navigator) {
+      global.addEventListener('load', () => { navigator.serviceWorker.register(BASE + 'sw.js').catch(() => {}); });
+    }
+  }
+
   const PRAISE = ['Correct! 🎉', 'Yes! Well done.', "That's right! ⭐", 'Great job! 👏', 'Perfect! ✅'];
 
   let S = null;   // page state

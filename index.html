@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Maths Drills</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<meta name="theme-color" content="#eef1f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Maths Drills">
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -111,6 +118,12 @@
   .teacher b{display:block; font-size:14px}
   .teacher span{display:block; font-size:12.5px; color:#6b7280; margin-top:3px; line-height:1.45}
   .teacher.on{border-style:solid; border-color:#2563eb; background:#eff6ff}
+
+  /* ---------- install help ---------- */
+  .install{margin-top:14px; font-size:13.5px; color:#374151}
+  .install summary{cursor:pointer; font-weight:700; padding:6px 0}
+  .install ol{margin:6px 0 6px; padding-left:22px; line-height:1.55}
+  .install p{margin:4px 0 0; color:#6b7280}
 </style>
 </head>
 <body>
@@ -231,6 +244,16 @@
       </span>
     </label>
 
+    <details class="install">
+      <summary>📲 Put Maths Drills on an iPad Home Screen</summary>
+      <ol>
+        <li>Open this page in <b>Safari</b> on the iPad.</li>
+        <li>Tap the <b>Share</b> button (the square with an arrow), then <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+        <li>Open it once from the new icon while online. After that it works on patchy or no wi-fi, and updates itself when online.</li>
+      </ol>
+      <p>Shared sheet links and QR codes open in Safari as normal.</p>
+    </details>
+
     <footer>Click a worksheet to begin.</footer>
   </main>
 <script>
@@ -248,6 +271,12 @@
       box.classList.toggle('on', chk.checked);
     });
   })();
+</script>
+<script>
+  /* Offline support and "Add to Home Screen" (see sw.js). Not available from disk. */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
 </script>
 </body>
 </html>

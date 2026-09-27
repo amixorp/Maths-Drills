@@ -12,8 +12,8 @@ module.exports = defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   projects: [
     { name: 'desktop-chrome', use: { ...devices['Desktop Chrome'] } },
-    // touch.spec.js drives real touch input, which needs Chromium: run it once, here.
-    { name: 'ipad-safari', use: { ...devices['iPad (gen 7)'] }, testIgnore: /touch\.spec\.js/ },
-    { name: 'phone-safari', use: { ...devices['iPhone SE'] }, testIgnore: /touch\.spec\.js/ }
+    // touch.spec.js (real touch input) and offline.spec.js (service worker) need Chromium: run them once, here.
+    { name: 'ipad-safari', use: { ...devices['iPad (gen 7)'] }, testIgnore: /(touch|offline)\.spec\.js/ },
+    { name: 'phone-safari', use: { ...devices['iPhone SE'] }, testIgnore: /(touch|offline)\.spec\.js/ }
   ]
 });
