@@ -37,7 +37,7 @@
     line-height:1.5;
   }
 
-  /* ---------- prominent navigation button ---------- */
+  /* ---------- prominent navigation buttons ---------- */
   .nav-btn{
     display:flex;
     align-items:center;
@@ -62,6 +62,24 @@
   .nav-btn .arrow{
     font-size:18px;
     line-height:1;
+  }
+
+  /* red variant — for timed activities */
+  .nav-btn.red{
+    border-color:#dc2626;
+    background:#fef2f2;
+    color:#b91c1c;
+  }
+  .nav-btn.red:hover{
+    background:#fee2e2;
+    border-color:#b91c1c;
+  }
+  .nav-btn .sub{
+    display:block;
+    font-weight:400;
+    font-size:12.5px;
+    opacity:.8;
+    margin-top:2px;
   }
 
   /* ---------- tier section headings ---------- */
@@ -121,6 +139,14 @@
 
     <a class="nav-btn" href="worksheets.html">
       <span>📄 Automatically-generated worksheets</span>
+      <span class="arrow">→</span>
+    </a>
+
+    <a class="nav-btn red" href="Times_Tables_Drill.html">
+      <span>
+        ⏱ Times Tables &mdash; 60-second drill
+        <span class="sub">Beat the clock: how many can you get before time runs out?</span>
+      </span>
       <span class="arrow">→</span>
     </a>
 
