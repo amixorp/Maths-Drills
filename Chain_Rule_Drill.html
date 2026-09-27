@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chain Rule Practice</title>
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script><style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .katex{ font-size: 1em !important; }
+
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  .sheet{
+    background:#fff;
+    max-width:1100px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted)}
+
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));
+    gap:14px;
+  }
+  @media (max-width:880px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px;
+    min-height:96px;
+    margin:2px 0 12px;
+    padding:6px 2px;
+  }
+  .lhs{ font-size: 22px; }
+  .eq{ font-size: 20px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:#dbeafe; transform:scale(1.05)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:108px; min-height:60px;
+    padding:8px 14px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:19px; font-weight:800; color:#9ca3af;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
+
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px dashed #e5e7eb;
+  }
+  @media (max-width:520px){ .options{grid-template-columns:1fr} }
+
+  .option{
+    display:flex; align-items:center; gap:8px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fafafa;
+    padding:8px 10px;
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
+    min-width:0;
+  }
+  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+  .opt-letter{
+    flex:none;
+    width:20px; height:20px; border-radius:50%;
+    background:#e5e7eb; color:#374151;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt-visual{
+    flex:1;
+    font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:32px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+  }
+
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:10px 16px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);
+    font-size:15px;
+  }
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+  }
+
+  .q-feedback{
+    margin-top:8px; min-height:15px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
+    gap:6px 10px;
+    font-size:13px;
+    color:#374151;
+  }
+  .key-grid b{color:var(--ink)}
+
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔗 Chain Rule Worksheet</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>4</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+    </select>
+  </label>
+  <label>Topic
+    <select id="topicSelect">
+      <option value="mixed" selected>Mixed (progressive)</option>
+      <option value="standard">Standard derivatives</option>
+      <option value="linear">Linear inner function</option>
+      <option value="power">Power of linear function</option>
+      <option value="poly">Polynomial inner function</option>
+      <option value="polypow">Power of polynomial</option>
+      <option value="recip">Reciprocal of polynomial</option>
+      <option value="fracpow">Fractional powers</option>
+      <option value="trigcomp">Trig / exp / log composites</option>
+      <option value="trigpow">Powers of trig functions</option>
+      <option value="nested">Deeply nested</option>
+      <option value="deepnest">Deeply nested (challenge)</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { const t = a % b; a = b; b = t; } return a || 1; }
+
+  /* ============================================================
+     LaTeX / KaTeX  RENDERING
+     ============================================================ */
+  function tex(latex) {
+    if (typeof katex === 'undefined') {
+      return '<code>' + String(latex).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</code>';
+    }
+    try {
+      return katex.renderToString(latex, { throwOnError: false, displayMode: false });
+    } catch (e) {
+      return '<code>' + latex + '</code>';
+    }
+  }
+
+  /* ============================================================
+     SMALL HELPERS FOR CHAIN-RULE LaTeX
+     ============================================================ */
+  function xPowL(n) {
+    if (n === 0) return '';
+    if (n === 1) return 'x';
+    return 'x^{' + n + '}';
+  }
+  function coeffStr(c) {
+    if (c === 1) return '';
+    if (c === -1) return '-';
+    return String(c);
+  }
+  function linInnerL(a, b) {
+    // ax + b in LaTeX
+    const aStr = (a === 1) ? 'x' : (a === -1 ? '-x' : a + 'x');
+    if (b === 0) return aStr;
+    return aStr + (b > 0 ? ' + ' + b : ' - ' + (-b));
+  }
+  function polyInnerL(a, n, b) {
+    // a x^n + b
+    return coeffStr(a) + xPowL(n) + (b > 0 ? ' + ' + b : (b < 0 ? ' - ' + (-b) : ''));
+  }
+
+  /* Render a fraction a/b (both integers) with sign in front. */
+  function frac(a, b) {
+    if (b === 1) return String(a);
+    return '\\frac{' + a + '}{' + b + '}';
+  }
+
+  /* ============================================================
+     CHAIN-RULE GENERATORS
+     ============================================================ */
+
+  /* ---------- L1: standard derivatives ---------- */
+  function genCR1() {
+    const list = [
+      { y: '\\sin x',  dy: '\\cos x',      wrong: ['-\\cos x', '-\\sin x', '\\sin x'] },
+      { y: '\\cos x',  dy: '-\\sin x',     wrong: ['\\sin x', '\\cos x', '-\\cos x'] },
+      { y: '\\tan x',  dy: '\\sec^2 x',    wrong: ['\\sec x \\tan x', '-\\sec^2 x', '\\tan^2 x'] },
+      { y: 'e^{x}',    dy: 'e^{x}',        wrong: ['xe^{x-1}', '\\frac{e^x}{x}', '1'] },
+      { y: '\\ln x',   dy: '\\frac{1}{x}', wrong: ['-\\frac{1}{x}', '\\ln x', 'x'] }
+    ];
+    const c = pick(list);
+    return {
+      sig: 'CR1|' + c.y,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + c.y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: c.dy, ok: true },
+        ...c.wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L2: linear inner (sin/cos/tan/exp/ln of ax+b) ---------- */
+  function genCR2() {
+    const a = ri(2, 9);
+    const b = pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+    const inner = linInnerL(a, b);
+    const kind = pick(['sin', 'cos', 'tan', 'exp', 'ln']);
+    let y, dy, wrong;
+
+    if (kind === 'sin') {
+      y = '\\sin\\left(' + inner + '\\right)';
+      dy = coeffStr(a) + '\\cos\\left(' + inner + '\\right)';
+      wrong = [
+        '\\cos\\left(' + inner + '\\right)',
+        '-' + coeffStr(a) + '\\cos\\left(' + inner + '\\right)',
+        coeffStr(a) + '\\sin\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'cos') {
+      y = '\\cos\\left(' + inner + '\\right)';
+      dy = '-' + coeffStr(a) + '\\sin\\left(' + inner + '\\right)';
+      wrong = [
+        '-\\sin\\left(' + inner + '\\right)',
+        coeffStr(a) + '\\sin\\left(' + inner + '\\right)',
+        '-' + coeffStr(a) + '\\cos\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'tan') {
+      y = '\\tan\\left(' + inner + '\\right)';
+      dy = coeffStr(a) + '\\sec^2\\left(' + inner + '\\right)';
+      wrong = [
+        '\\sec^2\\left(' + inner + '\\right)',
+        '-' + coeffStr(a) + '\\sec^2\\left(' + inner + '\\right)',
+        coeffStr(a) + '\\tan\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'exp') {
+      y = 'e^{' + inner + '}';
+      dy = coeffStr(a) + 'e^{' + inner + '}';
+      wrong = [
+        'e^{' + inner + '}',
+        '\\left(' + inner + '\\right)e^{' + inner + '}',
+        '-' + coeffStr(a) + 'e^{' + inner + '}'
+      ];
+    } else {
+      y = '\\ln\\left(' + inner + '\\right)';
+      dy = '\\frac{' + a + '}{' + inner + '}';
+      wrong = [
+        '\\frac{1}{' + inner + '}',
+        '-\\frac{' + a + '}{' + inner + '}',
+        coeffStr(a) + '\\ln\\left(' + inner + '\\right)'
+      ];
+    }
+    return {
+      sig: 'CR2|' + kind + '|' + a + '|' + b,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L3: (ax+b)^n ---------- */
+  function genCR3() {
+    const a = ri(2, 7);
+    const b = pick([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9]);
+    const n = ri(2, 5);
+    const inner = linInnerL(a, b);
+    const powerL = (n - 1 === 1) ? '\\left(' + inner + '\\right)'
+                                 : '\\left(' + inner + '\\right)^{' + (n - 1) + '}';
+    const wrongPow = '\\left(' + inner + '\\right)^{' + n + '}';
+    const dy    = (n * a) + powerL;
+    const wrong = [
+      n + powerL,                                // forgot chain
+      (n * a) + wrongPow,                        // wrong power
+      coeffStr(a) + powerL                       // forgot n
+    ];
+    return {
+      sig: 'CR3|' + a + '|' + b + '|' + n,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = \\left(' + inner + '\\right)^{' + n + '}'),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L4: trig/exp/log of a x^n + b ---------- */
+  function genCR4() {
+    const a = ri(1, 4);
+    const n = pick([2, 3]);
+    const b = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+    const inner = polyInnerL(a, n, b);
+    const dInner = coeffStr(a * n) + xPowL(n - 1);
+    const kind = pick(['sin', 'cos', 'tan', 'exp', 'ln']);
+    let y, dy, wrong;
+
+    if (kind === 'sin') {
+      y = '\\sin\\left(' + inner + '\\right)';
+      dy = dInner + '\\cos\\left(' + inner + '\\right)';
+      wrong = [
+        '\\cos\\left(' + inner + '\\right)',
+        '-' + dInner + '\\cos\\left(' + inner + '\\right)',
+        dInner + '\\sin\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'cos') {
+      y = '\\cos\\left(' + inner + '\\right)';
+      dy = '-' + dInner + '\\sin\\left(' + inner + '\\right)';
+      wrong = [
+        '-\\sin\\left(' + inner + '\\right)',
+        dInner + '\\sin\\left(' + inner + '\\right)',
+        '-' + dInner + '\\cos\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'tan') {
+      y = '\\tan\\left(' + inner + '\\right)';
+      dy = dInner + '\\sec^2\\left(' + inner + '\\right)';
+      wrong = [
+        '\\sec^2\\left(' + inner + '\\right)',
+        '-' + dInner + '\\sec^2\\left(' + inner + '\\right)',
+        dInner + '\\tan\\left(' + inner + '\\right)'
+      ];
+    } else if (kind === 'exp') {
+      y = 'e^{' + inner + '}';
+      dy = dInner + 'e^{' + inner + '}';
+      wrong = [
+        'e^{' + inner + '}',
+        '\\left(' + inner + '\\right)e^{' + inner + '}',
+        '-' + dInner + 'e^{' + inner + '}'
+      ];
+    } else {
+      y = '\\ln\\left(' + inner + '\\right)';
+      dy = '\\frac{' + dInner + '}{' + inner + '}';
+      wrong = [
+        '\\frac{1}{' + inner + '}',
+        '-\\frac{' + dInner + '}{' + inner + '}',
+        dInner + '\\ln\\left(' + inner + '\\right)'
+      ];
+    }
+    return {
+      sig: 'CR4|' + kind + '|' + a + '|' + n + '|' + b,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L5: (a x^n + b)^m ---------- */
+  function genCR5() {
+    const a = ri(1, 3);
+    const n = pick([2, 3]);
+    const b = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+    const m = ri(2, 4);
+    const inner = polyInnerL(a, n, b);
+    const powerL = (m - 1 === 1) ? '\\left(' + inner + '\\right)'
+                                 : '\\left(' + inner + '\\right)^{' + (m - 1) + '}';
+    const wrongPow = '\\left(' + inner + '\\right)^{' + m + '}';
+    const coefTotal = m * a * n;
+    const dy    = coefTotal + xPowL(n - 1) + powerL;
+    const wrong = [
+      m + powerL,                                              // forgot chain
+      (a * n) + xPowL(n - 1) + powerL,                         // forgot m
+      coefTotal + xPowL(n - 1) + wrongPow                      // wrong power
+    ];
+    return {
+      sig: 'CR5|' + a + '|' + n + '|' + b + '|' + m,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = \\left(' + inner + '\\right)^{' + m + '}'),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L6: reciprocal power 1/(a x^n + b)^m ---------- */
+  function genCR6() {
+    const a = ri(1, 3);
+    const n = pick([2, 3]);
+    const b = pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+    const m = ri(2, 4);
+    const inner = polyInnerL(a, n, b);
+    const numAbs = m * a * n;
+    const numL = numAbs + xPowL(n - 1);
+    const denomRight = '\\left(' + inner + '\\right)^{' + (m + 1) + '}';
+    const denomWrong = '\\left(' + inner + '\\right)^{' + m + '}';
+    const dy    = '-\\frac{' + numL + '}{' + denomRight + '}';
+    const wrong = [
+      '-\\frac{' + numL + '}{' + denomWrong + '}',      // wrong power
+      '\\frac{' + numL + '}{' + denomRight + '}',       // wrong sign
+      '-\\frac{' + m + '}{' + denomRight + '}'          // forgot chain
+    ];
+    return {
+      sig: 'CR6|' + a + '|' + n + '|' + b + '|' + m,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = \\frac{1}{\\left(' + inner + '\\right)^{' + m + '}}'),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L7: fractional powers of a linear inner ---------- */
+  function genCR7() {
+    const a = ri(2, 6);
+    const b = pick([-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7]);
+    const inner = linInnerL(a, b);
+    const kind = pick(['half', 'third', 'threehalf']);
+    let y, dy, wrong;
+
+    if (kind === 'half') {
+      y = '\\sqrt{' + inner + '}';
+      dy = '\\frac{' + a + '}{2\\sqrt{' + inner + '}}';
+      wrong = [
+        '\\frac{1}{2\\sqrt{' + inner + '}}',
+        '\\frac{' + a + '}{\\sqrt{' + inner + '}}',
+        '2\\sqrt{' + inner + '}'
+      ];
+    } else if (kind === 'third') {
+      y = '\\sqrt[3]{' + inner + '}';
+      dy = '\\frac{' + a + '}{3\\left(' + inner + '\\right)^{2/3}}';
+      wrong = [
+        '\\frac{1}{3\\left(' + inner + '\\right)^{2/3}}',
+        '\\frac{' + a + '}{3\\left(' + inner + '\\right)^{1/3}}',
+        '3\\left(' + inner + '\\right)^{2/3}'
+      ];
+    } else {
+      y = '\\left(' + inner + '\\right)^{3/2}';
+      dy = '\\frac{' + (3 * a) + '}{2}\\sqrt{' + inner + '}';
+      wrong = [
+        '\\frac{3}{2}\\sqrt{' + inner + '}',
+        '\\frac{' + (3 * a) + '}{2}\\left(' + inner + '\\right)^{1/2}',
+        '\\frac{3}{2}\\left(' + inner + '\\right)^{1/2}'
+      ];
+    }
+    return {
+      sig: 'CR7|' + kind + '|' + a + '|' + b,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L8: trig/exp/log composed with another function ---------- */
+  function genCR8() {
+    const kind = pick(['exp_sin', 'exp_cos', 'ln_sin', 'ln_cos', 'sin_exp', 'cos_ln']);
+    let y, dy, wrong;
+
+    if (kind === 'exp_sin') {
+      y = 'e^{\\sin x}';
+      dy = '\\cos x\\, e^{\\sin x}';
+      wrong = ['e^{\\sin x}', '\\cos x\\, e^{\\cos x}', '-\\cos x\\, e^{\\sin x}'];
+    } else if (kind === 'exp_cos') {
+      y = 'e^{\\cos x}';
+      dy = '-\\sin x\\, e^{\\cos x}';
+      wrong = ['e^{\\cos x}', '-\\sin x\\, e^{\\sin x}', '\\sin x\\, e^{\\cos x}'];
+    } else if (kind === 'ln_sin') {
+      y = '\\ln(\\sin x)';
+      dy = '\\frac{\\cos x}{\\sin x}';
+      wrong = ['\\frac{1}{\\sin x}', '\\frac{\\sin x}{\\cos x}', '-\\frac{\\cos x}{\\sin x}'];
+    } else if (kind === 'ln_cos') {
+      y = '\\ln(\\cos x)';
+      dy = '-\\frac{\\sin x}{\\cos x}';
+      wrong = ['\\frac{1}{\\cos x}', '\\frac{\\cos x}{\\sin x}', '\\frac{\\sin x}{\\cos x}'];
+    } else if (kind === 'sin_exp') {
+      y = '\\sin(e^{x})';
+      dy = 'e^{x}\\cos(e^{x})';
+      wrong = ['\\cos(e^{x})', 'e^{x}\\cos x', '-e^{x}\\cos(e^{x})'];
+    } else {
+      y = '\\cos(\\ln x)';
+      dy = '-\\frac{\\sin(\\ln x)}{x}';
+      wrong = ['-\\sin(\\ln x)', '-\\frac{\\sin(\\ln x)}{x^{2}}', '\\frac{\\sin(\\ln x)}{x}'];
+    }
+    return {
+      sig: 'CR8|' + kind,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L9: powers of trig functions ---------- */
+  function genCR9() {
+    const n = ri(2, 5);
+    const kind = pick(['sin', 'cos', 'tan']);
+    const powerL = (n - 1 === 1) ? null : ('^{' + (n - 1) + '}');
+    let y, dy, wrong;
+
+    if (kind === 'sin') {
+      y = '\\sin^{' + n + '} x';
+      const inner = (n - 1 === 1) ? '\\sin x' : '\\sin^{' + (n - 1) + '} x';
+      dy = n + '\\,' + inner + '\\cos x';
+      wrong = [
+        n + '\\,' + inner,
+        '\\cos^{' + n + '} x',
+        n + '\\sin^{' + n + '} x \\cos x'
+      ];
+    } else if (kind === 'cos') {
+      y = '\\cos^{' + n + '} x';
+      const inner = (n - 1 === 1) ? '\\cos x' : '\\cos^{' + (n - 1) + '} x';
+      dy = '-' + n + '\\,' + inner + '\\sin x';
+      wrong = [
+        n + '\\,' + inner + '\\sin x',
+        '-' + n + '\\,' + inner,
+        '-' + n + '\\cos^{' + n + '} x \\sin x'
+      ];
+    } else {
+      y = '\\tan^{' + n + '} x';
+      const inner = (n - 1 === 1) ? '\\tan x' : '\\tan^{' + (n - 1) + '} x';
+      dy = n + '\\,' + inner + '\\sec^2 x';
+      wrong = [
+        n + '\\,' + inner + '\\sec x\\tan x',
+        n + '\\,' + inner,
+        n + '\\tan^{' + n + '} x \\sec^2 x'
+      ];
+    }
+    return {
+      sig: 'CR9|' + kind + '|' + n,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L10: deeply nested / rational inner ---------- */
+  function genCR10() {
+    const kind = pick(['sin_recip', 'exp_recip', 'ln_tan', 'sqrt_poly']);
+    let y, dy, wrong, sigExtra;
+
+    if (kind === 'sin_recip') {
+      const a = ri(2, 5);
+      y = '\\sin\\left(\\frac{' + a + '}{x}\\right)';
+      dy = '-\\frac{' + a + '\\cos\\left(\\frac{' + a + '}{x}\\right)}{x^{2}}';
+      wrong = [
+        '\\frac{' + a + '\\cos\\left(\\frac{' + a + '}{x}\\right)}{x^{2}}',
+        '-\\frac{' + a + '\\cos\\left(\\frac{' + a + '}{x}\\right)}{x}',
+        '\\cos\\left(\\frac{' + a + '}{x}\\right)'
+      ];
+      sigExtra = String(a);
+    } else if (kind === 'exp_recip') {
+      const a = ri(2, 5);
+      y = 'e^{\\frac{' + a + '}{x}}';
+      dy = '-\\frac{' + a + 'e^{\\frac{' + a + '}{x}}}{x^{2}}';
+      wrong = [
+        '\\frac{' + a + 'e^{\\frac{' + a + '}{x}}}{x^{2}}',
+        '-\\frac{' + a + 'e^{\\frac{' + a + '}{x}}}{x}',
+        'e^{\\frac{' + a + '}{x}}'
+      ];
+      sigExtra = String(a);
+    } else if (kind === 'ln_tan') {
+      y = '\\ln(\\tan x)';
+      dy = '\\frac{\\sec^{2} x}{\\tan x}';
+      wrong = [
+        '\\frac{1}{\\tan x}',
+        '\\frac{\\sec x \\tan x}{\\tan x}',
+        '\\frac{\\sec^{2} x}{\\ln(\\tan x)}'
+      ];
+      sigExtra = 'a';
+    } else {
+      // sqrt_poly : y = sqrt(a x^2 + b)
+      const a = ri(1, 4);
+      const b = ri(1, 6);
+      const inner = coeffStr(a) + 'x^{2} + ' + b;
+      y = '\\sqrt{' + inner + '}';
+      dy = '\\frac{' + coeffStr(a) + 'x}{\\sqrt{' + inner + '}}';
+      wrong = [
+        '\\frac{1}{2\\sqrt{' + inner + '}}',
+        '\\frac{' + coeffStr(a) + 'x}{2\\sqrt{' + inner + '}}',
+        '\\frac{2' + coeffStr(a) + 'x}{\\sqrt{' + inner + '}}'
+      ];
+      sigExtra = a + '|' + b;
+    }
+    return {
+      sig: 'CR10|' + kind + '|' + sigExtra,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ---------- L11: three-deep compositions (challenge tier) ---------- */
+  function genCR11() {
+    const kind = pick([
+      'ln_tan_root',     // ln(tan(∜x))
+      'exp_cos_sqrt',    // e^{cos(√x)}
+      'sqrt_tan_lin',    // √(tan(ax+b))
+      'ln_sin_exp',      // ln(sin(e^x))
+      'sin_ln_lin',      // sin(ln(ax+b))
+      'exp_sqrt_lin',    // e^{√(ax+b)}
+      'tan_ln',          // tan(ln(ax))
+      'cos_sqrt_lin',    // cos(√(ax+b))
+      'exp_tan_lin',     // e^{tan(ax+b)}
+      'ln_cos_recip'     // ln(cos(a/x))
+    ]);
+    let y, dy, wrong, sigExtra = '';
+
+    if (kind === 'ln_tan_root') {
+      y = '\\ln\\left(\\tan\\left(\\sqrt[4]{x}\\right)\\right)';
+      dy = '\\frac{\\sec^2\\left(\\sqrt[4]{x}\\right)}{4x^{3/4}\\tan\\left(\\sqrt[4]{x}\\right)}';
+      wrong = [
+        '\\frac{\\sec^2\\left(\\sqrt[4]{x}\\right)}{\\tan\\left(\\sqrt[4]{x}\\right)}',
+        '\\frac{1}{4x^{3/4}\\tan\\left(\\sqrt[4]{x}\\right)}',
+        '\\frac{\\sec^2\\left(\\sqrt[4]{x}\\right)}{4x^{3/4}}'
+      ];
+    } else if (kind === 'exp_cos_sqrt') {
+      y = 'e^{\\cos\\left(\\sqrt{x}\\right)}';
+      dy = '-\\frac{\\sin\\left(\\sqrt{x}\\right)\\,e^{\\cos\\left(\\sqrt{x}\\right)}}{2\\sqrt{x}}';
+      wrong = [
+        '-\\sin\\left(\\sqrt{x}\\right)\\,e^{\\cos\\left(\\sqrt{x}\\right)}',
+        '\\frac{\\sin\\left(\\sqrt{x}\\right)\\,e^{\\cos\\left(\\sqrt{x}\\right)}}{2\\sqrt{x}}',
+        '-\\frac{\\sin\\left(\\sqrt{x}\\right)\\,e^{\\sin\\left(\\sqrt{x}\\right)}}{2\\sqrt{x}}'
+      ];
+    } else if (kind === 'sqrt_tan_lin') {
+      const a = ri(2, 5), b = pick([-3, -2, -1, 1, 2, 3]);
+      const inner = linInnerL(a, b);
+      y  = '\\sqrt{\\tan\\left(' + inner + '\\right)}';
+      dy = '\\frac{' + a + '\\sec^2\\left(' + inner + '\\right)}{2\\sqrt{\\tan\\left(' + inner + '\\right)}}';
+      wrong = [
+        '\\frac{\\sec^2\\left(' + inner + '\\right)}{2\\sqrt{\\tan\\left(' + inner + '\\right)}}',
+        '\\frac{' + a + '\\sec^2\\left(' + inner + '\\right)}{\\sqrt{\\tan\\left(' + inner + '\\right)}}',
+        '\\frac{' + a + '\\tan\\left(' + inner + '\\right)}{2\\sqrt{\\tan\\left(' + inner + '\\right)}}'
+      ];
+      sigExtra = a + '|' + b;
+    } else if (kind === 'ln_sin_exp') {
+      y  = '\\ln\\left(\\sin\\left(e^{x}\\right)\\right)';
+      dy = '\\frac{e^{x}\\cos\\left(e^{x}\\right)}{\\sin\\left(e^{x}\\right)}';
+      wrong = [
+        '\\frac{\\cos\\left(e^{x}\\right)}{\\sin\\left(e^{x}\\right)}',
+        '\\frac{e^{x}}{\\sin\\left(e^{x}\\right)}',
+        '\\frac{\\cos\\left(e^{x}\\right)}{e^{x}\\sin\\left(e^{x}\\right)}'
+      ];
+    } else if (kind === 'sin_ln_lin') {
+      const a = ri(2, 5), b = pick([-3, -2, -1, 1, 2, 3]);
+      const inner = linInnerL(a, b);
+      y  = '\\sin\\left(\\ln\\left(' + inner + '\\right)\\right)';
+      dy = '\\frac{' + a + '\\cos\\left(\\ln\\left(' + inner + '\\right)\\right)}{' + inner + '}';
+      wrong = [
+        '\\frac{\\cos\\left(\\ln\\left(' + inner + '\\right)\\right)}{' + inner + '}',
+        '\\frac{' + a + '\\cos\\left(\\ln\\left(' + inner + '\\right)\\right)}{\\ln\\left(' + inner + '\\right)}',
+        '\\frac{' + a + '\\sin\\left(\\ln\\left(' + inner + '\\right)\\right)}{' + inner + '}'
+      ];
+      sigExtra = a + '|' + b;
+    } else if (kind === 'exp_sqrt_lin') {
+      const a = ri(2, 5), b = pick([-3, -2, -1, 1, 2, 3]);
+      const inner = linInnerL(a, b);
+      y  = 'e^{\\sqrt{' + inner + '}}';
+      dy = '\\frac{' + a + '\\,e^{\\sqrt{' + inner + '}}}{2\\sqrt{' + inner + '}}';
+      wrong = [
+        '\\frac{e^{\\sqrt{' + inner + '}}}{2\\sqrt{' + inner + '}}',
+        '\\frac{' + a + '\\,e^{\\sqrt{' + inner + '}}}{\\sqrt{' + inner + '}}',
+        '\\frac{' + a + '\\,e^{\\sqrt{' + inner + '}}}{2' + inner + '}'
+      ];
+      sigExtra = a + '|' + b;
+    } else if (kind === 'tan_ln') {
+      const a = ri(2, 5);
+      y  = '\\tan\\left(\\ln\\left(' + a + 'x\\right)\\right)';
+      dy = '\\frac{\\sec^2\\left(\\ln\\left(' + a + 'x\\right)\\right)}{x}';
+      wrong = [
+        '\\frac{\\sec^2\\left(\\ln\\left(' + a + 'x\\right)\\right)}{' + a + 'x}',
+        '\\frac{\\sec^2\\left(' + a + 'x\\right)}{x}',
+        '\\frac{\\tan\\left(\\ln\\left(' + a + 'x\\right)\\right)}{x}'
+      ];
+      sigExtra = String(a);
+    } else if (kind === 'cos_sqrt_lin') {
+      const a = ri(2, 5), b = pick([-3, -2, -1, 1, 2, 3]);
+      const inner = linInnerL(a, b);
+      y  = '\\cos\\left(\\sqrt{' + inner + '}\\right)';
+      dy = '-\\frac{' + a + '\\sin\\left(\\sqrt{' + inner + '}\\right)}{2\\sqrt{' + inner + '}}';
+      wrong = [
+        '-\\frac{\\sin\\left(\\sqrt{' + inner + '}\\right)}{2\\sqrt{' + inner + '}}',
+        '\\frac{' + a + '\\sin\\left(\\sqrt{' + inner + '}\\right)}{2\\sqrt{' + inner + '}}',
+        '-\\frac{' + a + '\\sin\\left(\\sqrt{' + inner + '}\\right)}{\\sqrt{' + inner + '}}'
+      ];
+      sigExtra = a + '|' + b;
+    } else if (kind === 'exp_tan_lin') {
+      const a = ri(2, 5), b = pick([-3, -2, -1, 1, 2, 3]);
+      const inner = linInnerL(a, b);
+      y  = 'e^{\\tan\\left(' + inner + '\\right)}';
+      dy = coeffStr(a) + '\\sec^2\\left(' + inner + '\\right)\\,e^{\\tan\\left(' + inner + '\\right)}';
+      wrong = [
+        '\\sec^2\\left(' + inner + '\\right)\\,e^{\\tan\\left(' + inner + '\\right)}',
+        coeffStr(a) + '\\sec^2\\left(' + inner + '\\right)\\,e^{' + inner + '}',
+        '-' + coeffStr(a) + '\\sec^2\\left(' + inner + '\\right)\\,e^{\\tan\\left(' + inner + '\\right)}'
+      ];
+      sigExtra = a + '|' + b;
+    } else {
+      const a = ri(2, 5);
+      y  = '\\ln\\left(\\cos\\left(\\frac{' + a + '}{x}\\right)\\right)';
+      dy = '\\frac{' + a + '\\tan\\left(\\frac{' + a + '}{x}\\right)}{x^{2}}';
+      wrong = [
+        '-\\frac{' + a + '\\tan\\left(\\frac{' + a + '}{x}\\right)}{x^{2}}',
+        '\\frac{\\tan\\left(\\frac{' + a + '}{x}\\right)}{x^{2}}',
+        '\\frac{' + a + '}{x^{2}\\cos\\left(\\frac{' + a + '}{x}\\right)}'
+      ];
+      sigExtra = String(a);
+    }
+
+    return {
+      sig: 'CR11|' + kind + '|' + sigExtra,
+      prompt: 'Differentiate with respect to x.',
+      lhs: tex('y = ' + y),
+      eq: tex('\\Rightarrow \\frac{dy}{dx} ='),
+      options: shuffle([
+        { latex: dy, ok: true },
+        ...wrong.map(w => ({ latex: w, ok: false }))
+      ])
+    };
+  }
+
+  /* ============================================================
+     REGISTRY + TOPIC MAP
+     ============================================================ */
+  const GENERATORS = {
+    cr1:  genCR1,
+    cr2:  genCR2,
+    cr3:  genCR3,
+    cr4:  genCR4,
+    cr5:  genCR5,
+    cr6:  genCR6,
+    cr7:  genCR7,
+    cr8:  genCR8,
+    cr9:  genCR9,
+    cr10: genCR10,
+    cr11: genCR11
+  };
+
+  /* Progressive sequence used for "Mixed".  Each generator name
+     corresponds to a difficulty tier; we take entries in order. */
+    const PROGRESSIVE_SEQ = [
+    'cr1', 'cr2', 'cr3', 'cr4', 'cr5', 'cr6', 'cr7', 'cr8', 'cr9', 'cr10',
+    'cr8', 'cr10', 'cr9', 'cr10', 'cr9'
+  ];
+
+  const TOPIC_TYPES = {
+    mixed:     null,               // null => use PROGRESSIVE_SEQ
+    standard:  ['cr1'],
+    linear:    ['cr2'],
+    power:     ['cr3'],
+    poly:      ['cr4'],
+    polypow:   ['cr5'],
+    recip:     ['cr6'],
+    fracpow:   ['cr7'],
+    trigcomp:  ['cr8'],
+    trigpow:   ['cr9'],
+    nested:    ['cr10'],
+    deepnest:  ['cr11']
+  };
+
+  /* ============================================================
+     QUESTION BUILDER
+     ============================================================ */
+  function buildQuestions(n, types) {
+    const out = [];
+    const seen = new Set();
+
+    for (let i = 0; i < n; i++) {
+      let q = null;
+
+      /* Decide which generator to try first.  In mixed mode the very
+         last question is always a deep, three-level composition (cr11). */
+      let primaryGen;
+      if (types === null) {
+        primaryGen = (i === n - 1)
+          ? 'cr11'
+          : (PROGRESSIVE_SEQ[i] || pick(PROGRESSIVE_SEQ));
+      } else {
+        primaryGen = pick(types);
+      }
+
+      for (let t = 0; t < 60 && !q; t++) {
+        const gname = (t < 40) ? primaryGen
+                               : pick(Object.keys(GENERATORS));
+        const candidate = GENERATORS[gname]();
+        if (candidate && !seen.has(candidate.sig)) {
+          q = candidate;
+          seen.add(candidate.sig);
+        }
+      }
+      if (q) out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
+        '<span class="opt-visual">' + tex(o.latex) + '</span>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="diagram">' +
+        '<span class="lhs">' + q.lhs + '</span>' +
+        '<span class="eq">' + q.eq + '</span>' +
+        '<div class="drop-zone"><div class="qmark">?</div></div>' +
+      '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+    const topic = document.getElementById('topicSelect').value;
+    const types = TOPIC_TYPES[topic];        // may be null
+
+    questions = buildQuestions(n, types);
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => {
+        const idx = q.options.findIndex(o => o.ok);
+        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
+      })
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Chain Rule &mdash; Differentiation</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Differentiate each function with respect to <b>x</b>. ' +
+        'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION
+     ============================================================ */
+  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+
+    const state = qState[qi];
+    if (state) state.attempts++;
+
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const ok = !!q.options[idx].ok;
+
+    if (slot) {
+      slot.innerHTML = tex(q.options[idx].latex);
+      slot.classList.add('filled');
+    }
+
+    if (ok) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const topicSel   = document.getElementById('topicSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function setSeedInURL(seed) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url);
+  }
+
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => {
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  });
+
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  topicSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    applySeed();
+    render();
+    setSeedInURL(seedInput.value);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
