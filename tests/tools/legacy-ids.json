@@ -1,0 +1,68 @@
+{
+  "Multiplication_Drill_1.html": {
+    "countSelect": "set-n",
+    "decimalsChk": "set-decimals"
+  },
+  "IP_to_MN.html": {
+    "countSelect": "set-n"
+  },
+  "MN_to_IP.html": {
+    "countSelect": "set-n"
+  },
+  "Simplifying_Ratio.html": {
+    "countSelect": "set-n"
+  },
+  "Standard_Form_Drill_1.html": {
+    "countSelect": "set-n",
+    "topicSelect": "set-topic"
+  },
+  "Standard_Form_Drill_2.html": {
+    "countSelect": "set-n",
+    "topicSelect": "set-topic"
+  },
+  "Indices.html": {
+    "countSelect": "set-n",
+    "topicSelect": "set-topic"
+  },
+  "Surds_Drill.html": {
+    "countSelect": "set-n",
+    "topicSelect": "set-topic"
+  },
+  "Standard_Form_Drill_3.html": {
+    "countSelect": "set-n",
+    "opSelect": "set-op"
+  },
+  "Standard_Form_Drill_4.html": {
+    "countSelect": "set-n",
+    "opSelect": "set-op"
+  },
+  "Fractions_to_Decimals_V2.html": {
+    "countSelect": "set-n"
+  },
+  "Rounding.html": {
+    "countSelect": "set-n",
+    "typeWhole": "set-types-whole",
+    "typeDp1": "set-types-dp1",
+    "typeDp2": "set-types-dp2",
+    "typeDp3": "set-types-dp3",
+    "typeSf1": "set-types-sf1",
+    "typeSf2": "set-types-sf2",
+    "typeSf3": "set-types-sf3"
+  },
+  "Seq_TtT1.html": {
+    "countSelect": "set-n"
+  },
+  "Perimeter_with_Algebra.html": {
+    "countSelect": "set-n"
+  },
+  "Ratio_Sharing.html": {
+    "countSelect": "set-n",
+    "typeSelect": "set-type",
+    "diffEasy": "set-diff-0",
+    "diffMid": "set-diff-1",
+    "diffHard": "set-diff-2"
+  },
+  "Shape_Pattern_Recognition_V3.html": {
+    "countSelect": "set-n"
+  }
+}

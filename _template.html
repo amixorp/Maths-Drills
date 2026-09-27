@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Adding &amp; Subtracting Integers</title>
+<!--
+  TEMPLATE DRILL — copy this file to start a new drill.
+  Everything shared (toolbar, seed, tap/drag, scoring, print, share,
+  student/teacher modes) comes from core/. This file only holds the maths.
+  Rules and checklist: AGENTS.md.
+-->
+<link rel="stylesheet" href="core/drill.css">
+<!-- Using LaTeX? Also add:  <link rel="stylesheet" href="katex/katex.min.css">
+     and before core/drill.js:  <script src="katex/katex.min.js"></script>  -->
+<style>
+  /* Optional: tune the shared layout for this drill. */
+  :root{
+    --lhs-size: 46px;   /* the expression */
+    --opt-size: 30px;   /* the answers */
+  }
+</style>
+</head>
+<body>
+<main class="sheet" id="sheet"><noscript>This worksheet needs JavaScript turned on.</noscript></main>
+
+<script src="core/drill.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     build() receives rng. Use ONLY rng for anything that changes
+     the questions, so the same seed always gives the same sheet.
+     ============================================================ */
+  let rng = Math.random;
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));   // integer in [lo, hi]
+  const shuffle = a => Drill.shuffle(rng, a);
+
+  /* Show negatives with a proper minus sign, in brackets after an operator. */
+  const fmt = v => (v < 0 ? '−' + Math.abs(v) : String(v));
+  const fmtB = v => (v < 0 ? '(' + fmt(v) + ')' : fmt(v));
+
+  /* ============================================================
+     ONE QUESTION
+     pos runs from 0 (first question) to 1 (last) so questions can
+     get harder down the sheet.
+     ============================================================ */
+  function makeQuestion(pos, allowNegatives) {
+    const size = pos < 0.5 ? 10 : 20;
+    const lo = allowNegatives ? -size : 0;
+    const a = ri(lo, size);
+    const b = ri(lo, size);
+    const op = pick(['+', '−']);
+    const answer = op === '+' ? a + b : a - b;
+
+    /* Wrong answers come from real mistakes, not random numbers. */
+    const wrong = new Set([
+      op === '+' ? a - b : a + b,     // used the wrong operation
+      -answer,                        // sign error (also "subtracted the wrong way round")
+      answer + 1, answer - 1          // counting slip
+    ]);
+    wrong.delete(answer);
+    for (let k = 2; wrong.size < 3; k++) wrong.add(answer + k);   // top up if mistakes coincide
+    const distractors = shuffle([...wrong]).slice(0, 3);
+
+    const options = shuffle([
+      { text: fmt(answer), ok: true },
+      ...distractors.map(d => ({ text: fmt(d), ok: false }))
+    ]);
+
+    return {
+      sig: a + op + b,                // used to avoid repeated questions
+      prompt: 'Work out',
+      lhs: fmt(a) + ' ' + op + ' ' + fmtB(b),
+      options
+    };
+  }
+
+  /* ============================================================
+     THE WHOLE SHEET
+     ============================================================ */
+  function buildQuestions(n, allowNegatives) {
+    const out = [];
+    const seen = new Set();
+    for (let guard = 0; out.length < n && guard < 1000; guard++) {
+      const pos = n > 1 ? out.length / (n - 1) : 0.5;
+      const q = makeQuestion(pos, allowNegatives);
+      if (seen.has(q.sig)) continue;
+      seen.add(q.sig);
+      out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     REGISTER WITH THE SHARED ENGINE
+     ============================================================ */
+  Drill.define({
+    id: 'template-integers',                 // unique, lowercase, never change once published
+    title: 'Adding &amp; Subtracting Integers',
+    toolbarTitle: '➕ Integers',
+    instructions: 'Work out each calculation <b>without a calculator</b>.',
+    counts: [6, 8, 10, 12],                   // choices for "Questions"
+    defaultCount: 8,
+    settings: [
+      { key: 'neg', label: 'Include negatives', type: 'checkbox', default: true }
+    ],
+    build: function (r, s) {                  // s.n = number of questions, plus your settings
+      rng = r;
+      return buildQuestions(s.n, s.neg);
+    }
+    /* Optional hooks (see AGENTS.md):
+       renderPrompt: q => ...,   // default: q.prompt
+       renderBody: q => ...,     // default: q.lhs  =  [?]   — must include Drill.slot()
+       renderOption: o => ...    // default: o.html, else o.text
+    */
+  });
+})();
+</script>
+</body>
+</html>

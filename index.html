@@ -99,6 +99,18 @@
     color:#9ca3af;
     text-align:center;
   }
+
+  /* ---------- teacher mode switch ---------- */
+  .teacher{
+    display:flex; align-items:flex-start; gap:12px;
+    margin-top:18px; padding:14px 16px;
+    border:1.5px dashed #d1d5db; border-radius:9px;
+    cursor:pointer;
+  }
+  .teacher input{width:20px; height:20px; margin:1px 0 0; accent-color:#2563eb; flex:none}
+  .teacher b{display:block; font-size:14px}
+  .teacher span{display:block; font-size:12.5px; color:#6b7280; margin-top:3px; line-height:1.45}
+  .teacher.on{border-style:solid; border-color:#2563eb; background:#eff6ff}
 </style>
 </head>
 <body>
@@ -210,7 +222,32 @@
       </li>
     </ul>
 
+    <label class="teacher" id="teacherBox">
+      <input type="checkbox" id="teacherChk">
+      <span>
+        <b>Teacher mode on this device</b>
+        <span>Drills open with the seed, settings, answer key, Print and <i>Share to students</i>
+        (a link and QR code for the exact sheet). Leave this off on student iPads.</span>
+      </span>
+    </label>
+
     <footer>Click a worksheet to begin.</footer>
   </main>
+<script>
+  /* Remembered per device (browser storage), read by core/drill.js. */
+  (function () {
+    var KEY = 'mathsDrills.teacher';
+    var chk = document.getElementById('teacherChk');
+    var box = document.getElementById('teacherBox');
+    var on = false;
+    try { on = localStorage.getItem(KEY) === '1'; } catch (e) { /* storage blocked */ }
+    chk.checked = on;
+    box.classList.toggle('on', on);
+    chk.addEventListener('change', function () {
+      try { localStorage.setItem(KEY, chk.checked ? '1' : '0'); } catch (e) { /* storage blocked */ }
+      box.classList.toggle('on', chk.checked);
+    });
+  })();
+</script>
 </body>
 </html>

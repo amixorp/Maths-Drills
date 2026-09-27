@@ -1,0 +1,12 @@
+{
+  "name": "maths-drills-tests",
+  "private": true,
+  "description": "Test tooling only. The website itself has no build step and no dependencies.",
+  "scripts": {
+    "snapshot": "node tools/snapshot.js",
+    "compare": "node tools/compare.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
