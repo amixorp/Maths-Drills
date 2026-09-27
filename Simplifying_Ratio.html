@@ -3,273 +3,183 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Simplifying Ratios</title>
-<link rel="stylesheet" href="katex/katex.min.css">
-<script src="katex/katex.min.js"></script>
+<title>Simplifying Ratios — Worksheet Generator</title>
 <style>
   :root{
-    --ink:#111827;
-    --muted:#6b7280;
-    --line:#d1d5db;
+    --ink:#0f172a;
+    --muted:#64748b;
     --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
     color:var(--ink);
-    background:#eef1f5;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-size:16px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
   }
 
-  /* ---------- toolbar ---------- */
+  /* ---------------- toolbar ---------------- */
   .toolbar{
     position:sticky; top:0; z-index:50;
-    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
     padding:12px 20px;
-    background:#111827; color:#f9fafb;
-    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
     font-size:14px;
   }
-  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
-  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
-  .toolbar input[type=number]{
-    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
-    background:#1f2937; color:#f9fafb; font:inherit;
-  }
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],
+  .toolbar input[type=text],
   .toolbar select{
-    padding:6px 8px; border-radius:6px; border:1px solid #374151;
-    background:#1f2937; color:#f9fafb; font:inherit;
+    padding:7px 9px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit;
   }
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:215px}
   .toolbar button{
-    padding:8px 14px; border-radius:8px; border:1px solid #374151;
-    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+    padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
+    cursor:pointer; white-space:nowrap;
   }
-  .toolbar button:hover{background:#374151}
+  .toolbar button:hover{background:#334155}
   .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
-  .toolbar button.primary:hover{background:#1d4ed8}
-  .chk{cursor:pointer}
-  .score-chip{
-    padding:6px 12px; border-radius:999px;
-    background:#1f2937; border:1px solid #374151;
-    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{
+    background:#15803d; border-color:#16a34a;
   }
+  .toolbar button.reveal-on:hover{background:#166534}
 
-  /* ---------- sheet ---------- */
-  .sheet{
+  /* ---------------- paper ---------------- */
+  .viewport{
+    overflow:hidden;
+    padding-top:28px;
+    padding-bottom:6px;
+  }
+  .page{
+    position:relative;
+    width:210mm;
+    height:297mm;
     background:#fff;
-    max-width:1100px;
-    margin:22px auto 60px;
-    padding:30px 34px 42px;
-    border-radius:10px;
-    box-shadow:0 6px 24px rgba(15,23,42,.10);
+    box-shadow:0 6px 26px rgba(15,23,42,.16);
+    left:50%;
+    margin-left:-105mm;
+    transform-origin:top center;
+    font-family:Helvetica,Arial,sans-serif;
+    color:#000;
   }
-  .sheet-head{
-    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
-    border-bottom:3px solid var(--ink);
-    padding-bottom:10px;
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
   }
-  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
-  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
-  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
-  .meta .line.short{width:80px}
-  .meta .line.tiny{width:48px}
-  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted); line-height:1.55}
-
-  /* ---------- questions ---------- */
-  .questions{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));
-    gap:14px;
+  .page .ln{
+    position:absolute; height:0; border-top-style:solid; border-color:#000;
   }
-  @media (max-width:880px){ .questions{grid-template-columns:1fr} }
-
-  .q{
-    border:1.5px solid var(--line);
-    border-radius:10px;
-    padding:10px 12px 12px;
-    background:#fff;
-    break-inside:avoid;
-    page-break-inside:avoid;
-    display:flex; flex-direction:column;
-  }
-  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
-  .q-num{
-    flex:none;
-    width:22px; height:22px; border-radius:50%;
-    background:var(--ink); color:#fff;
-    font-size:12px; font-weight:700;
-    display:flex; align-items:center; justify-content:center;
-    margin-top:1px;
-  }
-  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
-
-  /* ---------- diagram ---------- */
-  .diagram{
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:14px;
-    min-height:96px;
-    margin:2px 0 12px;
-    padding:6px 2px;
-  }
-  .lhs{ font-size: 40px; font-weight: 700; letter-spacing: 1px; }
-  .eq{ font-size: 32px; font-weight: 700; color: var(--muted); white-space: nowrap; }
-
-  /* ---------- drop slot ---------- */
-  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
-  .drop-zone.over{background:#dbeafe; transform:scale(1.05)}
-  .drop-zone.over .qmark{
-    border-color:var(--accent); color:var(--accent); background:#eff6ff;
-  }
-  .qmark{
-    min-width:170px; min-height:84px;
-    padding:10px 18px;
-    border:3px dashed #94a3b8;
-    border-radius:12px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:26px; font-weight:800; color:#94a3b8;
-    white-space:nowrap;
-    transition:border-color .15s, background .15s, color .15s;
-  }
-  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
-
-  /* ---------- options ---------- */
-  .options{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
-    margin-top:auto;
-    padding-top:10px;
-    border-top:1px dashed #e5e7eb;
-  }
-  @media (max-width:520px){ .options{grid-template-columns:1fr} }
-
-  .option{
-    display:flex; align-items:center; gap:8px;
-    cursor:grab; touch-action:none;
-    user-select:none; -webkit-user-select:none;
-    -webkit-tap-highlight-color:transparent;
-    border:1.5px solid var(--line);
-    border-radius:9px;
-    background:#fafafa;
-    padding:8px 10px;
-    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
-    min-width:0;
-  }
-  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
-  .option:hover{background:#f3f4f6}
-  .option:active{cursor:grabbing}
-  .option.dragging{opacity:.3}
-  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #16a34a}
-  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
-  @keyframes shake{
-    0%,100%{transform:translateX(0)}
-    20%{transform:translateX(-5px)}
-    60%{transform:translateX(5px)}
-    80%{transform:translateX(-3px)}
-  }
-  .opt-letter{
-    flex:none;
-    width:20px; height:20px; border-radius:50%;
-    background:#e5e7eb; color:#374151;
-    font-size:11px; font-weight:700;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .opt-visual{
-    flex:1;
-    font-size:22px;
-    font-weight:700;
-    letter-spacing:.5px;
-    display:flex; align-items:center; justify-content:center;
-    min-height:32px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    min-width:0;
+  .page .rr{
+    position:absolute;
+    border-style:solid;
+    border-color:#000;
+    box-sizing:border-box;
   }
 
-  /* ---------- drag ghost ---------- */
-  .drag-ghost{
-    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
-    padding:10px 16px;
-    border-radius:10px;
-    background:#fff; border:1.5px solid var(--line);
-    box-shadow:0 10px 22px rgba(15,23,42,.28);
-    display:flex; align-items:center; justify-content:center;
-    transform:translate(-50%,-50%) scale(1.05);
-    font-size:22px; font-weight:700; letter-spacing:.5px;
+  /* ---------- inline answers: hidden by default, shown on reveal ---------- */
+  .page .ans{
+    display: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .page.reveal .ans{
+    display: block;
   }
 
-  body.dragging-active{user-select:none; -webkit-user-select:none}
-  body.dragging-active .drop-zone .qmark{
-    border-color:var(--accent); color:var(--accent);
-    animation:pulse 1.1s ease-in-out infinite;
+  .hint{
+    text-align:center; color:var(--muted);
+    font-size:13px; line-height:1.5;
+    padding:4px 16px 34px;
   }
-  @keyframes pulse{
-    0%,100%{transform:scale(1)}
-    50%{transform:scale(1.06)}
+  .hint kbd{
+    background:#e2e8f0; border-radius:5px; padding:1px 6px;
+    font-family:inherit; font-size:12px;
   }
 
-  /* ---------- per-question feedback ---------- */
-  .q-feedback{
-    margin-top:8px; min-height:15px; text-align:center;
-    font-size:12.5px; font-weight:700; letter-spacing:.2px;
-  }
-  .q-feedback.ok{color:#15803d}
-  .q-feedback.no{color:#b91c1c}
-
-  /* ---------- answer key ---------- */
-  .key{
-    margin-top:26px;
-    border-top:3px solid var(--ink);
-    padding-top:12px;
-    break-inside:avoid;
-  }
-  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
-  .key-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
-    gap:6px 10px;
-    font-size:13px;
-    color:#374151;
-  }
-  .key-grid b{color:var(--ink)}
-
-  /* ---------- print ---------- */
-  @page{ size:A4; margin:12mm; }
+  /* ---------------- print ---------------- */
+  @page{ size:A4; margin:0; }
   @media print{
     body{background:#fff}
     .no-print{display:none !important}
-    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
-    .q{border-color:#9ca3af}
-    .q-feedback{display:none !important}
-    body.dragging-active .drop-zone .qmark{animation:none}
-    .lhs{font-size:32px}
-    .qmark{min-width:140px; min-height:70px; font-size:22px}
-    .opt-visual{font-size:19px}
+    .viewport{height:auto !important; padding:0 !important; overflow:visible !important}
+    .page{
+      transform:none !important;
+      left:0 !important;
+      margin-left:0 !important;
+      box-shadow:none !important;
+      width:210mm;
+      height:296.9mm;
+    }
+    /* Answers NEVER print — regardless of on-screen reveal state. */
+    .page .ans{ display: none !important; }
   }
 </style>
 </head>
 <body>
 
 <div class="toolbar no-print">
-  <div class="tb-title">⚖️ Simplifying Ratios</div>
-  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <span class="tb-title">📐 Simplifying Ratio</span>
+
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Simplifying Ratios" spellcheck="false">
+  </label>
+
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+
   <label>Questions
-    <select id="countSelect">
-      <option>4</option>
-      <option selected>8</option>
+    <select id="countSel">
       <option>10</option>
       <option>12</option>
+      <option>16</option>
+      <option selected>20</option>
+      <option>24</option>
+      <option>30</option>
+      <option>40</option>
     </select>
   </label>
+
+  <label>Columns
+    <select id="colsSel">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+  </label>
+
+  <button id="revealBtn">👁 Reveal answers</button>
   <button id="regenBtn" class="primary">🎲 Generate New</button>
-  <button id="resetBtn">↺ Reset answers</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
   <button id="printBtn">🖨️ Print</button>
-  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
-  <span class="score-chip" id="scoreTag">0 / 8 correct</span>
 </div>
 
-<div class="sheet" id="sheet"></div>
+<div class="viewport" id="viewport">
+  <div class="page" id="page"></div>
+</div>
+
+<p class="hint no-print">
+  Progressive difficulty: warm-ups (small HCF) → medium (HCF up to 9) → harder (HCF up to 12).<br>
+  HCF is always within the 12 times table, terms never exceed 120, and the larger term is
+  equally likely to appear first or second.<br>
+  <b>Reveal answers</b> shows them inline on screen — they're never printed.
+  <b>Worksheet PDF</b> / <b>Answers PDF</b> download them as separate files.<br>
+  Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd>
+  to open it already revealed.
+</p>
 
 <script>
 (function () {
@@ -288,440 +198,583 @@
     };
   }
   const pick = a => a[Math.floor(rng() * a.length)];
-  function shuffle(a) {
-    a = a.slice();
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(rng() * (i + 1));
-      const t = a[i]; a[i] = a[j]; a[j] = t;
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+
+  function weightedPick(pairs) {
+    let total = 0;
+    for (let i = 0; i < pairs.length; i++) total += pairs[i][1];
+    let r = rng() * total;
+    for (let i = 0; i < pairs.length; i++) {
+      r -= pairs[i][1];
+      if (r <= 0) return pairs[i][0];
     }
-    return a;
+    return pairs[pairs.length - 1][0];
   }
 
-  /* Position-weighted pick: items are equally likely when pos = 0.5,
-     biased toward early items when pos < 0.5, and toward late items
-     when pos > 0.5. */
-  function weightedPick(items, weightFn) {
-    const weights = items.map(weightFn);
-    let total = 0;
-    for (const w of weights) total += w;
-    let r = rng() * total;
-    for (let i = 0; i < items.length; i++) {
-      r -= weights[i];
-      if (r <= 0) return items[i];
+  function gcd(a, b) { while (b) { const t = a % b; a = b; b = t; } return a; }
+
+  /* ============================================================
+     FONT METRICS  (Helvetica / Arial, units per 1000 em)
+     ============================================================ */
+  const W_REG = [
+    278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584
+  ];
+  const W_BOLD = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    333,333,584,584,584,611,975,
+    722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    333,278,333,584,556,333,
+    556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+    389,280,389,584
+  ];
+
+  function textWidth(str, size, bold) {
+    const t = bold ? W_BOLD : W_REG;
+    let w = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
     }
-    return items[items.length - 1];
+    return w * size / 1000;
   }
 
   /* ============================================================
-     GENERATOR: simplify a ratio
+     QUESTION GENERATION
+     ------------------------------------------------------------
+     Each question is built as:
+
+         a = h · p     b = h · q       with gcd(p, q) = 1 and p < q
+
+     so the HCF of (a, b) is exactly h, and the simplified form is
+     p : q.  A 50/50 coin flip then decides whether to swap a and b,
+     giving the larger term equal probability of appearing first or
+     second.
+
+     Four positional stages give the progressive ramp:
+
+       A  h ∈ {2..5},  p, q ≤ 5   warm-up  (e.g. 6:8, 4:12)
+       B  h ∈ {2..6},  p, q ≤ 7   easy     (e.g. 12:15, 14:21)
+       C  h ∈ {3..9},  p, q ≤ 9   medium   (e.g. 18:24, 36:48)
+       D  h ∈ {4..12}, p, q ≤ 10  harder   (e.g. 55:77, 84:96)
      ============================================================ */
 
-  /* Divisor values. The "difficulty" of a ratio question is
-     essentially the size of the divisor the student must spot:
-     2, 3, 4 are easy, 15, 20, 30 are harder, 100 and 200 are
-     the extreme cases used only occasionally on the final question. */
-  const K_VALUES = [
-    2, 3, 4, 5, 6, 7, 8, 9, 10,
-    12, 15, 16, 18, 20, 24, 25, 30, 36, 40, 50, 60, 72, 100, 200
-  ];
+  const STAGES = {
+    A: { hMin: 2, hMax: 5,  maxPQ: 5  },
+    B: { hMin: 2, hMax: 6,  maxPQ: 7  },
+    C: { hMin: 3, hMax: 9,  maxPQ: 9  },
+    D: { hMin: 4, hMax: 12, maxPQ: 10 }
+  };
 
-  /* 5% special: force one of these very large divisors on the last
-     question so that occasionally a student meets a truly tricky one. */
-  const BIG_K = [20, 25, 50, 60, 72, 100, 200];
+  /* coprime pairs (p, q) with 1 ≤ p < q ≤ maxPQ, cached */
+  const coprimeCache = {};
+  function coprimePairs(maxPQ) {
+    if (coprimeCache[maxPQ]) return coprimeCache[maxPQ];
+    const out = [];
+    for (let p = 1; p <= maxPQ; p++) {
+      for (let q = p + 1; q <= maxPQ; q++) {
+        if (gcd(p, q) === 1) out.push([p, q]);
+      }
+    }
+    coprimeCache[maxPQ] = out;
+    return out;
+  }
 
-  /* Coprime pairs — the "shape" of the simplified answer.
-     Pairs are always listed with the smaller number first, so the
-     later random swap gives us a 50/50 split between "larger first"
-     and "larger second". Simple pairs are repeated to weight them
-     toward more frequent appearance. */
-  const PAIRS = [
-    [1,2],[1,2],[1,2],[1,2],[1,2],
-    [1,3],[1,3],[1,3],
-    [2,3],[2,3],[2,3],
-    [1,4],[1,4],
-    [3,4],[3,4],
-    [1,5],[2,5],[3,5],[4,5],
-    [1,6],[5,6],
-    [1,7],[2,7],[3,7],[4,7],[5,7],[6,7],
-    [1,8],[3,8],[5,8],[7,8],
-    [1,9],[2,9],[4,9],[5,9],[7,9],[8,9],
-    [1,10],[3,10],[7,10],[9,10]
-  ];
+  /* build one ratio for the given stage; returns null on failure */
+  function genRatio(stage) {
+    const cfg = STAGES[stage];
+    const pairs = coprimePairs(cfg.maxPQ);
+    for (let tries = 0; tries < 200; tries++) {
+      const h = ri(cfg.hMin, cfg.hMax);
+      const pq = pick(pairs);
+      const p = pq[0], q = pq[1];
+      const a = h * p;
+      const b = h * q;
 
-  function genSimplifyRatio(pos, isLast) {
-    for (let attempt = 0; attempt < 200; attempt++) {
-      /* Choose the divisor k with a position-based gradient. */
-      let k;
-      if (isLast && rng() < 0.05) {
-        k = pick(BIG_K);
+      /* 50/50 swap so the larger term is equally likely to lead */
+      if (rng() < 0.5) {
+        return { a: b, b: a, ans: q + ' : ' + p };
       } else {
-        k = weightedPick(K_VALUES, x => Math.pow(x, 2 * pos - 1));
+        return { a: a, b: b, ans: p + ' : ' + q };
       }
-
-      /* Choose the coprime shape and randomly decide the order of
-         the two numbers. 50% of the time the larger number comes
-         first; 50% of the time it comes second. */
-      let [a, b] = pick(PAIRS);
-      if (rng() < 0.5) { const tmp = a; a = b; b = tmp; }
-
-      const A = a * k;
-      const B = b * k;
-
-      const sig = 'SR|' + a + '|' + b + '|' + k;
-      const correctText = a + ' : ' + b;
-
-      /* --- distractor pool --- */
-      const pool = [];
-      const seen = new Set([correctText]);
-      const addRatio = (x, y) => {
-        if (!Number.isInteger(x) || !Number.isInteger(y)) return;
-        if (x <= 0 || y <= 0) return;
-        const key = x + ':' + y;
-        if (seen.has(key)) return;
-        seen.add(key);
-        pool.push({ text: x + ' : ' + y });
-      };
-
-      /* 1. Partial simplification: divide both sides by a proper
-            divisor of k. This is by far the most common mistake. */
-      if (k > 3) {
-        const divisors = [];
-        for (let d = 2; d < k; d++) if (k % d === 0) divisors.push(d);
-        if (divisors.length > 0) {
-          const d = pick(divisors);
-          addRatio(A / d, B / d);
-        }
-      }
-
-      /* 2. One-sided division: student divides only one number. */
-      addRatio(a, B);
-      addRatio(A, b);
-
-      /* 3. Swapped: student mixes up which number goes first. */
-      addRatio(b, a);
-
-      /* 4. Near-misses on one side. */
-      addRatio(a + 1, b);
-      addRatio(a, b + 1);
-
-      if (pool.length < 3) continue;
-
-      const opts = shuffle([
-        { text: correctText, ok: true },
-        ...shuffle(pool).slice(0, 3).map(p => ({ text: p.text, ok: false }))
-      ]);
-
-      return {
-        sig,
-        prompt: 'Write this ratio in its simplest form.',
-        lhs: A + ' : ' + B,
-        eq: '=',
-        options: opts
-      };
     }
     return null;
   }
 
-  /* ============================================================
-     BUILD QUESTIONS — with position-based difficulty gradient
-     ============================================================ */
-  function buildQuestions(n) {
-    const out = [];
+  /* positional stage picker — smooth ramp with blended zones */
+  function pickStageForIndex(i, n) {
+    const t = (n <= 1) ? 0 : (i / (n - 1));
+    if (t < 0.20) return weightedPick([['A', 6], ['B', 1]]);
+    if (t < 0.45) return weightedPick([['A', 1], ['B', 5], ['C', 1]]);
+    if (t < 0.70) return weightedPick([['B', 1], ['C', 5], ['D', 1]]);
+    return weightedPick([['C', 1], ['D', 6]]);
+  }
+
+  function generateSet(count) {
     const seen = new Set();
-    let guard = 0;
-    while (out.length < n && guard < 5000) {
-      guard++;
-      const pos = n > 1 ? out.length / (n - 1) : 0.5;
-      const isLast = (out.length === n - 1);
-      let q = null;
-      try {
-        q = genSimplifyRatio(pos, isLast);
-      } catch (err) {
-        if (typeof console !== 'undefined') console.warn('Generator threw:', err);
-        continue;
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      const stage = pickStageForIndex(i, count);
+      let q = null, tries = 0;
+      while (tries++ < 400) {
+        const cand = genRatio(stage);
+        if (!cand) continue;
+        /* canonical key: unordered pair, so 3:6 and 6:3 are the same item */
+        const key = Math.min(cand.a, cand.b) + ':' + Math.max(cand.a, cand.b);
+        if (!seen.has(key)) { seen.add(key); q = cand; break; }
       }
-      if (!q || seen.has(q.sig)) continue;
-      seen.add(q.sig);
+      if (!q) {
+        /* fallback: anything valid */
+        q = genRatio('A') || { a: 2, b: 4, ans: '1 : 2' };
+      }
       out.push(q);
     }
-    /* Safety net — allow duplicates rather than render fewer questions. */
-    let g2 = 0;
-    while (out.length < n && g2 < 500) {
-      g2++;
-      const pos = n > 1 ? out.length / (n - 1) : 0.5;
-      const q = genSimplifyRatio(pos, false);
-      if (q) out.push(q);
-    }
-    return out.slice(0, n);
+    return out;
   }
 
   /* ============================================================
-     RENDER
+     LAYOUT ENGINE
      ============================================================ */
-  const LETTERS = 'ABCD';
-  let questions = [];
-  let qState = [];
+  const PW = 595.276;
+  const PH = 841.890;
+  const MG = 42.52;
 
-  function renderQuestion(q, i) {
-    const optsHTML = q.options.map((o, j) =>
-      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
-           'aria-label="Answer ' + LETTERS[j] + '">' +
-        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
-        '<span class="opt-visual">' + o.text + '</span>' +
-      '</div>'
-    ).join('');
+  const FS_BY_COLS = { 1: 17, 2: 15, 3: 13, 4: 10.5 };
 
-    return '<article class="q" data-q="' + i + '">' +
-      '<div class="q-head">' +
-        '<span class="q-num">' + (i + 1) + '</span>' +
-        '<span class="q-prompt">' + q.prompt + '</span>' +
-      '</div>' +
-      '<div class="diagram">' +
-        '<span class="lhs">' + q.lhs + '</span>' +
-        '<span class="eq">' + q.eq + '</span>' +
-        '<div class="drop-zone"><div class="qmark">?</div></div>' +
-      '</div>' +
-      '<div class="options">' + optsHTML + '</div>' +
-      '<div class="q-feedback" aria-live="polite"></div>' +
-    '</article>';
-  }
+  /* ---------- the question sheet ---------- */
+  function layoutSheet(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const cols = opts.cols;
 
-  function render() {
-    const sheet = document.getElementById('sheet');
-    const n = parseInt(document.getElementById('countSelect').value, 10);
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
 
-    questions = buildQuestions(n);
-    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+    /* title */
+    const ts = 19;
+    const tw = textWidth(title, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true, s: title });
+    top = bl + ts * 0.32 + 6;
 
-    const keyGrid = questions
-      .map((q, i) => {
-        const idx = q.options.findIndex(o => o.ok);
-        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
-      })
-      .join('');
+    /* rule */
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 17;
 
-    sheet.innerHTML =
-      '<header class="sheet-head">' +
-        '<h1>Simplifying Ratios</h1>' +
-        '<div class="meta">' +
-          '<span>Name: <span class="line"></span></span>' +
-          '<span>Date: <span class="line short"></span></span>' +
-          '<span>Score: <span class="line tiny"></span></span>' +
-        '</div>' +
-      '</header>' +
-      '<p class="instructions">' +
-        'Write each ratio in its simplest form. ' +
-        'Divide both numbers by their <b>highest common factor</b>. ' +
-        'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
-        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
-      '</p>' +
-      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
-      '<section class="key" id="keySection">' +
-        '<h2>Answer Key</h2>' +
-        '<div class="key-grid">' + keyGrid + '</div>' +
-      '</section>';
+    /* name / date */
+    const ns = 10.5;
+    bl = top + ns * 0.78;
 
-    const seedTag = document.getElementById('seedTag');
-    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+    const nl = 'Name:';
+    items.push({ t: 'text', x: MG, y: bl, size: ns, bold: false, s: nl });
+    const nlw = textWidth(nl, ns, false);
+    items.push({ t: 'line', x1: MG + nlw + 6, y1: bl + 2.2,
+                 x2: MG + innerW * 0.46, y2: bl + 2.2, w: 0.6 });
 
-    toggleKey();
-    updateScore();
-  }
+    const dl = 'Date:';
+    const dx = MG + innerW * 0.60;
+    items.push({ t: 'text', x: dx, y: bl, size: ns, bold: false, s: dl });
+    const dlw = textWidth(dl, ns, false);
+    items.push({ t: 'line', x1: dx + dlw + 6, y1: bl + 2.2,
+                 x2: PW - MG, y2: bl + 2.2, w: 0.6 });
 
-  function toggleKey() {
-    const show = document.getElementById('answersChk').checked;
-    const key = document.getElementById('keySection');
-    if (key) key.style.display = show ? '' : 'none';
-  }
+    top = bl + 22;
 
-  /* ============================================================
-     INTERACTION
-     ============================================================ */
-  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+    /* instruction line */
+    const insSize = 10.5;
+    const instruction = 'Simplify the following ratios as much as possible.';
+    const iw = textWidth(instruction, insSize, false);
+    bl = top + insSize * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - iw) / 2), y: bl,
+                 size: insSize, bold: false, s: instruction });
+    top = bl + 22;
 
-  let drag = null;
+    /* grid */
+    const n = questions.length;
+    const rows = Math.ceil(n / cols);
+    const gridTop = top;
+    const gridH = PH - MG - gridTop;
+    const colW = innerW / cols;
 
-  function zoneAt(qEl, x, y) {
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
-    const z = el.closest('.drop-zone');
-    return (z && qEl.contains(z)) ? z : null;
-  }
+    const MAX_ROW_H = 130;
+    const rawRowH = gridH / rows;
+    const rowH = Math.min(MAX_ROW_H, rawRowH);
+    const gridTotalH = rowH * rows;
+    const gridY0 = gridTop + Math.max(0, (gridH - gridTotalH) / 2);
 
-  function startGhost() {
-    const g = document.createElement('div');
-    g.className = 'drag-ghost';
-    const src = drag.opt.querySelector('.opt-visual');
-    g.innerHTML = src ? src.innerHTML : '';
-    g.style.left = drag.startX + 'px';
-    g.style.top  = drag.startY + 'px';
-    document.body.appendChild(g);
-    drag.ghost = g;
-    drag.opt.classList.add('dragging');
-  }
+    const fs = FS_BY_COLS[cols] || 12;
+    const R = 6;
+    const INSET = 2;
+    const PAD = 8;
 
-  function moveGhost(x, y) {
-    if (!drag.ghost) return;
-    drag.ghost.style.left = x + 'px';
-    drag.ghost.style.top  = y + 'px';
-  }
+    questions.forEach(function (q, i) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const cx = MG + c * colW;
+      const cy = gridY0 + r * rowH;
 
-  function highlight(x, y) {
-    const z = zoneAt(drag.qEl, x, y);
-    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
-    if (z) z.classList.add('over');
-    drag.zone = z;
-  }
+      /* rounded-rectangle box */
+      items.push({
+        t: 'rrect',
+        x: cx + INSET,
+        y: cy + INSET,
+        w: colW - 2 * INSET,
+        h: rowH - 2 * INSET,
+        r: R,
+        lw: 0.8
+      });
 
-  function onPointerDown(e) {
-    if (drag) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
-    if (!opt) return;
-    const qEl = opt.closest('.q');
-    if (!qEl || qEl.dataset.locked === '1') return;
+      const base = cy + INSET + PAD + fs * 0.78;
 
-    drag = {
-      opt: opt, qEl: qEl, id: e.pointerId,
-      startX: e.clientX, startY: e.clientY,
-      moved: false, ghost: null, zone: null
-    };
-    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-  }
+      /* question number */
+      const numStr = (i + 1) + '.';
+      items.push({ t: 'text', x: cx + INSET + PAD, y: base,
+                   size: fs, bold: true, s: numStr });
+      const numW = textWidth(numStr, fs, true) + 4;
 
-  function onPointerMove(e) {
-    if (!drag || e.pointerId !== drag.id) return;
-    if (!drag.moved) {
-      const dx = e.clientX - drag.startX;
-      const dy = e.clientY - drag.startY;
-      if (Math.hypot(dx, dy) < 6) return;
-      drag.moved = true;
-      startGhost();
-      document.body.classList.add('dragging-active');
-    }
-    moveGhost(e.clientX, e.clientY);
-    highlight(e.clientX, e.clientY);
-  }
+      /* question text:  "6 : 8 =" */
+      const qs = q.a + ' : ' + q.b + ' =';
+      items.push({ t: 'text', x: cx + INSET + PAD + numW, y: base,
+                   size: fs, bold: false, s: qs });
 
-  function endDrag(e, cancelled) {
-    if (!drag || !e || e.pointerId !== drag.id) return;
-    const d = drag;
-    drag = null;
-
-    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
-
-    if (d.ghost) d.ghost.remove();
-    if (d.zone)  d.zone.classList.remove('over');
-    d.opt.classList.remove('dragging');
-    document.body.classList.remove('dragging-active');
-
-    if (cancelled) return;
-
-    const idx = parseInt(d.opt.dataset.opt, 10);
-    if (!d.moved || target) choose(d.qEl, idx);
-  }
-
-  function choose(qEl, idx) {
-    if (qEl.dataset.locked === '1') return;
-
-    const qi = parseInt(qEl.dataset.q, 10);
-    const q  = questions[qi];
-    if (!q) return;
-
-    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
-    if (!opt) return;
-
-    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
-
-    const state = qState[qi];
-    if (state) state.attempts++;
-
-    const slot = qEl.querySelector('.drop-zone .qmark');
-    const ok = !!q.options[idx].ok;
-
-    if (slot) {
-      slot.textContent = q.options[idx].text;
-      slot.classList.add('filled');
-    }
-
-    if (ok) {
-      if (state) state.solved = true;
-      qEl.dataset.locked = '1';
-      opt.classList.add('correct');
-      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
-    } else {
-      opt.classList.add('wrong');
-      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
-    }
-    updateScore();
-  }
-
-  function setFeedback(qEl, cls, msg) {
-    const fb = qEl.querySelector('.q-feedback');
-    if (!fb) return;
-    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
-    fb.textContent = msg || '';
-  }
-
-  function updateScore() {
-    const el = document.getElementById('scoreTag');
-    if (!el) return;
-    const solved = qState.filter(s => s.solved).length;
-    el.textContent = solved + ' / ' + qState.length + ' correct';
-  }
-
-  function resetAnswers() {
-    document.querySelectorAll('.q').forEach(qEl => {
-      delete qEl.dataset.locked;
-      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
-      const slot = qEl.querySelector('.drop-zone .qmark');
-      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
-      setFeedback(qEl, '', '');
+      /* inline answer, right-aligned in the working space below the question.
+         Always laid out; visibility is controlled purely by CSS. */
+      const ansStr = q.ans;                       /* e.g. "3 : 4" */
+      const ansY   = base + fs * 2.2;
+      const boxRight = cx + INSET + (colW - 2 * INSET) - PAD;
+      const ansW   = textWidth(ansStr, fs, true);
+      items.push({
+        t: 'answer',
+        x: boxRight - ansW,
+        y: ansY,
+        size: fs,
+        bold: true,
+        s: ansStr
+      });
     });
-    qState = qState.map(() => ({ solved: false, attempts: 0 }));
-    updateScore();
+
+    return items;
   }
 
-  document.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup',     e => endDrag(e, false));
-  window.addEventListener('pointercancel', e => endDrag(e, true));
+  /* ---------- separate one-page answer key ---------- */
+  function layoutAnswerKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
 
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
-    if (!opt) return;
-    e.preventDefault();
-    const qEl = opt.closest('.q');
-    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' — Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true, s: heading });
+    top = bl + ts * 0.32 + 6;
+
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 20;
+
+    const n = questions.length;
+    let cols, fs, rowH;
+    if (n <= 12)      { cols = 2; fs = 12;   rowH = 22; }
+    else if (n <= 24) { cols = 3; fs = 11;   rowH = 20; }
+    else              { cols = 4; fs = 10.5; rowH = 18; }
+
+    const rows = Math.ceil(n / cols);
+    const colW = innerW / cols;
+    const blockH = rows * rowH;
+    const startY = top + Math.max(0, (PH - MG - top - blockH - 40) / 2);
+
+    questions.forEach(function (q, i) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const x0 = MG + c * colW;
+      const y  = startY + r * rowH + fs * 0.78;
+
+      const numStr = (i + 1) + '.';
+      items.push({ t: 'text', x: x0, y: y, size: fs, bold: true, s: numStr });
+      const numW = textWidth(numStr, fs, true) + 4;
+
+      const body = ' ' + q.a + ' : ' + q.b + ' = ' + q.ans;
+      items.push({ t: 'text', x: x0 + numW, y: y, size: fs, bold: false, s: body });
+    });
+
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    items.push({ t: 'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false, s: note });
+
+    return items;
+  }
+
+  /* ============================================================
+     HTML RENDERER
+     ============================================================ */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function drawHTML(items) {
+    const page = document.getElementById('page');
+    const parts = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+
+      if (it.t === 'text') {
+        const t = it.y - it.size * 0.755;
+        parts.push('<span class="tx" style="left:' + it.x.toFixed(2) + 'pt;top:' +
+          t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+          (it.bold ? 'font-weight:700;' : '') + '">' + esc(it.s) + '</span>');
+
+      } else if (it.t === 'answer') {
+        const t = it.y - it.size * 0.755;
+        parts.push('<span class="tx ans" style="left:' + it.x.toFixed(2) + 'pt;top:' +
+          t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+          'font-weight:700;">' + esc(it.s) + '</span>');
+
+      } else if (it.t === 'line') {
+        parts.push('<span class="ln" style="left:' + it.x1.toFixed(2) + 'pt;top:' +
+          it.y1.toFixed(2) + 'pt;width:' + (it.x2 - it.x1).toFixed(2) +
+          'pt;border-top-width:' + it.w.toFixed(2) + 'pt;"></span>');
+
+      } else if (it.t === 'rrect') {
+        parts.push('<span class="rr" style="left:' + it.x.toFixed(2) + 'pt;top:' +
+          it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) + 'pt;height:' +
+          it.h.toFixed(2) + 'pt;border-radius:' + it.r.toFixed(2) + 'pt;' +
+          'border-width:' + it.lw.toFixed(2) + 'pt;"></span>');
+      }
+    }
+    page.innerHTML = parts.join('');
+  }
+
+  /* ============================================================
+     PDF WRITER
+     ============================================================ */
+  function pdfEsc(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const code = ch.charCodeAt(0);
+      if (code > 126 || code < 32) { out += '?'; continue; }
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '(') out += '\\(';
+      else if (ch === ')') out += '\\)';
+      else out += ch;
+    }
+    return out;
+  }
+
+  const KAPPA = 0.5522847498;
+
+  function contentStream(items) {
+    const ops = [];
+    const f = v => v.toFixed(2);
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'answer') continue;   /* never written into the question PDF */
+
+      if (it.t === 'text') {
+        ops.push('BT /' + (it.bold ? 'F2' : 'F1') + ' ' + it.size.toFixed(2) +
+          ' Tf ' + it.x.toFixed(2) + ' ' + (PH - it.y).toFixed(2) +
+          ' Td (' + pdfEsc(it.s) + ') Tj ET');
+
+      } else if (it.t === 'line') {
+        ops.push(it.w.toFixed(2) + ' w ' + it.x1.toFixed(2) + ' ' +
+          (PH - it.y1).toFixed(2) + ' m ' + it.x2.toFixed(2) + ' ' +
+          (PH - it.y2).toFixed(2) + ' l S');
+
+      } else if (it.t === 'rrect') {
+        const X = it.x;
+        const Y = PH - it.y - it.h;
+        const W = it.w;
+        const H = it.h;
+        const R = it.r;
+        const k = R * KAPPA;
+
+        ops.push(f(it.lw) + ' w');
+        ops.push(f(X + R) + ' ' + f(Y) + ' m');
+        ops.push(f(X + W - R) + ' ' + f(Y) + ' l');
+        ops.push(f(X + W - R + k) + ' ' + f(Y) + ' ' +
+                 f(X + W) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + W) + ' ' + f(Y + R) + ' c');
+        ops.push(f(X + W) + ' ' + f(Y + H - R) + ' l');
+        ops.push(f(X + W) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X + W - R + k) + ' ' + f(Y + H) + ' ' +
+                 f(X + W - R) + ' ' + f(Y + H) + ' c');
+        ops.push(f(X + R) + ' ' + f(Y + H) + ' l');
+        ops.push(f(X + R - k) + ' ' + f(Y + H) + ' ' +
+                 f(X) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X) + ' ' + f(Y + H - R) + ' c');
+        ops.push(f(X) + ' ' + f(Y + R) + ' l');
+        ops.push(f(X) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + R - k) + ' ' + f(Y) + ' ' +
+                 f(X + R) + ' ' + f(Y) + ' c');
+        ops.push('S');
+      }
+    }
+    return ops.join('\n');
+  }
+
+  function assemblePDF(content) {
+    const objects = [];
+    objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objects[2] = '<< /Type /Pages /Kids [6 0 R] /Count 1 >>';
+    objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    objects[5] = '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream';
+    objects[6] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+                 '/Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents 5 0 R >>';
+
+    let out = '%PDF-1.4\n';
+    const offsets = [];
+    for (let i = 1; i < objects.length; i++) {
+      offsets[i] = out.length;
+      out += i + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xrefPos = out.length;
+    out += 'xref\n0 ' + objects.length + '\n';
+    out += '0000000000 65535 f \n';
+    for (let i = 1; i < objects.length; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += 'trailer\n<< /Size ' + objects.length + ' /Root 1 0 R >>\n';
+    out += 'startxref\n' + xrefPos + '\n%%EOF\n';
+    return out;
+  }
+
+  function downloadPDF(items, filename) {
+    const pdfStr = assemblePDF(contentStream(items));
+    const bytes = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  /* ============================================================
+     STATE + RENDER
+     ============================================================ */
+  const titleInput  = document.getElementById('titleInput');
+  const seedInput   = document.getElementById('seedInput');
+  const countSel    = document.getElementById('countSel');
+  const colsSel     = document.getElementById('colsSel');
+  const revealBtn   = document.getElementById('revealBtn');
+  const pageEl      = document.getElementById('page');
+
+  let currentQuestions = [];
+  let lastItems = [];
+  let lastAnswerItems = [];
+
+  function chosenCols(n) {
+    const v = colsSel.value;
+    if (v !== 'auto') return parseInt(v, 10);
+    if (n <= 20) return 2;
+    if (n <= 30) return 3;
+    return 4;
+  }
+
+  function sheetTitle() {
+    const t = titleInput.value.trim();
+    return t || 'Simplifying Ratios';
+  }
+
+  function renderSheet() {
+    lastItems = layoutSheet({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      cols: chosenCols(currentQuestions.length)
+    });
+    drawHTML(lastItems);
+
+    lastAnswerItems = layoutAnswerKey({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+
+    fitPage();
+  }
+
+  function regenerate() {
+    const n = parseInt(countSel.value, 10);
+    currentQuestions = generateSet(n);
+    renderSheet();
+  }
+
+  /* ============================================================
+     SCALING THE PREVIEW TO THE WINDOW
+     ============================================================ */
+  function fitPage() {
+    const vp = document.getElementById('viewport');
+    const pg = document.getElementById('page');
+    const pw = 210 * 96 / 25.4;
+    const ph = 297 * 96 / 25.4;
+    const avail = vp.clientWidth - 40;
+    const z = Math.max(0.22, Math.min(1, avail / pw));
+    pg.style.transform = 'scale(' + z + ')';
+    vp.style.height = (ph * z + 44) + 'px';
+  }
+
+  /* ============================================================
+     INLINE REVEAL TOGGLE (screen only — never printed)
+     ============================================================ */
+  function setRevealed(on) {
+    pageEl.classList.toggle('reveal', !!on);
+    revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!pageEl.classList.contains('reveal'));
   });
 
   /* ============================================================
-     UI WIRING
+     SEED / URL
      ============================================================ */
-  const seedInput  = document.getElementById('seedInput');
-  const countSel   = document.getElementById('countSelect');
-  const answersChk = document.getElementById('answersChk');
-
   function applySeed() {
     const s = parseInt(seedInput.value, 10);
     rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
   }
 
-  /* --- seed handling --- */
-
   function getSeedFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const s = params.get('seed');
-    if (s === null) return null;
-    const n = parseInt(s, 10);
+    const p = new URLSearchParams(window.location.search).get('seed');
+    if (p === null) return null;
+    const n = parseInt(p, 10);
     return isNaN(n) ? null : n;
   }
 
+  function getAnswersFromURL() {
+    const p = new URLSearchParams(window.location.search).get('answers');
+    return p === '1' || p === 'true';
+  }
+
   function setSeedInURL(seed) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('seed', seed);
-    window.history.replaceState({}, '', url);
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('seed', seed);
+      window.history.replaceState({}, '', url);
+    } catch (e) { /* ignore on file:// */ }
   }
 
   function dateSeed() {
@@ -737,38 +790,67 @@
     );
   }
 
-  /* --- event wiring --- */
+  function safeFilename(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
 
-  document.getElementById('regenBtn').addEventListener('click', () => {
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+  document.getElementById('regenBtn').addEventListener('click', function () {
     seedInput.value = dateSeed();
     applySeed();
-    render();
+    regenerate();
     setSeedInURL(seedInput.value);
   });
 
-  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    if (!lastItems.length) return;
+    const name = 'ratio-' + safeFilename(sheetTitle()) +
+                 '-' + seedInput.value + '.pdf';
+    downloadPDF(lastItems, name);
+  });
 
-  seedInput.addEventListener('change', () => {
+  document.getElementById('dlAnsBtn').addEventListener('click', function () {
+    if (!lastAnswerItems.length) return;
+    const name = 'ratio-' + safeFilename(sheetTitle()) +
+                 '-ANSWERS-' + seedInput.value + '.pdf';
+    downloadPDF(lastAnswerItems, name);
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function () {
+    window.print();
+  });
+
+  seedInput.addEventListener('change', function () {
     applySeed();
-    render();
+    regenerate();
     setSeedInURL(seedInput.value);
   });
 
-  countSel.addEventListener('change', () => { applySeed(); render(); });
-  answersChk.addEventListener('change', toggleKey);
-  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  countSel.addEventListener('change', function () { applySeed(); regenerate(); });
+  colsSel.addEventListener('change', renderSheet);
+  titleInput.addEventListener('input', renderSheet);
 
-  /* --- boot --- */
+  window.addEventListener('resize', fitPage);
 
+  /* ============================================================
+     BOOT
+     ============================================================ */
   function boot() {
     const urlSeed = getSeedFromURL();
     seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
     applySeed();
-    render();
+    regenerate();
     setSeedInURL(seedInput.value);
+    fitPage();
+
+    if (getAnswersFromURL()) setRevealed(true);
   }
+
   if (document.readyState === 'complete') boot();
   else window.addEventListener('load', boot, { once: true });
+
 })();
 </script>
 </body>
