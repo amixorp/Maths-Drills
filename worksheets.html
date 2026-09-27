@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Automatically-generated Worksheets</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<meta name="theme-color" content="#eef1f5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Maths Drills">
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -105,7 +112,7 @@
 
     <ul>
       <li>
-          <a class="ws-link" href="pdf-worksheets/Perc_Of_Amount.html">>
+          <a class="ws-link" href="pdf-worksheets/Perc_Of_Amount.html">
           Percentages of Amounts
           <span>Non-calculator practice: 10%, 25%, 50%, 75% and other simple percentages of an amount.</span>
         </a>
@@ -114,5 +121,11 @@
 
     <footer>Click a worksheet to begin.</footer>
   </main>
+<script>
+  /* Offline support and "Add to Home Screen" (see sw.js). Not available from disk. */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
 </body>
 </html>

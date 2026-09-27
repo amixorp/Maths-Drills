@@ -32,6 +32,8 @@
     box-shadow:0 2px 10px rgba(15,23,42,.25);
     font-size:14px;
   }
+  .tb-home{display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px;
+    border:1px solid #334155; background:#1e293b; text-decoration:none; font-size:18px; flex:none}
   .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
   .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
   .toolbar input[type=number],
@@ -125,10 +127,13 @@
     .page .ans{ display: none !important; }
   }
 </style>
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="icon" type="image/png" href="../icons/favicon-32.png">
 </head>
 <body>
 
 <div class="toolbar no-print">
+  <a class="tb-home" href="../worksheets.html" title="All worksheets" aria-label="All worksheets">🏠</a>
   <span class="tb-title">🧮 Percentage Worksheet</span>
 
   <label>Sheet title
@@ -873,6 +878,12 @@
   else window.addEventListener('load', boot, { once: true });
 
 })();
+</script>
+<script>
+  /* Offline support and "Add to Home Screen" (see sw.js). Not available from disk. */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    addEventListener('load', function () { navigator.serviceWorker.register('../sw.js').catch(function () {}); });
+  }
 </script>
 </body>
 </html>

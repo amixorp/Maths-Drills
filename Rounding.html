@@ -1,317 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Rounding — Practice</title>
+<link rel="stylesheet" href="core/drill.css">
 <style>
   :root{
-    --ink:#0f172a;
-    --muted:#64748b;
-    --line:#cbd5e1;
-    --line-soft:#e2e8f0;
-    --accent:#2563eb;
-    --accent-dark:#1d4ed8;
-    --accent-soft:#dbeafe;
-    --page:#eef2f7;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
-  body{
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    color:var(--ink);
-    background:var(--page);
-    font-size:17px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  /* Thin gap used between groups of three digits. */
-  .gap{ font-size: 0.55em; }
-
-  /* toolbar */
-  .toolbar{
-    position:sticky; top:0; z-index:50;
-    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
-    padding:14px 22px;
-    background:#0f172a; color:#f9fafb;
-    box-shadow:0 2px 10px rgba(15,23,42,.25);
-    font-size:15px;
-  }
-  .tb-title{font-weight:800; margin-right:auto; letter-spacing:.3px; font-size:16px}
-  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0}
-  .toolbar input[type=number]{
-    width:140px; padding:8px 10px; border-radius:8px; border:1px solid #334155;
-    background:#1e293b; color:#f9fafb; font:inherit;
-  }
-  .toolbar select{
-    padding:8px 10px; border-radius:8px; border:1px solid #334155;
-    background:#1e293b; color:#f9fafb; font:inherit;
-  }
-  .toolbar button{
-    padding:9px 16px; border-radius:9px; border:1px solid #334155;
-    background:#1e293b; color:#f9fafb; font:inherit; font-weight:700; cursor:pointer;
-  }
-  .toolbar button:hover{background:#334155}
-  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
-  .toolbar button.primary:hover{background:var(--accent-dark)}
-  .chk{cursor:pointer}
-  .score-chip{
-    padding:8px 14px; border-radius:999px;
-    background:#1e293b; border:1px solid #334155;
-    font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap;
-  }
-  /* Force a new toolbar row */
-  .toolbar-break{flex-basis:100%; height:0; margin:0; padding:0;}
-  .tb-sub{color:#94a3b8; font-weight:700; letter-spacing:.3px}
-  .type-chk{
-    padding:6px 12px;
-    border-radius:8px;
-    background:#1e293b;
-    border:1px solid #334155;
-    font-size:14px;
-    font-weight:600;
-  }
-  .type-chk input{margin-right:2px}
-
-  /* sheet */
-  .sheet{
-    background:#fff;
-    max-width:1180px;
-    margin:26px auto 60px;
-    padding:34px 38px 46px;
-    border-radius:14px;
-    box-shadow:0 8px 28px rgba(15,23,42,.10);
-  }
-  .sheet-head{
-    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
-    border-bottom:3px solid var(--ink);
-    padding-bottom:12px;
-  }
-  .sheet-head h1{margin:0; font-size:30px; letter-spacing:.4px; font-weight:800}
-  .meta{margin-left:auto; display:flex; gap:20px; font-size:14px; color:#334155}
-  .meta .line{display:inline-block; width:120px; border-bottom:1px solid #94a3b8}
-  .meta .line.short{width:90px}
-  .meta .line.tiny{width:55px}
-  .instructions{margin:16px 0 20px; font-size:15.5px; color:var(--muted); line-height:1.5}
-
-  /* questions */
-  .questions{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(440px, 1fr));
-    gap:18px;
-  }
-  @media (max-width:920px){ .questions{grid-template-columns:1fr} }
-
-  .q{
-    border:2px solid var(--line-soft);
-    border-radius:14px;
-    padding:14px 16px 16px;
-    background:#fff;
-    break-inside:avoid;
-    page-break-inside:avoid;
-    display:flex; flex-direction:column;
-  }
-  .q-head{display:flex; align-items:center; gap:10px; margin-bottom:10px}
-  .q-num{
-    flex:none;
-    width:30px; height:30px; border-radius:50%;
-    background:var(--ink); color:#fff;
-    font-size:15px; font-weight:800;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .q-prompt{font-size:16px; line-height:1.3; font-weight:700; color:#1e293b}
-
-  /* diagram — big readable number */
-  .diagram{
-    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:20px;
-    min-height:120px;
-    margin:6px 0 16px;
-    padding:6px 2px;
-  }
-  .lhs{
-    font-size: 42px;
-    font-weight: 800;
-    color: var(--ink);
-    letter-spacing: 1px;
-    white-space: nowrap;
-  }
-  .eq{
-    font-size: 42px;
-    font-weight: 800;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-
-  /* drop slot */
-  .drop-zone{border-radius:14px; transition:transform .15s ease, background .15s ease}
-  .drop-zone.over{background:var(--accent-soft); transform:scale(1.06)}
-  .drop-zone.over .qmark{
-    border-color:var(--accent); color:var(--accent); background:#eff6ff;
-  }
-  .qmark{
-    min-width:170px; min-height:84px;
-    padding:0 20px;
-    border:3px dashed #94a3b8;
-    border-radius:12px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:34px; font-weight:800; color:#94a3b8;
-    white-space:nowrap;
-    transition:border-color .15s, background .15s, color .15s;
-  }
-  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
-
-  /* options */
-  .options{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:14px;
-    margin-top:auto;
-    padding-top:14px;
-    border-top:1px dashed var(--line-soft);
-  }
-  @media (max-width:560px){ .options{grid-template-columns:1fr} }
-
-  .option{
-    display:flex; align-items:center; gap:12px;
-    cursor:grab; touch-action:none;
-    user-select:none; -webkit-user-select:none;
-    -webkit-tap-highlight-color:transparent;
-    border:2px solid var(--line-soft);
-    border-radius:12px;
-    background:#f8fafc;
-    padding:12px 14px;
-    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
-    min-width:0;
-  }
-  .option:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
-  .option:hover{background:#f1f5f9}
-  .option:active{cursor:grabbing}
-  .option.dragging{opacity:.3}
-  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 3px #16a34a}
-  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 3px #dc2626; animation:shake .3s ease}
-  @keyframes shake{
-    0%,100%{transform:translateX(0)}
-    20%{transform:translateX(-6px)}
-    60%{transform:translateX(6px)}
-    80%{transform:translateX(-4px)}
-  }
-  .opt-letter{
-    flex:none;
-    width:28px; height:28px; border-radius:50%;
-    background:#e2e8f0; color:#475569;
-    font-size:14px; font-weight:800;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .opt-visual{
-    flex:1;
-    font-size:28px;
-    font-weight:800;
-    color:var(--ink);
-    letter-spacing:.5px;
-    display:flex; align-items:center; justify-content:center;
-    min-height:44px;
-    overflow-x:auto;
-    overflow-y:hidden;
-    min-width:0;
-  }
-
-  /* drag ghost */
-  .drag-ghost{
-    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
-    padding:14px 22px;
-    border-radius:12px;
-    background:#fff; border:2px solid var(--line-soft);
-    box-shadow:0 12px 26px rgba(15,23,42,.30);
-    display:flex; align-items:center; justify-content:center;
-    transform:translate(-50%,-50%) scale(1.06);
-    font-size:28px; font-weight:800;
-    letter-spacing:.5px;
-  }
-
-  body.dragging-active{user-select:none; -webkit-user-select:none}
-  body.dragging-active .drop-zone .qmark{
-    border-color:var(--accent); color:var(--accent);
-    animation:pulse 1.1s ease-in-out infinite;
-  }
-  @keyframes pulse{
-    0%,100%{transform:scale(1)}
-    50%{transform:scale(1.07)}
-  }
-
-  /* feedback */
-  .q-feedback{
-    margin-top:10px; min-height:20px; text-align:center;
-    font-size:15px; font-weight:800; letter-spacing:.2px;
-  }
-  .q-feedback.ok{color:#15803d}
-  .q-feedback.no{color:#b91c1c}
-
-  /* answer key */
-  .key{
-    margin-top:30px;
-    border-top:3px solid var(--ink);
-    padding-top:14px;
-    break-inside:avoid;
-  }
-  .key h2{margin:0 0 12px; font-size:18px; letter-spacing:.5px; font-weight:800}
-  .key-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(80px,1fr));
-    gap:8px 12px;
-    font-size:15px;
-    color:#334155;
-  }
-  .key-grid b{color:var(--ink); font-size:17px}
-
-  /* print */
-  @page{ size:A4; margin:12mm; }
-  @media print{
-    body{background:#fff; font-size:14px}
-    .no-print{display:none !important}
-    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
-    .q{border-color:#94a3b8}
-    .q-feedback{display:none !important}
-    body.dragging-active .drop-zone .qmark{animation:none}
-    .lhs, .eq{font-size:30px}
-    .qmark{min-width:130px; min-height:60px; font-size:24px}
-    .opt-visual{font-size:22px; min-height:36px}
-    .opt-letter{width:24px; height:24px; font-size:12px}
+    --q-min:440px; --lhs-size:42px; --opt-size:28px; --diagram-min-h:120px;
   }
 </style>
 </head>
 <body>
+<main class="sheet" id="sheet"><noscript>This worksheet needs JavaScript turned on.</noscript></main>
 
-<div class="toolbar no-print">
-  <div class="tb-title">🔢 Rounding</div>
-  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
-  <label>Questions
-    <select id="countSelect">
-      <option>6</option>
-      <option selected>8</option>
-      <option>10</option>
-      <option>12</option>
-      <option>15</option>
-    </select>
-  </label>
-  <button id="regenBtn" class="primary">🎲 Generate New</button>
-  <button id="resetBtn">↺ Reset answers</button>
-  <button id="printBtn">🖨️ Print</button>
-  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
-  <span class="score-chip" id="scoreTag">0 / 8 correct</span>
-  <div class="toolbar-break"></div>
-  <span class="tb-sub">Round to:</span>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeWhole" checked> Whole number</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp1" checked> 1 dp</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp2" checked> 2 dp</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeDp3" checked> 3 dp</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf1" checked> 1 sf</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf2" checked> 2 sf</label>
-  <label class="chk type-chk"><input type="checkbox" class="typeCheck" id="typeSf3" checked> 3 sf</label>
-</div>
-
-<div class="sheet" id="sheet"></div>
-
+<script src="core/drill.js"></script>
 <script>
 (function () {
   'use strict';
@@ -320,14 +23,6 @@
      SEEDED RANDOM
      ============================================================ */
   let rng = Math.random;
-  function mulberry32(a) {
-    return function () {
-      a |= 0; a = (a + 0x6D2B79F5) | 0;
-      let t = Math.imul(a ^ (a >>> 15), 1 | a);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
   const pick = a => a[Math.floor(rng() * a.length)];
   const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
   function shuffle(a) {
@@ -628,15 +323,10 @@
     sf3:   4
   };
 
+  /* The ticked "Round to" types, set by build() from the settings. */
+  let enabledTypes = [];
   function getEnabledTypes() {
-    const types = [];
-    if (document.getElementById('typeWhole').checked) types.push('whole');
-    if (document.getElementById('typeDp1').checked)   types.push('dp1');
-    if (document.getElementById('typeDp2').checked)   types.push('dp2');
-    if (document.getElementById('typeDp3').checked)   types.push('dp3');
-    if (document.getElementById('typeSf1').checked)   types.push('sf1');
-    if (document.getElementById('typeSf2').checked)   types.push('sf2');
-    if (document.getElementById('typeSf3').checked)   types.push('sf3');
+    const types = enabledTypes.slice();
     /* If nothing is checked, default to the whole-number type. */
     if (types.length === 0) types.push('whole');
     return types;
@@ -760,303 +450,34 @@
     return out.slice(0, n);
   }
 
-  /* ============================================================
-     RENDER
-     ============================================================ */
-  const LETTERS = 'ABCD';
-  let questions = [];
-  let qState = [];
-
-  function renderQuestion(q, i) {
-    const optsHTML = q.options.map((o, j) =>
-      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
-           'aria-label="Answer ' + LETTERS[j] + '">' +
-        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
-        '<span class="opt-visual">' + o.text + '</span>' +
-      '</div>'
-    ).join('');
-
-    return '<article class="q" data-q="' + i + '">' +
-      '<div class="q-head">' +
-        '<span class="q-num">' + (i + 1) + '</span>' +
-        '<span class="q-prompt">' + q.promptText + '</span>' +
-      '</div>' +
-      '<div class="diagram">' +
-        '<span class="lhs">' + q.sourceDisplay + '</span>' +
-        '<span class="eq">\u2192</span>' +
-        '<div class="drop-zone"><div class="qmark">?</div></div>' +
-      '</div>' +
-      '<div class="options">' + optsHTML + '</div>' +
-      '<div class="q-feedback" aria-live="polite"></div>' +
-    '</article>';
-  }
-
-  function render() {
-    const sheet = document.getElementById('sheet');
-    const n = parseInt(document.getElementById('countSelect').value, 10);
-
-    questions = buildQuestions(n);
-    qState = questions.map(() => ({ solved: false, attempts: 0 }));
-
-    const keyGrid = questions
-      .map((q, i) => {
-        const idx = q.options.findIndex(o => o.ok);
-        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
-      })
-      .join('');
-
-    sheet.innerHTML =
-      '<header class="sheet-head">' +
-        '<h1>Rounding</h1>' +
-        '<div class="meta">' +
-          '<span>Name: <span class="line"></span></span>' +
-          '<span>Date: <span class="line short"></span></span>' +
-          '<span>Score: <span class="line tiny"></span></span>' +
-        '</div>' +
-      '</header>' +
-      '<p class="instructions">' +
-        'Round the number to the accuracy asked for. ' +
-        'Drag the correct answer into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
-        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
-      '</p>' +
-      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
-      '<section class="key" id="keySection">' +
-        '<h2>Answer Key</h2>' +
-        '<div class="key-grid">' + keyGrid + '</div>' +
-      '</section>';
-
-    const seedTag = document.getElementById('seedTag');
-    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
-
-    toggleKey();
-    updateScore();
-  }
-
-  function toggleKey() {
-    const show = document.getElementById('answersChk').checked;
-    const key = document.getElementById('keySection');
-    if (key) key.style.display = show ? '' : 'none';
-  }
-
-  /* ============================================================
-     INTERACTION
-     ============================================================ */
-  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
-
-  let drag = null;
-
-  function zoneAt(qEl, x, y) {
-    const el = document.elementFromPoint(x, y);
-    if (!el) return null;
-    const z = el.closest('.drop-zone');
-    return (z && qEl.contains(z)) ? z : null;
-  }
-
-  function startGhost() {
-    const g = document.createElement('div');
-    g.className = 'drag-ghost';
-    const src = drag.opt.querySelector('.opt-visual');
-    g.innerHTML = src ? src.innerHTML : '';
-    g.style.left = drag.startX + 'px';
-    g.style.top  = drag.startY + 'px';
-    document.body.appendChild(g);
-    drag.ghost = g;
-    drag.opt.classList.add('dragging');
-  }
-
-  function moveGhost(x, y) {
-    if (!drag.ghost) return;
-    drag.ghost.style.left = x + 'px';
-    drag.ghost.style.top  = y + 'px';
-  }
-
-  function highlight(x, y) {
-    const z = zoneAt(drag.qEl, x, y);
-    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
-    if (z) z.classList.add('over');
-    drag.zone = z;
-  }
-
-  function onPointerDown(e) {
-    if (drag) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
-    if (!opt) return;
-    const qEl = opt.closest('.q');
-    if (!qEl || qEl.dataset.locked === '1') return;
-    drag = {
-      opt: opt, qEl: qEl, id: e.pointerId,
-      startX: e.clientX, startY: e.clientY,
-      moved: false, ghost: null, zone: null
-    };
-    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
-  }
-
-  function onPointerMove(e) {
-    if (!drag || e.pointerId !== drag.id) return;
-    if (!drag.moved) {
-      const dx = e.clientX - drag.startX;
-      const dy = e.clientY - drag.startY;
-      if (Math.hypot(dx, dy) < 6) return;
-      drag.moved = true;
-      startGhost();
-      document.body.classList.add('dragging-active');
-    }
-    moveGhost(e.clientX, e.clientY);
-    highlight(e.clientX, e.clientY);
-  }
-
-  function endDrag(e, cancelled) {
-    if (!drag || !e || e.pointerId !== drag.id) return;
-    const d = drag;
-    drag = null;
-    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
-    if (d.ghost) d.ghost.remove();
-    if (d.zone)  d.zone.classList.remove('over');
-    d.opt.classList.remove('dragging');
-    document.body.classList.remove('dragging-active');
-    if (cancelled) return;
-    const idx = parseInt(d.opt.dataset.opt, 10);
-    if (!d.moved || target) choose(d.qEl, idx);
-  }
-
-  function choose(qEl, idx) {
-    if (qEl.dataset.locked === '1') return;
-    const qi = parseInt(qEl.dataset.q, 10);
-    const q  = questions[qi];
-    if (!q) return;
-    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
-    if (!opt) return;
-    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
-    const state = qState[qi];
-    if (state) state.attempts++;
-    const slot = qEl.querySelector('.drop-zone .qmark');
-    const ok = !!q.options[idx].ok;
-    if (slot) {
-      slot.innerHTML = q.options[idx].text;
-      slot.classList.add('filled');
-    }
-    if (ok) {
-      if (state) state.solved = true;
-      qEl.dataset.locked = '1';
-      opt.classList.add('correct');
-      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
-    } else {
-      opt.classList.add('wrong');
-      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
-    }
-    updateScore();
-  }
-
-  function setFeedback(qEl, cls, msg) {
-    const fb = qEl.querySelector('.q-feedback');
-    if (!fb) return;
-    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
-    fb.textContent = msg || '';
-  }
-
-  function updateScore() {
-    const el = document.getElementById('scoreTag');
-    if (!el) return;
-    const solved = qState.filter(s => s.solved).length;
-    el.textContent = solved + ' / ' + qState.length + ' correct';
-  }
-
-  function resetAnswers() {
-    document.querySelectorAll('.q').forEach(qEl => {
-      delete qEl.dataset.locked;
-      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
-      const slot = qEl.querySelector('.drop-zone .qmark');
-      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
-      setFeedback(qEl, '', '');
-    });
-    qState = qState.map(() => ({ solved: false, attempts: 0 }));
-    updateScore();
-  }
-
-  document.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointermove', onPointerMove);
-  window.addEventListener('pointerup',     e => endDrag(e, false));
-  window.addEventListener('pointercancel', e => endDrag(e, true));
-
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
-    if (!opt) return;
-    e.preventDefault();
-    const qEl = opt.closest('.q');
-    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  Drill.define({
+    id: 'rounding',
+    title: 'Rounding',
+    toolbarTitle: '🔢 Rounding',
+    instructions: 'Round the number to the accuracy asked for.',
+    settings: [
+      { key: 'types', label: 'Round to', type: 'checkboxes', options: [
+        { value: 'whole', label: 'Whole number' },
+        { value: 'dp1', label: '1 dp' },
+        { value: 'dp2', label: '2 dp' },
+        { value: 'dp3', label: '3 dp' },
+        { value: 'sf1', label: '1 sf' },
+        { value: 'sf2', label: '2 sf' },
+        { value: 'sf3', label: '3 sf' }
+      ] }
+    ],
+    build: function (r, s) {
+      rng = r;
+      enabledTypes = s.types;
+      return buildQuestions(s.n);
+    },
+    renderPrompt: q => q.promptText,
+    renderBody: q => '<div class="diagram">' +
+      '<span class="lhs">' + q.sourceDisplay + '</span>' +
+      '<span class="eq">→</span>' +
+      Drill.slot() +
+    '</div>'
   });
-
-  /* ============================================================
-     UI WIRING
-     ============================================================ */
-  const seedInput  = document.getElementById('seedInput');
-  const countSel   = document.getElementById('countSelect');
-  const answersChk = document.getElementById('answersChk');
-
-  function applySeed() {
-    const s = parseInt(seedInput.value, 10);
-    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
-  }
-
-  function randomSeed() {
-    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
-      const buf = new Uint32Array(1);
-      window.crypto.getRandomValues(buf);
-      return buf[0] % 1000000000;
-    }
-    return Math.floor(
-      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
-    ) % 1000000000;
-  }
-
-  function getSeedFromURL() {
-    const m = /[?&]seed=(\d+)/.exec(window.location.search);
-    if (m) return parseInt(m[1], 10) >>> 0;
-    return null;
-  }
-
-  function setSeedInURL(seed) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('seed', seed);
-    window.history.replaceState({}, '', url);
-  }
-
-  document.getElementById('regenBtn').addEventListener('click', () => {
-    seedInput.value = randomSeed();
-    applySeed();
-    render();
-    setSeedInURL(seedInput.value);
-  });
-
-  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
-
-  seedInput.addEventListener('change', () => {
-    applySeed();
-    render();
-    setSeedInURL(seedInput.value);
-  });
-
-  countSel.addEventListener('change', () => { applySeed(); render(); });
-  answersChk.addEventListener('change', toggleKey);
-  document.getElementById('printBtn').addEventListener('click', () => window.print());
-
-  /* Re-render whenever any of the type checkboxes changes. */
-  const typeChecks = document.querySelectorAll('.typeCheck');
-  typeChecks.forEach(cb => {
-    cb.addEventListener('change', () => { applySeed(); render(); });
-  });
-
-  function boot() {
-    const urlSeed = getSeedFromURL();
-    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
-    applySeed();
-    render();
-    setSeedInURL(seedInput.value);
-  }
-  if (document.readyState === 'complete') boot();
-  else window.addEventListener('load', boot, { once: true });
 })();
 </script>
 </body>
