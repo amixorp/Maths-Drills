@@ -31,18 +31,46 @@
     letter-spacing:.4px;
   }
   p.lede{
-    margin:0 0 24px;
+    margin:0 0 20px;
     color:#6b7280;
     font-size:14px;
     line-height:1.5;
   }
+
+  /* ---------- prominent navigation button ---------- */
+  .nav-btn{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    width:100%;
+    padding:14px 18px;
+    margin:0 0 22px;
+    border:1.5px solid #2563eb;
+    background:#eff6ff;
+    border-radius:9px;
+    color:#1d4ed8;
+    text-decoration:none;
+    font-weight:700;
+    font-size:15px;
+    transition:background .12s, border-color .12s;
+  }
+  .nav-btn:hover{
+    background:#dbeafe;
+    border-color:#1d4ed8;
+  }
+  .nav-btn .arrow{
+    font-size:18px;
+    line-height:1;
+  }
+
   ul{
     list-style:none;
     margin:0;
     padding:0;
   }
   li{margin-bottom:10px}
-  a{
+  a.ws-link{
     display:block;
     padding:14px 16px;
     border:1.5px solid #d1d5db;
@@ -52,11 +80,11 @@
     font-weight:600;
     transition:background .12s, border-color .12s, transform .12s;
   }
-  a:hover{
+  a.ws-link:hover{
     background:#f3f4f6;
     border-color:#9ca3af;
   }
-  a span{
+  a.ws-link span{
     display:block;
     font-weight:400;
     font-size:12.5px;
@@ -78,99 +106,104 @@
     <h1>Maths Drills</h1>
     <p class="lede">Interactive worksheets with instant feedback. Printable, and each one generates fresh questions on demand.</p>
 
+    <a class="nav-btn" href="worksheets.html">
+      <span>📄 Automatically-generated worksheets</span>
+      <span class="arrow">→</span>
+    </a>
+
     <ul>
       <li>
-        <a href="Fractions_to_Decimals_V2.html">
+        <a class="ws-link" href="Fractions_to_Decimals_V2.html">
           Fractions → Decimals
           <span>Convert simple fractions to their decimal equivalents.</span>
         </a>
       </li>
       <li>
-        <a href="MN_to_IP.html">
+        <a class="ws-link" href="MN_to_IP.html">
           Improper Fractions → Mixed Numbers
           <span>Convert mixed numbers to improper fractions.</span>
         </a>
       </li>
       <li>
-        <a href="IP_to_MN.html">
+        <a class="ws-link" href="IP_to_MN.html">
           Mixed Numbers → Improper Fractions
           <span>Convert improper fractions to mixed numbers.</span>
         </a>
       </li>
       <li>
-        <a href="Multiplication_Drill_1.html">
+        <a class="ws-link" href="Multiplication_Drill_1.html">
           Multiplication Drill 1
           <span>Practise multiplication questions like 30 × 400, 5000 × 0.3 and so on.</span>
         </a>
       </li>
       <li>
-        <a href="Rounding.html">
+        <a class="ws-link" href="Rounding.html">
           Rounding Drill
           <span>Practise different forms of rounding.</span>
         </a>
       </li>
       <li>
-        <a href="Simplifying_Ratio.html">
+        <a class="ws-link" href="Simplifying_Ratio.html">
           Simplifying Ratios
           <span>Practise simplifying ratios.</span>
         </a>
       </li>
       <li>
-        <a href="Ratio_Sharing.html">
+        <a class="ws-link" href="Ratio_Sharing.html">
           Dividing in a given ratio.
           <span>Practise dividing in a given ratio.</span>
         </a>
       </li>
       <li>
-        <a href="Standard_Form_Drill_1.html">
+        <a class="ws-link" href="Standard_Form_Drill_1.html">
           Standard Form Drill 1
           <span>Practise converting to and from standard form.</span>
         </a>
       </li>
       <li>
-        <a href="Standard_Form_Drill_2.html">
+        <a class="ws-link" href="Standard_Form_Drill_2.html">
           Standard Form Drill 2
           <span>More standard form practice.</span>
         </a>
       </li>
       <li>
-        <a href="Standard_Form_Drill_3.html">
+        <a class="ws-link" href="Standard_Form_Drill_3.html">
           Standard Form Drill 3
           <span>Add and subtract numbers in standard form.</span>
         </a>
       </li>
       <li>
-        <a href="Standard_Form_Drill_4.html">
+        <a class="ws-link" href="Standard_Form_Drill_4.html">
           Standard Form Drill 4
           <span>Multiply and divide numbers in standard form.</span>
         </a>
       </li>
       <li>
-        <a href="Seq_TtT1.html">
+        <a class="ws-link" href="Seq_TtT1.html">
           Sequences - Term-to-Term Rule 1
           <span>Practise finding the term-to-term rule of a sequence.</span>
         </a>
       </li>
       <li>
-        <a href="Perimeter_with_Algebra.html">
+        <a class="ws-link" href="Perimeter_with_Algebra.html">
           Perimeter with Algebra
           <span>Practise perimeter questions that include expressions.</span>
         </a>
       </li>
       <li>
-        <a href="Indices.html">
+        <a class="ws-link" href="Indices.html">
           Indices
           <span>Evaluate powers, simplify indices, and solve exponential equations.</span>
         </a>
       </li>
       <li>
-        <a href="Surds_Drill.html">
+        <a class="ws-link" href="Surds_Drill.html">
           Surds
           <span>Practice your skills working with surds.</span>
         </a>
       </li>
       <li>
-        <a href="Shape_Pattern_Recognition_V3.html">
+        <a class="ws-link" href="Shape_Pattern_Recognition_V3.html">
           Shape &amp; Pattern Recognition
           <span>Identify the next term in a sequence or pattern.</span>
         </a>
