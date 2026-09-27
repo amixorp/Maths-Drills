@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Times Tables — 60-Second Drill</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
+    --ok:#16a34a;
+    --no:#dc2626;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-size:16px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  /* ---------------- toolbar ---------------- */
+  .toolbar{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px;
+    padding:12px 20px;
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;
+    flex:0 0 auto;
+  }
+  .tb-title{font-weight:800; font-size:16px; letter-spacing:.3px}
+  .tb-sub{color:#94a3b8; font-size:13px}
+  .tb-best{
+    margin-left:auto;
+    background:#1e293b;
+    border:1px solid #334155;
+    border-radius:999px;
+    padding:6px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:#cbd5e1;
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  .tb-best b{color:#fff; font-size:15px; margin-left:2px}
+
+  .table-pills{
+    display:flex; flex-wrap:wrap; align-items:center; gap:5px;
+    flex-basis:100%;
+    order:2;
+  }
+  @media (min-width:900px){
+    .table-pills{flex-basis:auto; order:0}
+    .tb-best{margin-left:auto}
+  }
+
+  .pills-label{
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#94a3b8;
+    margin-right:4px;
+  }
+
+  .pill{
+    min-width:32px;
+    height:30px;
+    padding:0 9px;
+    border-radius:8px;
+    background:#1e293b;
+    color:#94a3b8;
+    border:1.5px solid #334155;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    transition:background .12s, color .12s, border-color .12s;
+    font-variant-numeric:tabular-nums;
+  }
+  .pill:hover:not(:disabled){
+    background:#334155;
+    color:#e2e8f0;
+  }
+  .pill.active{
+    background:var(--accent);
+    color:#fff;
+    border-color:var(--accent);
+  }
+  .pill.active:hover:not(:disabled){
+    background:var(--accent-dark);
+  }
+  .pill:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+  }
+  .pill-action{
+    text-transform:uppercase;
+    font-size:11px;
+    letter-spacing:.8px;
+    padding:0 11px;
+  }
+
+  /* ---------------- stage ---------------- */
+  .stage{
+    flex:1 1 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 20px 40px;
+  }
+  .panel{
+    background:#fff;
+    width:100%;
+    max-width:600px;
+    padding:32px 32px 28px;
+    border-radius:14px;
+    box-shadow:0 8px 28px rgba(15,23,42,.10);
+    text-align:center;
+  }
+
+  /* ---------------- shared ---------------- */
+  h1{margin:0 0 8px; font-size:28px; letter-spacing:.4px}
+  .lede{
+    margin:0 0 20px;
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.55;
+  }
+  .best-line{
+    margin:20px 0 0;
+    font-size:14px;
+    color:var(--muted);
+  }
+  .best-line b{color:var(--ink); font-size:17px; font-variant-numeric:tabular-nums}
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+    border:none;
+    border-radius:11px;
+    font-weight:800;
+    transition:background .12s, transform .08s;
+  }
+  button:active:not(:disabled){transform:translateY(1px)}
+
+  .primary-btn{
+    padding:16px 40px;
+    font-size:17px;
+    letter-spacing:.3px;
+    background:var(--accent);
+    color:#fff;
+  }
+  .primary-btn:hover:not(:disabled){background:var(--accent-dark)}
+  .primary-btn:disabled{
+    background:#94a3b8;
+    cursor:not-allowed;
+  }
+
+  .hint-warn{
+    color:var(--no);
+    font-size:13px;
+    font-weight:700;
+    margin:12px 0 0;
+    min-height:18px;
+  }
+
+  /* ---------------- ready state ---------------- */
+  .rules{
+    list-style:none;
+    margin:0 0 24px;
+    padding:0;
+    font-size:14.5px;
+    color:#334155;
+    line-height:1.7;
+    text-align:left;
+    max-width:360px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+  .rules li{
+    padding-left:22px;
+    position:relative;
+  }
+  .rules li::before{
+    content:"•";
+    position:absolute;
+    left:6px;
+    color:var(--accent);
+    font-weight:800;
+  }
+
+  /* ---------------- HUD ---------------- */
+  .hud{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .hud-cell{
+    background:#f1f5f9;
+    border-radius:11px;
+    padding:11px 8px;
+  }
+  .hud-cell.best{
+    background:#eff6ff;
+  }
+  .hud-cell.best .hud-value{color:var(--accent)}
+  .hud-label{
+    display:block;
+    font-size:10.5px;
+    font-weight:800;
+    letter-spacing:1px;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:2px;
+  }
+  .hud-value{
+    display:block;
+    font-size:26px;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    line-height:1.05;
+  }
+
+  .progress{
+    height:7px;
+    background:#e2e8f0;
+    border-radius:999px;
+    overflow:hidden;
+    margin:0 0 26px;
+  }
+  .progress-fill{
+    height:100%;
+    width:100%;
+    background:var(--accent);
+    border-radius:999px;
+  }
+  .progress-fill.low{background:var(--no)}
+
+  /* ---------------- question ---------------- */
+  .question{
+    font-size:64px;
+    font-weight:800;
+    letter-spacing:2px;
+    line-height:1.1;
+    margin:6px 0 26px;
+    font-variant-numeric:tabular-nums;
+  }
+  .question.countdown{
+    color:var(--accent);
+    font-size:88px;
+    letter-spacing:4px;
+    animation:countPop .42s cubic-bezier(.18,.9,.35,1.25) both;
+  }
+  @keyframes countPop{
+    0%   { transform:scale(.55); opacity:0; }
+    60%  { transform:scale(1.08); opacity:1; }
+    100% { transform:scale(1);   opacity:1; }
+  }
+
+  .answer-row{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:12px;
+    max-width:440px;
+    margin:0 auto;
+  }
+  .answer-input{
+    width:100%;
+    min-width:0;
+    padding:14px 16px;
+    font-family:inherit;
+    font-size:28px;
+    font-weight:700;
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+    background:#fff;
+    border:3px solid #cbd5e1;
+    border-radius:12px;
+    outline:none;
+    transition:border-color .12s, box-shadow .12s;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .answer-input:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 4px rgba(37,99,235,.15);
+  }
+  .answer-input:disabled{
+    background:#f8fafc;
+    color:#94a3b8;
+  }
+  .answer-input.flash-ok{animation:flashOk .35s ease-out}
+  .answer-input.flash-no{animation:flashNo .35s ease-out}
+  @keyframes flashOk{
+    0%  { border-color:var(--ok); box-shadow:0 0 0 5px rgba(22,163,74,.25); }
+    100%{ border-color:#cbd5e1;  box-shadow:none; }
+  }
+  @keyframes flashNo{
+    0%  { border-color:var(--no); box-shadow:0 0 0 5px rgba(220,38,38,.25); }
+    100%{ border-color:#cbd5e1;  box-shadow:none; }
+  }
+
+  .submit-btn{
+    padding:0 26px;
+    font-size:16px;
+    background:#0f172a;
+    color:#fff;
+    border-radius:12px;
+  }
+  .submit-btn:hover:not(:disabled){background:#1e293b}
+  .submit-btn:disabled{background:#94a3b8; cursor:not-allowed}
+
+  /* ---------------- done state ---------------- */
+  .final-score{
+    font-size:86px;
+    font-weight:800;
+    line-height:1;
+    letter-spacing:-1px;
+    font-variant-numeric:tabular-nums;
+    margin:6px 0 4px;
+  }
+  .final-caption{
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:16px;
+  }
+  .final-msg{
+    min-height:24px;
+    margin:0 0 4px;
+    font-size:17px;
+    font-weight:800;
+    color:var(--ok);
+  }
+  .final-msg.neutral{color:var(--muted); font-weight:600; font-size:15px}
+
+  /* ---------------- small screens ---------------- */
+  @media (max-width:440px){
+    .panel{padding:26px 22px 22px}
+    .question{font-size:52px}
+    .question.countdown{font-size:72px}
+    .answer-row{grid-template-columns:1fr}
+    .submit-btn{padding:14px 22px}
+    .final-score{font-size:72px}
+    .hud-value{font-size:22px}
+    .hud-label{font-size:9.5px; letter-spacing:.5px}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="tb-title">⏱ Times Tables</span>
+  <span class="tb-sub">60-second drill</span>
+
+  <div class="table-pills">
+    <span class="pills-label">Tables</span>
+    <button class="pill pill-action" data-action="all">All</button>
+    <button class="pill pill-action" data-action="clear">Clear</button>
+    <button class="pill" data-table="2">2</button>
+    <button class="pill" data-table="3">3</button>
+    <button class="pill" data-table="4">4</button>
+    <button class="pill" data-table="5">5</button>
+    <button class="pill" data-table="6">6</button>
+    <button class="pill" data-table="7">7</button>
+    <button class="pill" data-table="8">8</button>
+    <button class="pill" data-table="9">9</button>
+    <button class="pill" data-table="10">10</button>
+    <button class="pill" data-table="11">11</button>
+    <button class="pill" data-table="12">12</button>
+  </div>
+
+  <span class="tb-best">Best <b id="toolbarBest">0</b></span>
+</div>
+
+<main class="stage">
+  <div class="panel">
+
+    <!-- ============ READY ============ -->
+    <section id="readyState">
+      <h1>Times Tables</h1>
+      <p class="lede">Answer as many as you can before the clock runs out.</p>
+      <ul class="rules">
+        <li>60 seconds on the clock.</li>
+        <li>Questions from your chosen tables (default: 2 to 12).</li>
+        <li>Type the answer and press Enter.</li>
+        <li>The next question appears straight away.</li>
+      </ul>
+      <button id="startBtn" class="primary-btn" autofocus>Start</button>
+      <p class="hint-warn" id="startHint"></p>
+      <p class="best-line">Your best: <b id="readyBest">0</b></p>
+    </section>
+
+    <!-- ============ PLAYING ============ -->
+    <section id="playState" hidden>
+      <div class="hud">
+        <div class="hud-cell">
+          <span class="hud-label">Time</span>
+          <span class="hud-value" id="timeVal">60</span>
+        </div>
+        <div class="hud-cell">
+          <span class="hud-label">Score</span>
+          <span class="hud-value" id="scoreVal">0</span>
+        </div>
+        <div class="hud-cell best">
+          <span class="hud-label">Best</span>
+          <span class="hud-value" id="playBest">0</span>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+      <div class="question" id="questionEl">— × —</div>
+
+      <form class="answer-row" id="answerForm" autocomplete="off">
+        <input
+          id="answerInput"
+          class="answer-input"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="3"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          enterkeyhint="go"
+          aria-label="Your answer">
+        <button type="submit" class="submit-btn">Submit</button>
+      </form>
+    </section>
+
+    <!-- ============ DONE ============ -->
+    <section id="doneState" hidden>
+      <div class="final-caption">Time</div>
+      <div class="final-score" id="finalScore">0</div>
+      <p class="final-msg" id="finalMsg"></p>
+      <p class="best-line">Your best: <b id="doneBest">0</b></p>
+      <p style="margin-top:24px">
+        <button id="againBtn" class="primary-btn">Play again</button>
+      </p>
+    </section>
+
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     CONFIG
+     ============================================================ */
+  const DURATION       = 60;
+  const MIN_FACTOR     = 2;
+  const MAX_FACTOR     = 12;
+  const ALL_TABLES     = [2,3,4,5,6,7,8,9,10,11,12];
+  const COUNTDOWN_MS   = 750;   /* time per "3", "2", "1", "GO!" */
+  const STORAGE_KEY    = 'tt60_best_v1';
+
+  /* ============================================================
+     DOM
+     ============================================================ */
+  const readyState = document.getElementById('readyState');
+  const playState  = document.getElementById('playState');
+  const doneState  = document.getElementById('doneState');
+
+  const toolbarBest = document.getElementById('toolbarBest');
+  const readyBest   = document.getElementById('readyBest');
+  const playBest    = document.getElementById('playBest');
+  const doneBest    = document.getElementById('doneBest');
+
+  const timeVal    = document.getElementById('timeVal');
+  const scoreVal   = document.getElementById('scoreVal');
+  const progress   = document.getElementById('progressFill');
+  const questionEl = document.getElementById('questionEl');
+  const answerForm = document.getElementById('answerForm');
+  const answerInput= document.getElementById('answerInput');
+  const submitBtn  = answerForm.querySelector('.submit-btn');
+
+  const finalScore = document.getElementById('finalScore');
+  const finalMsg   = document.getElementById('finalMsg');
+
+  const startBtn   = document.getElementById('startBtn');
+  const againBtn   = document.getElementById('againBtn');
+  const startHint  = document.getElementById('startHint');
+
+  const pillButtons = Array.prototype.slice.call(
+    document.querySelectorAll('.pill[data-table]')
+  );
+  const allBtn   = document.querySelector('.pill[data-action="all"]');
+  const clearBtn = document.querySelector('.pill[data-action="clear"]');
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  let phase         = 'ready';        /* ready | playing | done */
+  let score         = 0;
+  let persistentBest= 0;
+  let startTime     = 0;
+  let rafId         = null;
+  let countdownId   = null;
+  let current       = null;
+  let lastKey       = '';
+
+  const selectedTables = new Set(ALL_TABLES);
+
+  /* ============================================================
+     LOCAL STORAGE
+     ============================================================ */
+  function loadBest() {
+    try {
+      const v = parseInt(localStorage.getItem(STORAGE_KEY), 10);
+      return isNaN(v) ? 0 : v;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function saveBest(v) {
+    try { localStorage.setItem(STORAGE_KEY, String(v)); } catch (e) {}
+  }
+
+  function updateBestDisplays() {
+    toolbarBest.textContent = persistentBest;
+    readyBest.textContent   = persistentBest;
+    playBest.textContent    = persistentBest;
+    doneBest.textContent    = persistentBest;
+  }
+
+  /* ============================================================
+     HELPERS
+     ============================================================ */
+  function ri(a, b) {
+    return a + Math.floor(Math.random() * (b - a + 1));
+  }
+
+  function showState(name) {
+    phase = name;
+    readyState.hidden = (name !== 'ready');
+    playState.hidden  = (name !== 'playing');
+    doneState.hidden  = (name !== 'done');
+  }
+
+  /* ============================================================
+     TABLE SELECTION
+     ============================================================ */
+  function refreshPills() {
+    pillButtons.forEach(function (btn) {
+      const n = parseInt(btn.dataset.table, 10);
+      btn.classList.toggle('active', selectedTables.has(n));
+    });
+
+    const allSelected = ALL_TABLES.every(function (n) {
+      return selectedTables.has(n);
+    });
+    allBtn.classList.toggle('active', allSelected);
+
+    /* enable / disable pills based on phase */
+    const pillsDisabled = (phase === 'playing');
+    pillButtons.forEach(function (b) { b.disabled = pillsDisabled; });
+    allBtn.disabled   = pillsDisabled;
+    clearBtn.disabled = pillsDisabled;
+
+    /* start button and hint */
+    const none = selectedTables.size === 0;
+    startBtn.disabled = none;
+    startHint.textContent = none ? 'Select at least one table to begin.' : '';
+  }
+
+  pillButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (phase === 'playing') return;
+      const n = parseInt(btn.dataset.table, 10);
+      if (selectedTables.has(n)) selectedTables.delete(n);
+      else                       selectedTables.add(n);
+      refreshPills();
+    });
+  });
+
+  allBtn.addEventListener('click', function () {
+    if (phase === 'playing') return;
+    selectedTables.clear();
+    ALL_TABLES.forEach(function (n) { selectedTables.add(n); });
+    refreshPills();
+  });
+
+  clearBtn.addEventListener('click', function () {
+    if (phase === 'playing') return;
+    selectedTables.clear();
+    refreshPills();
+  });
+
+  /* ============================================================
+     QUESTION
+     ============================================================ */
+  function nextQuestion() {
+    const pool = Array.from(selectedTables);
+    if (pool.length === 0) return;
+
+    let a, b, key, guard = 0;
+    do {
+      a = pool[Math.floor(Math.random() * pool.length)];
+      b = ri(MIN_FACTOR, MAX_FACTOR);
+      key = a + 'x' + b;
+      guard++;
+    } while (key === lastKey && guard < 50);
+
+    lastKey = key;
+    current = { a: a, b: b, answer: a * b };
+    questionEl.textContent = a + ' × ' + b;
+  }
+
+  /* ============================================================
+     TIMER
+     ============================================================ */
+  function tick() {
+    const elapsed   = (performance.now() - startTime) / 1000;
+    const remaining = Math.max(0, DURATION - elapsed);
+
+    timeVal.textContent = Math.ceil(remaining);
+    progress.style.width = (remaining / DURATION * 100) + '%';
+    progress.classList.toggle('low', remaining <= 10);
+
+    if (remaining <= 0) { finish(); return; }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* ============================================================
+     COUNTDOWN
+     ============================================================ */
+  function showCountdownNumber(text) {
+    questionEl.classList.remove('countdown');
+    void questionEl.offsetWidth;          /* force reflow to restart animation */
+    questionEl.textContent = text;
+    questionEl.classList.add('countdown');
+  }
+
+  function startCountdown() {
+    let n = 3;
+    showCountdownNumber(String(n));
+
+    countdownId = setInterval(function () {
+      n--;
+      if (n > 0) {
+        showCountdownNumber(String(n));
+      } else if (n === 0) {
+        showCountdownNumber('GO!');
+      } else {
+        clearInterval(countdownId);
+        countdownId = null;
+        beginPlay();
+      }
+    }, COUNTDOWN_MS);
+  }
+
+  /* ============================================================
+     START / FINISH
+     ============================================================ */
+  function startGame() {
+    if (selectedTables.size === 0) return;
+
+    /* cancel anything left over */
+    if (countdownId) { clearInterval(countdownId); countdownId = null; }
+    if (rafId)       { cancelAnimationFrame(rafId); rafId = null; }
+
+    score   = 0;
+    lastKey = '';
+    scoreVal.textContent = '0';
+    timeVal.textContent  = DURATION;
+    progress.style.width = '100%';
+    progress.classList.remove('low');
+
+    answerInput.value = '';
+    answerInput.disabled = true;
+    submitBtn.disabled   = true;
+
+    showState('playing');
+    refreshPills();       /* locks the pills during play */
+
+    startCountdown();
+  }
+
+  function beginPlay() {
+    questionEl.classList.remove('countdown');
+    nextQuestion();
+
+    answerInput.disabled = false;
+    submitBtn.disabled   = false;
+    answerInput.focus();
+
+    startTime = performance.now();
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function finish() {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+
+    answerInput.disabled = true;
+    submitBtn.disabled   = true;
+    answerInput.blur();
+
+    const final = score;
+    const prev  = persistentBest;
+    const isNew = final > prev;
+
+    if (isNew) {
+      persistentBest = final;
+      saveBest(persistentBest);
+    }
+    updateBestDisplays();
+
+    finalScore.textContent = final;
+
+    let msg = '';
+    let neutral = false;
+
+    if (final === 0) {
+      msg = 'Give it another go — you\'ll get there.';
+      neutral = true;
+    } else if (isNew && prev === 0) {
+      msg = 'A first best to beat!';
+      neutral = true;
+    } else if (isNew) {
+      msg = 'New best! 🎉';
+    } else if (final === prev) {
+      msg = 'You matched your best.';
+      neutral = true;
+    } else {
+      msg = 'Just short of your best.';
+      neutral = true;
+    }
+
+    finalMsg.textContent = msg;
+    finalMsg.classList.toggle('neutral', neutral);
+
+    showState('done');
+    refreshPills();
+    againBtn.focus();
+  }
+
+  /* ============================================================
+     ANSWER HANDLING
+     ============================================================ */
+  function flash(ok) {
+    answerInput.classList.remove('flash-ok', 'flash-no');
+    void answerInput.offsetWidth;
+    answerInput.classList.add(ok ? 'flash-ok' : 'flash-no');
+  }
+
+  answerInput.addEventListener('animationend', function () {
+    answerInput.classList.remove('flash-ok', 'flash-no');
+  });
+
+  answerInput.addEventListener('input', function () {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);
+  });
+
+  answerForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (phase !== 'playing') return;
+    if (countdownId) return;              /* still counting down */
+
+    const raw = answerInput.value.trim();
+    if (raw === '') return;
+
+    const guess   = parseInt(raw, 10);
+    const correct = (guess === current.answer);
+
+    if (correct) {
+      score++;
+      scoreVal.textContent = score;
+    }
+
+    flash(correct);
+
+    answerInput.value = '';
+    nextQuestion();
+    answerInput.focus();
+  });
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
+  startBtn.addEventListener('click', startGame);
+  againBtn.addEventListener('click', startGame);
+
+  /* ============================================================
+     BOOT
+     ============================================================ */
+  persistentBest = loadBest();
+  updateBestDisplays();
+  showState('ready');
+  refreshPills();
+
+})();
+</script>
+</body>
+</html>
