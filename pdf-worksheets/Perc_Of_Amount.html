@@ -50,7 +50,10 @@
   .toolbar button:hover{background:#334155}
   .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
   .toolbar button.primary:hover{background:var(--accent-dark)}
-  .chk{cursor:pointer}
+  .toolbar button.reveal-on{
+    background:#15803d; border-color:#16a34a;
+  }
+  .toolbar button.reveal-on:hover{background:#166534}
 
   /* ---------------- paper ---------------- */
   .viewport{
@@ -83,6 +86,17 @@
     border-color:#000;
     box-sizing:border-box;
   }
+
+  /* ---------- inline answers: hidden by default, shown on reveal ---------- */
+  .page .ans{
+    display: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .page.reveal .ans{
+    display: block;
+  }
+
   .hint{
     text-align:center; color:var(--muted);
     font-size:13px; line-height:1.5;
@@ -107,6 +121,8 @@
       width:210mm;
       height:296.9mm;
     }
+    /* Answers NEVER print — regardless of on-screen reveal state. */
+    .page .ans{ display: none !important; }
   }
 </style>
 </head>
@@ -145,10 +161,11 @@
   </label>
 
   <label class="chk"><input type="checkbox" id="decChk" checked> Decimal answers</label>
-  <label class="chk"><input type="checkbox" id="ansChk"> Show answers</label>
 
+  <button id="revealBtn">👁 Reveal answers</button>
   <button id="regenBtn" class="primary">🎲 Generate New</button>
-  <button id="dlBtn">⬇️ Download PDF</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
   <button id="printBtn">🖨️ Print</button>
 </div>
 
@@ -157,11 +174,12 @@
 </div>
 
 <p class="hint no-print">
-  Progression: the first 3–5 questions are always 10% (the last of them a decimal),
-  then 20/30/40% → 25/50/75% specials → 5/15/35/…/95% and decimals.<br>
-  <b>Download PDF</b> saves a real A4 PDF (vector text — light on toner).
-  <b>Print</b> uses your browser's print dialog.<br>
-  Add <kbd>?seed=12345</kbd> to the URL to reproduce a sheet exactly.
+  <b>Reveal answers</b> shows them inline under each question on screen — nothing downloads,
+  and they're never printed.<br>
+  <b>Worksheet PDF</b> saves the questions only. <b>Answers PDF</b> saves a separate one-page key.<br>
+  <b>Print</b> always prints the question sheet alone.<br>
+  Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd>
+  to open it with answers already revealed.
 </p>
 
 <script>
@@ -228,23 +246,9 @@
 
   /* ============================================================
      QUESTION GENERATION
-     ------------------------------------------------------------
-     The sheet is laid out as:
-
-       [ 1 .. k ]    always 10% questions — the last of these
-                     is a decimal (10% of a non-multiple of 10).
-
-       [ k+1 .. n ]  split into three positional zones, so the
-                     ramp is fixed but the picks stay random:
-
-         early  (t < 0.34)   20/30/40 % dominant, a couple of 10%s
-         mid    (t < 0.67)   25/50/75 % specials + 60/70/80/90 %
-         end    (t >= 0.67)  5/15/35/45/55/65/85/95 % + decimals,
-                             and NO 10 % questions at all.
      ============================================================ */
 
   function planStages(n, allowDec) {
-    /* --- Fixed prefix: the first 3–5 questions are 10 % ones. --- */
     let k;
     if (n <= 10) k = 3;
     else if (n <= 16) k = 4;
@@ -254,12 +258,11 @@
     const plan = [];
     if (allowDec) {
       for (let i = 0; i < k - 1; i++) plan.push('A');
-      plan.push('E');                        /* last of the block: decimal */
+      plan.push('E');
     } else {
       for (let i = 0; i < k; i++) plan.push('A');
     }
 
-    /* --- Remaining positions, split by progress t through the sheet --- */
     const m = n - k;
     for (let p = 0; p < m; p++) {
       const t = (m <= 1) ? 0 : (p / (m - 1));
@@ -285,102 +288,63 @@
     return plan;
   }
 
-  /* ---- individual generators ---- */
+  function genA() { const k = ri(2, 30); return { p: 10, B: k * 10, a: k }; }
 
-  function genA() {                       /* 10% of a multiple of 10 */
-    const k = ri(2, 30);
-    return { p: 10, B: k * 10, a: k };
-  }
-
-  function genE() {                       /* 10% of a non-multiple of 10 */
-    let B;
-    do { B = ri(5, 99); } while (B % 10 === 0);
+  function genE() {
+    let B; do { B = ri(5, 99); } while (B % 10 === 0);
     return { p: 10, B: B, a: B / 10 };
   }
 
-  function genB() {                       /* 25 / 50 / 75 % specials */
+  function genB() {
     const kind = pick(['50', '25', '75']);
-    if (kind === '50') {
-      const k = ri(10, 120);
-      return { p: 50, B: 2 * k, a: k };
-    }
+    if (kind === '50') { const k = ri(10, 120); return { p: 50, B: 2 * k, a: k }; }
     const k = ri(3, 50);
     if (kind === '25') return { p: 25, B: 4 * k, a: k };
     return { p: 75, B: 4 * k, a: 3 * k };
   }
 
-  function genC1() {                      /* 20 / 30 / 40 % — easy decades */
+  function genC1() {
     const p = pick([20, 30, 40]);
     let B;
-    if (p === 30) B = 10 * ri(3, 30);
-    else          B = 5  * ri(6, 60);
+    if (p === 30) B = 10 * ri(3, 30); else B = 5 * ri(6, 60);
     return { p: p, B: B, a: p * B / 100 };
   }
 
-  function genC2() {                      /* 60 / 70 / 80 / 90 % */
+  function genC2() {
     const p = pick([60, 70, 80, 90]);
     let B;
-    if (p === 70 || p === 90) B = 10 * ri(3, 30);
-    else                      B = 5  * ri(6, 60);
+    if (p === 70 || p === 90) B = 10 * ri(3, 30); else B = 5 * ri(6, 60);
     return { p: p, B: B, a: p * B / 100 };
   }
 
-  function genD() {                       /* 5/15/35/45/55/65/85/95 % */
+  function genD() {
     const p = pick([5, 15, 35, 45, 55, 65, 85, 95]);
     const B = 20 * ri(2, 25);
     return { p: p, B: B, a: p * B / 100 };
   }
 
-  function genF() {                       /* hard decimals — mixed variants */
-    const kind = pick([
-      '50odd','25of2','75of2','5of10','15of10','30of5',
-      '15not20','20not5','40not5'
-    ]);
-
-    if (kind === '50odd') {
-      const B = 2 * ri(2, 20) + 1;
-      return { p: 50, B: B, a: B / 2 };
-    }
-    if (kind === '25of2') {
-      const B = 4 * ri(1, 12) + 2;
-      return { p: 25, B: B, a: B / 4 };
-    }
-    if (kind === '75of2') {
-      const B = 4 * ri(1, 12) + 2;
-      return { p: 75, B: B, a: 3 * B / 4 };
-    }
-    if (kind === '5of10') {
-      const B = 20 * ri(1, 6) + 10;
-      return { p: 5, B: B, a: B / 20 };
-    }
-    if (kind === '15of10') {
-      const B = 20 * ri(1, 6) + 10;
-      return { p: 15, B: B, a: 3 * B / 20 };
-    }
-    if (kind === '30of5') {
-      const B = 10 * ri(1, 9) + 5;
-      return { p: 30, B: B, a: 3 * B / 10 };
-    }
+  function genF() {
+    const kind = pick(['50odd','25of2','75of2','5of10','15of10','30of5',
+                       '15not20','20not5','40not5']);
+    if (kind === '50odd')  { const B = 2 * ri(2, 20) + 1; return { p: 50, B: B, a: B / 2 }; }
+    if (kind === '25of2')  { const B = 4 * ri(1, 12) + 2; return { p: 25, B: B, a: B / 4 }; }
+    if (kind === '75of2')  { const B = 4 * ri(1, 12) + 2; return { p: 75, B: B, a: 3 * B / 4 }; }
+    if (kind === '5of10')  { const B = 20 * ri(1, 6) + 10; return { p: 5,  B: B, a: B / 20 }; }
+    if (kind === '15of10') { const B = 20 * ri(1, 6) + 10; return { p: 15, B: B, a: 3 * B / 20 }; }
+    if (kind === '30of5')  { const B = 10 * ri(1, 9) + 5;  return { p: 30, B: B, a: 3 * B / 10 }; }
     if (kind === '15not20') {
-      const opts = [6, 8, 12, 14, 16, 18, 22, 24, 26, 28, 32, 34, 36, 38];
-      const B = pick(opts);
-      return { p: 15, B: B, a: 3 * B / 20 };
+      const opts = [6,8,12,14,16,18,22,24,26,28,32,34,36,38];
+      const B = pick(opts); return { p: 15, B: B, a: 3 * B / 20 };
     }
     if (kind === '20not5') {
-      let B;
-      do { B = ri(6, 40); } while (B % 5 === 0);
+      let B; do { B = ri(6, 40); } while (B % 5 === 0);
       return { p: 20, B: B, a: B / 5 };
     }
-    let B;
-    do { B = ri(6, 40); } while (B % 5 === 0);
+    let B; do { B = ri(6, 40); } while (B % 5 === 0);
     return { p: 40, B: B, a: 40 * B / 100 };
   }
 
-  const GENS = {
-    A: genA, E: genE, B: genB,
-    C1: genC1, C2: genC2,
-    D: genD, F: genF
-  };
+  const GENS = { A: genA, E: genE, B: genB, C1: genC1, C2: genC2, D: genD, F: genF };
 
   function generateSet(count, allowDec) {
     const plan = planStages(count, allowDec);
@@ -400,12 +364,10 @@
     return out;
   }
 
-  function fmtNum(x) {
-    return String(Math.round(x * 100) / 100);
-  }
+  function fmtNum(x) { return String(Math.round(x * 100) / 100); }
 
   /* ============================================================
-     LAYOUT ENGINE  (PostScript points, A4 portrait)
+     LAYOUT ENGINE
      ============================================================ */
   const PW = 595.276;
   const PH = 841.890;
@@ -413,17 +375,16 @@
 
   const FS_BY_COLS = { 1: 17, 2: 15, 3: 13, 4: 10.5 };
 
+  /* ---------- the question sheet (answers included inline; hidden by CSS) ---------- */
   function layoutSheet(opts) {
     const title = opts.title;
     const questions = opts.questions;
     const cols = opts.cols;
-    const showAnswers = opts.showAnswers;
 
     const items = [];
     const innerW = PW - 2 * MG;
     let top = MG;
 
-    /* ---- title ---- */
     const ts = 19;
     const tw = textWidth(title, ts, true);
     let bl = top + ts * 0.78;
@@ -431,11 +392,9 @@
                  size: ts, bold: true, s: title });
     top = bl + ts * 0.32 + 6;
 
-    /* ---- rule under title ---- */
     items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
     top += 17;
 
-    /* ---- name / date ---- */
     const ns = 10.5;
     bl = top + ns * 0.78;
 
@@ -454,7 +413,6 @@
 
     top = bl + 20;
 
-    /* ---- grid of rounded-rectangle question boxes ---- */
     const n = questions.length;
     const rows = Math.ceil(n / cols);
     const gridTop = top;
@@ -478,6 +436,7 @@
       const cx = MG + c * colW;
       const cy = gridY0 + r * rowH;
 
+      /* box */
       items.push({
         t: 'rrect',
         x: cx + INSET,
@@ -490,22 +449,87 @@
 
       const base = cy + INSET + PAD + fs * 0.78;
 
+      /* question number */
       const numStr = (i + 1) + '.';
       items.push({ t: 'text', x: cx + INSET + PAD, y: base,
                    size: fs, bold: true, s: numStr });
       const numW = textWidth(numStr, fs, true) + 4;
 
+      /* question text */
       const qs = q.p + '% of ' + q.B + ' =';
       items.push({ t: 'text', x: cx + INSET + PAD + numW, y: base,
                    size: fs, bold: false, s: qs });
 
-      if (showAnswers) {
-        const qw = textWidth(qs, fs, false);
-        const ax = cx + INSET + PAD + numW + qw + 7;
-        items.push({ t: 'text', x: ax, y: base,
-                     size: fs, bold: false, s: fmtNum(q.a) });
-      }
+      /* inline answer, right-aligned in the working space below the question.
+         Always laid out; visibility is controlled purely by CSS. */
+      const ansStr = fmtNum(q.a);
+      const ansY = base + fs * 2.2;
+      const boxRight = cx + INSET + (colW - 2 * INSET) - PAD;
+      const ansW = textWidth(ansStr, fs, true);
+      items.push({
+        t: 'answer',
+        x: boxRight - ansW,
+        y: ansY,
+        size: fs,
+        bold: true,
+        s: ansStr
+      });
     });
+
+    return items;
+  }
+
+  /* ---------- separate one-page answer key (for the answers-PDF download) ---------- */
+  function layoutAnswerKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
+
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' — Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true, s: heading });
+    top = bl + ts * 0.32 + 6;
+
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 20;
+
+    const n = questions.length;
+    let cols, fs, rowH;
+    if (n <= 12)      { cols = 2; fs = 12;   rowH = 22; }
+    else if (n <= 24) { cols = 3; fs = 11;   rowH = 20; }
+    else              { cols = 4; fs = 10.5; rowH = 18; }
+
+    const rows = Math.ceil(n / cols);
+    const colW = innerW / cols;
+    const blockH = rows * rowH;
+    const startY = top + Math.max(0, (PH - MG - top - blockH - 40) / 2);
+
+    questions.forEach(function (q, i) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const x0 = MG + c * colW;
+      const y  = startY + r * rowH + fs * 0.78;
+
+      const numStr = (i + 1) + '.';
+      items.push({ t: 'text', x: x0, y: y, size: fs, bold: true, s: numStr });
+      const numW = textWidth(numStr, fs, true) + 4;
+
+      const body = ' ' + q.p + '% of ' + q.B + ' = ' + fmtNum(q.a);
+      items.push({ t: 'text', x: x0 + numW, y: y, size: fs, bold: false, s: body });
+    });
+
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    items.push({ t: 'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false, s: note });
 
     return items;
   }
@@ -531,6 +555,14 @@
           t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
           (it.bold ? 'font-weight:700;' : '') + '">' + esc(it.s) + '</span>');
 
+      } else if (it.t === 'answer') {
+        /* Same positioning math, but rendered as a .ans span — hidden
+           unless the .page has .reveal, and never printed. */
+        const t = it.y - it.size * 0.755;
+        parts.push('<span class="tx ans" style="left:' + it.x.toFixed(2) + 'pt;top:' +
+          t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+          'font-weight:700;">' + esc(it.s) + '</span>');
+
       } else if (it.t === 'line') {
         parts.push('<span class="ln" style="left:' + it.x1.toFixed(2) + 'pt;top:' +
           it.y1.toFixed(2) + 'pt;width:' + (it.x2 - it.x1).toFixed(2) +
@@ -547,7 +579,7 @@
   }
 
   /* ============================================================
-     PDF WRITER  (single page, Helvetica, vector text)
+     PDF WRITER
      ============================================================ */
   function pdfEsc(s) {
     let out = '';
@@ -571,6 +603,8 @@
 
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
+      /* 'answer' items are never written into the question PDF */
+      if (it.t === 'answer') continue;
 
       if (it.t === 'text') {
         ops.push('BT /' + (it.bold ? 'F2' : 'F1') + ' ' + it.size.toFixed(2) +
@@ -659,15 +693,17 @@
   /* ============================================================
      STATE + RENDER
      ============================================================ */
-  const titleInput = document.getElementById('titleInput');
-  const seedInput  = document.getElementById('seedInput');
-  const countSel   = document.getElementById('countSel');
-  const colsSel    = document.getElementById('colsSel');
-  const decChk     = document.getElementById('decChk');
-  const ansChk     = document.getElementById('ansChk');
+  const titleInput  = document.getElementById('titleInput');
+  const seedInput   = document.getElementById('seedInput');
+  const countSel    = document.getElementById('countSel');
+  const colsSel     = document.getElementById('colsSel');
+  const decChk      = document.getElementById('decChk');
+  const revealBtn   = document.getElementById('revealBtn');
+  const pageEl      = document.getElementById('page');
 
   let currentQuestions = [];
   let lastItems = [];
+  let lastAnswerItems = [];
 
   function chosenCols(n) {
     const v = colsSel.value;
@@ -683,14 +719,19 @@
   }
 
   function renderSheet() {
-    const cols = chosenCols(currentQuestions.length);
     lastItems = layoutSheet({
       title: sheetTitle(),
       questions: currentQuestions,
-      cols: cols,
-      showAnswers: ansChk.checked
+      cols: chosenCols(currentQuestions.length)
     });
     drawHTML(lastItems);
+
+    lastAnswerItems = layoutAnswerKey({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+
     fitPage();
   }
 
@@ -715,6 +756,19 @@
   }
 
   /* ============================================================
+     INLINE REVEAL TOGGLE (screen only — never printed)
+     ============================================================ */
+  function setRevealed(on) {
+    pageEl.classList.toggle('reveal', !!on);
+    revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!pageEl.classList.contains('reveal'));
+  });
+
+  /* ============================================================
      SEED / URL
      ============================================================ */
   function applySeed() {
@@ -727,6 +781,11 @@
     if (p === null) return null;
     const n = parseInt(p, 10);
     return isNaN(n) ? null : n;
+  }
+
+  function getAnswersFromURL() {
+    const p = new URLSearchParams(window.location.search).get('answers');
+    return p === '1' || p === 'true';
   }
 
   function setSeedInURL(seed) {
@@ -750,6 +809,10 @@
     );
   }
 
+  function safeFilename(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
   /* ============================================================
      EVENTS
      ============================================================ */
@@ -762,10 +825,16 @@
 
   document.getElementById('dlBtn').addEventListener('click', function () {
     if (!lastItems.length) return;
-    const name = 'percentages-' + sheetTitle().toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') +
-      '-' + seedInput.value + '.pdf';
+    const name = 'percentages-' + safeFilename(sheetTitle()) +
+                 '-' + seedInput.value + '.pdf';
     downloadPDF(lastItems, name);
+  });
+
+  document.getElementById('dlAnsBtn').addEventListener('click', function () {
+    if (!lastAnswerItems.length) return;
+    const name = 'percentages-' + safeFilename(sheetTitle()) +
+                 '-ANSWERS-' + seedInput.value + '.pdf';
+    downloadPDF(lastAnswerItems, name);
   });
 
   document.getElementById('printBtn').addEventListener('click', function () {
@@ -781,7 +850,6 @@
   countSel.addEventListener('change', function () { applySeed(); regenerate(); });
   colsSel.addEventListener('change', renderSheet);
   decChk.addEventListener('change', function () { applySeed(); regenerate(); });
-  ansChk.addEventListener('change', renderSheet);
   titleInput.addEventListener('input', renderSheet);
 
   window.addEventListener('resize', fitPage);
@@ -796,6 +864,9 @@
     regenerate();
     setSeedInURL(seedInput.value);
     fitPage();
+
+    /* ?answers=1 opens the sheet with answers already revealed */
+    if (getAnswersFromURL()) setRevealed(true);
   }
 
   if (document.readyState === 'complete') boot();
