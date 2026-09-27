@@ -356,6 +356,45 @@ body.dragging-active .q.drag-source .drop-zone .qmark{
 .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
 .btn.primary:hover{background:var(--accent-dark)}
 
+/* ---------------- end of sheet ---------------- */
+.finish-row{display:flex; justify-content:center; margin:26px 0 4px}
+.finish-row .btn{min-height:48px; padding:10px 22px; font-size:17px}
+.confetti{position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; z-index:10000}
+.sum-name{display:flex; flex-direction:column; gap:4px; font-size:13px; font-weight:700; color:var(--muted); margin:10px 0 14px}
+.sum-name input{padding:9px 10px; border:1.5px solid var(--line); border-radius:8px; font-size:16px; color:var(--ink)}
+.sum-stats{display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:0 0 14px}
+.sum-stats div{background:#f8fafc; border:1.5px solid var(--line-soft); border-radius:10px; padding:10px 6px; text-align:center}
+.sum-stats b{display:block; font-size:24px; font-variant-numeric:tabular-nums}
+.sum-stats span{font-size:12.5px; color:var(--muted)}
+.sum-marks{list-style:none; margin:0 0 12px; padding:0; display:flex; flex-wrap:wrap; gap:6px}
+.mk{display:flex; flex-direction:column; align-items:center; min-width:36px; padding:3px 4px; border-radius:8px; border:1.5px solid var(--line-soft); font-size:12px}
+.mk-n{color:var(--muted); font-weight:700}
+.mk-s{font-weight:800; font-size:15px}
+.mk-1{background:var(--ok-soft); border-color:#86efac; color:#166534}
+.mk-2, .mk-3{background:#fef3c7; border-color:#fcd34d; color:#92400e}
+.mk-0{background:#f1f5f9; color:#94a3b8}
+.sum-marks.small .mk{min-width:28px; font-size:10.5px; padding:2px 3px}
+.sum-marks.small .mk-s{font-size:12.5px}
+.sum-code{margin:4px 0; font-size:14px; color:var(--muted)}
+.sum-code b{display:inline-block; margin-left:6px; font-size:20px; letter-spacing:1.5px; color:var(--ink); font-family:ui-monospace, Menlo, Consolas, monospace}
+.sum-help{font-size:13.5px}
+
+/* check codes (teacher) */
+.dlg-wide{width:min(860px, calc(100vw - 32px))}
+.dlg textarea{width:100%; padding:9px 10px; border:1.5px solid var(--line); border-radius:8px; font:15px ui-monospace, Menlo, Consolas, monospace}
+.table-wrap{overflow-x:auto; margin-top:12px}
+.check-table{border-collapse:collapse; width:100%; font-size:14px}
+.check-table th, .check-table td{border-bottom:1px solid var(--line-soft); padding:7px 8px; text-align:left; vertical-align:top}
+.check-table th{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px}
+.check-table .code{font:12px ui-monospace, Menlo, Consolas, monospace; color:var(--muted)}
+.check-table .sum-marks{margin:0}
+.bad{color:#b91c1c; font-weight:700}
+.warn-t{color:#92400e; font-weight:700}
+@media (max-width:480px){
+  .sum-stats b{font-size:20px}
+  .dlg-body{padding:18px 16px 16px}
+}
+
 /* ---------------- errors ---------------- */
 .error-box{
   max-width:640px; margin:40px auto; padding:18px 22px;

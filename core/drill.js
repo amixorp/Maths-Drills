@@ -218,6 +218,83 @@
     else show();
   };
 
+  /* ============================================================
+     RESULTS CODE
+     A short code a student can show or send their teacher, e.g.
+     "4K7P-QX9M-2TZ8-A". It packs: which drill, which sheet (seed +
+     settings), minutes taken and, for every question, how many
+     tries it took (0 = not done, 1, 2, 3 = three or more), plus a
+     check value so a mistyped or edited code is spotted. It is a
+     deterrent, not security. Teachers decode codes on the drill
+     page with "Check codes".
+     ============================================================ */
+  function fnv(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return h >>> 0;
+  }
+  const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';    // Crockford: no I, L, O, U
+  const CODE_SALT = 'maths-drills/1:';
+  const CODE_VERSION = 1;
+
+  /* Stable text for "this exact sheet": the seed plus non-default settings. */
+  function sheetId(specs, seed, settings) {
+    const p = new URLSearchParams();
+    settingsToParams(specs, settings, p);
+    p.sort();
+    return seed + '?' + p.toString();
+  }
+  const drillHash = cfg => fnv(cfg.id) & 1023;
+  const sheetHash = (specs, seed, settings) => fnv(sheetId(specs, seed, settings)) & 0xFFFF;
+
+  function encodeResult(r) {       // r = { drill, sheet, minutes, marks: [0..3] }
+    let bits = 0n, len = 0;
+    const put = (v, w) => { bits = (bits << BigInt(w)) | BigInt(v & ((1 << w) - 1)); len += w; };
+    put(CODE_VERSION, 2); put(r.drill, 10); put(r.sheet, 16);
+    put(r.marks.length, 5); put(Math.min(63, Math.max(0, r.minutes)), 6);
+    r.marks.forEach(m => put(Math.min(3, m), 2));
+    put(fnv(CODE_SALT + bits.toString(36) + ':' + len) & 1023, 10);
+    const pad = (5 - len % 5) % 5;
+    bits <<= BigInt(pad); len += pad;
+    let s = '';
+    for (let i = len - 5; i >= 0; i -= 5) s += B32[Number((bits >> BigInt(i)) & 31n)];
+    return s.replace(/(.{4})(?=.)/g, '$1-');
+  }
+
+  function decodeResult(code) {
+    const clean = String(code).toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1').replace(/[^0-9A-Z]/g, '');
+    if (clean.length < 10) return null;
+    let bits = 0n;
+    for (const ch of clean) {
+      const v = B32.indexOf(ch);
+      if (v < 0) return null;
+      bits = (bits << 5n) | BigInt(v);
+    }
+    const total = clean.length * 5;
+    let pos = total;
+    const take = w => {
+      pos -= w;
+      if (pos < 0) throw new Error('short');
+      return Number((bits >> BigInt(pos)) & ((1n << BigInt(w)) - 1n));
+    };
+    try {
+      if (take(2) !== CODE_VERSION) return null;
+      const drill = take(10), sheet = take(16), n = take(5), minutes = take(6);
+      const marks = [];
+      for (let i = 0; i < n; i++) marks.push(take(2));
+      const dataLen = total - pos;
+      const data = bits >> BigInt(pos);
+      const check = take(10);
+      if (pos >= 5) return null;                         // extra characters
+      if ((fnv(CODE_SALT + data.toString(36) + ':' + dataLen) & 1023) !== check) return null;
+      return { drill, sheet, minutes, marks };
+    } catch (e) {
+      return null;
+    }
+  }
+  Drill.encodeResult = encodeResult;
+  Drill.decodeResult = decodeResult;
+
   if (!HAS_DOM) {
     if (typeof module === 'object' && module.exports) module.exports = Drill;
     return;
@@ -293,9 +370,10 @@
       '<div class="tb-settings unlocked-only" id="tbSettings">' + S.specs.map(settingControl).join('') + '</div>' +
       '<button type="button" id="optionsBtn" class="student-only unlocked-only" aria-expanded="false" aria-controls="tbSettings">⚙️<span class="btn-text"> Options</span></button>' +
       '<button type="button" id="regenBtn" class="primary unlocked-only">🎲<span class="btn-text"> New questions</span></button>' +
-      '<button type="button" id="resetBtn">↺<span class="btn-text"> Reset</span></button>' +
+      '<button type="button" id="resetBtn" class="unlocked-only">↺<span class="btn-text"> Reset</span></button>' +
       '<button type="button" id="printBtn" class="teacher-only">🖨️<span class="btn-text"> Print</span></button>' +
       '<button type="button" id="shareBtn" class="teacher-only">📲<span class="btn-text"> Share to students</span></button>' +
+      '<button type="button" id="checkBtn" class="teacher-only">🔎<span class="btn-text"> Check codes</span></button>' +
       '<label class="chk teacher-only"><input type="checkbox" id="answersChk"><span>Show answers</span></label>' +
       '<span class="score-chip" id="scoreTag" aria-live="polite"></span>';
     document.body.insertBefore(tb, document.body.firstChild);
@@ -319,6 +397,7 @@
     $('resetBtn').addEventListener('click', resetAnswers);
     $('printBtn').addEventListener('click', () => global.print());
     $('shareBtn').addEventListener('click', openShare);
+    $('checkBtn').addEventListener('click', openCheck);
     $('answersChk').addEventListener('change', toggleKey);
     $('seedInput').addEventListener('change', () => { setSeed($('seedInput').value); regenerate(); });
   }
@@ -437,11 +516,16 @@
         ' <span class="seed-note">(Seed: ' + S.seed + ')</span>' +
       '</p>' +
       '<div class="questions">' + S.questions.map(renderQuestion).join('') + '</div>' +
+      '<div class="finish-row no-print"><button type="button" class="btn primary" id="finishBtn">✅ I’ve finished</button></div>' +
       '<section class="key" id="keySection">' +
         '<h2>Answer Key</h2>' +
         '<div class="key-grid">' + keyGrid + '</div>' +
       '</section>';
+    $('finishBtn').addEventListener('click', () => openSummary(false));
 
+    S.startedAt = Date.now();
+    S.finished = false;
+    restoreProgress();
     toggleKey();
     updateScore();
     updateUrl();
@@ -509,16 +593,35 @@
       fit(slot);
     }
     if (ok) {
-      state.solved = true;
-      qEl.dataset.locked = '1';
-      qEl.classList.add('solved');
-      opt.classList.add('correct');
-      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+      markSolved(qEl, idx, PRAISE[Math.floor(Math.random() * PRAISE.length)]);
     } else {
       opt.classList.add('wrong');
       setFeedback(qEl, 'no', 'Not quite — try again!');
     }
     updateScore();
+    saveProgress();
+    if (ok && !S.finished && S.qState.every(s => s.solved)) {
+      S.finished = true;
+      saveProgress();
+      celebrate().then(() => openSummary(true));
+    }
+  }
+
+  function markSolved(qEl, idx, msg) {
+    const qi = parseInt(qEl.dataset.q, 10);
+    S.qState[qi].solved = true;
+    qEl.dataset.locked = '1';
+    qEl.classList.add('solved');
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (opt) opt.classList.add('correct');
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const vis = opt && opt.querySelector('.opt-visual');
+    if (slot && vis && !slot.classList.contains('filled')) {
+      slot.innerHTML = vis.innerHTML;
+      slot.classList.add('filled');
+      fit(slot);
+    }
+    setFeedback(qEl, 'ok', msg);
   }
 
   function setFeedback(qEl, cls, msg) {
@@ -539,7 +642,243 @@
       setFeedback(qEl, '', '');
     });
     S.qState = S.qState.map(() => ({ solved: false, attempts: 0 }));
+    S.startedAt = Date.now();
+    S.finished = false;
+    clearProgress();
     updateScore();
+  }
+
+  /* ============================================================
+     SAVED PROGRESS
+     Answers are kept in this browser for each exact sheet, so a
+     refresh or an accidental swipe back doesn't lose a student's
+     work. Only the most recent sheets are kept.
+     ============================================================ */
+  const MAX_SAVED = 30;
+  function progressKey() {
+    return 'progress.' + S.cfg.id + '.' + sheetId(S.specs, S.seed, S.settings);
+  }
+  function saveProgress() {
+    const key = progressKey();
+    store.set(key, JSON.stringify({
+      t: S.startedAt,
+      f: S.finished ? 1 : 0,
+      q: S.qState.map(s => [s.solved ? 1 : 0, s.attempts])
+    }));
+    let keys = [];
+    try { keys = JSON.parse(store.get('progressKeys') || '[]'); } catch (e) { keys = []; }
+    keys = keys.filter(k => k !== key).concat(key);
+    while (keys.length > MAX_SAVED) {
+      try { global.localStorage.removeItem('mathsDrills.' + keys.shift()); } catch (e) { keys.shift(); }
+    }
+    store.set('progressKeys', JSON.stringify(keys));
+  }
+  function clearProgress() {
+    try { global.localStorage.removeItem('mathsDrills.' + progressKey()); } catch (e) { /* storage blocked */ }
+  }
+  function restoreProgress() {
+    let saved = null;
+    try { saved = JSON.parse(store.get(progressKey()) || 'null'); } catch (e) { saved = null; }
+    if (!saved || !Array.isArray(saved.q) || saved.q.length !== S.questions.length) return;
+    S.startedAt = saved.t || S.startedAt;
+    S.finished = !!saved.f;
+    saved.q.forEach(([solved, attempts], i) => {
+      S.qState[i].attempts = attempts || 0;
+      if (!solved) return;
+      const qEl = document.querySelector('.q[data-q="' + i + '"]');
+      const idx = S.questions[i].options.findIndex(o => o.ok);
+      if (qEl && idx >= 0) markSolved(qEl, idx, 'Correct!');
+    });
+  }
+
+  /* ============================================================
+     END OF SHEET — a short celebration, then the summary
+     ============================================================ */
+  function celebrate() {
+    const reduce = global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || !document.createElement('canvas').getContext) return Promise.resolve();
+    return new Promise(resolve => {
+      const c = document.createElement('canvas');
+      c.className = 'confetti';
+      const dpr = Math.min(2, global.devicePixelRatio || 1);
+      const W = global.innerWidth, H = global.innerHeight;
+      c.width = W * dpr; c.height = H * dpr;
+      document.body.appendChild(c);
+      const ctx = c.getContext('2d');
+      ctx.scale(dpr, dpr);
+      const colours = ['#2563eb', '#16a34a', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6'];
+      const bits = [];
+      for (let i = 0; i < 90; i++) {
+        bits.push({
+          x: W / 2 + (Math.random() - 0.5) * W * 0.3, y: H * 0.35,
+          vx: (Math.random() - 0.5) * 14, vy: -6 - Math.random() * 9,
+          r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.3,
+          w: 6 + Math.random() * 6, h: 4 + Math.random() * 4,
+          c: colours[i % colours.length]
+        });
+      }
+      const t0 = performance.now();
+      const DURATION = 1500;
+      (function frame(now) {
+        const t = now - t0;
+        ctx.clearRect(0, 0, W, H);
+        ctx.globalAlpha = Math.max(0, 1 - Math.max(0, t - DURATION * 0.6) / (DURATION * 0.4));
+        bits.forEach(b => {
+          b.vy += 0.35; b.vx *= 0.99; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+          ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.r);
+          ctx.fillStyle = b.c; ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+          ctx.restore();
+        });
+        if (t < DURATION) global.requestAnimationFrame(frame);
+        else { c.remove(); resolve(); }
+      })(t0);
+    });
+  }
+
+  function formatTime(ms) {
+    const s = Math.max(0, Math.round(ms / 1000));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  /* 0 = not solved, 1 = first try, 2 = second try, 3 = three or more */
+  const markOf = s => (!s.solved ? 0 : Math.min(3, s.attempts));
+
+  function currentResult() {
+    return {
+      drill: drillHash(S.cfg),
+      sheet: sheetHash(S.specs, S.seed, S.settings),
+      minutes: Math.round((Date.now() - S.startedAt) / 60000),
+      marks: S.qState.map(markOf)
+    };
+  }
+
+  function markHTML(m, i) {
+    const label = ['not done', 'right first time', 'right on the 2nd try', 'right after 3+ tries'][m];
+    return '<li class="mk mk-' + m + '" title="Q' + (i + 1) + ': ' + label + '">' +
+      '<span class="mk-n">' + (i + 1) + '</span><span class="mk-s">' + (m === 0 ? '–' : m === 1 ? '✓' : '✓' + m) + '</span></li>';
+  }
+
+  function openSummary(complete) {
+    let dlg = $('summaryDlg');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'summaryDlg';
+      dlg.className = 'dlg';
+      dlg.innerHTML =
+        '<div class="dlg-body">' +
+          '<h2 id="sumTitle"></h2>' +
+          '<label class="sum-name">Your name <input id="sumName" maxlength="40" autocomplete="name"></label>' +
+          '<div class="sum-stats">' +
+            '<div><b id="sumScore"></b><span>correct</span></div>' +
+            '<div><b id="sumFirst"></b><span>right first time</span></div>' +
+            '<div><b id="sumTime"></b><span>time taken</span></div>' +
+          '</div>' +
+          '<ol class="sum-marks" id="sumMarks" aria-label="Each question"></ol>' +
+          '<p class="sum-code">Results code <b id="sumCode"></b></p>' +
+          '<p class="sum-help">Show this to your teacher, or press <b>Copy results</b> and send it to them.</p>' +
+          '<div class="dlg-actions">' +
+            '<button type="button" class="btn" id="sumCopy">Copy results</button>' +
+            '<button type="button" class="btn primary" id="sumClose">Back to the sheet</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(dlg);
+      $('sumName').value = store.get('name') || '';
+      $('sumName').addEventListener('input', () => store.set('name', $('sumName').value.trim()));
+      $('sumClose').addEventListener('click', () => closeDialog(dlg));
+      $('sumCopy').addEventListener('click', () => {
+        const r = currentResult();
+        const solved = r.marks.filter(m => m > 0).length;
+        const text = ($('sumName').value.trim() || 'No name') + ' — ' + stripTags(S.cfg.title) +
+          ' — ' + solved + '/' + r.marks.length + ' correct, ' + r.marks.filter(m => m === 1).length +
+          ' first time — ' + $('sumTime').textContent + ' — code ' + $('sumCode').textContent;
+        copyText(text, $('sumCopy'));
+      });
+    }
+    const r = currentResult();
+    const solved = r.marks.filter(m => m > 0).length;
+    $('sumTitle').textContent = complete ? 'Sheet complete! 🎉' :
+      (solved === r.marks.length ? 'All done! 🎉' : 'You’ve answered ' + solved + ' of ' + r.marks.length);
+    $('sumScore').textContent = solved + ' / ' + r.marks.length;
+    $('sumFirst').textContent = r.marks.filter(m => m === 1).length;
+    $('sumTime').textContent = formatTime(Date.now() - S.startedAt);
+    $('sumMarks').innerHTML = r.marks.map(markHTML).join('');
+    $('sumCode').textContent = encodeResult(r);
+    showDialog(dlg);
+  }
+
+  /* ============================================================
+     CHECK CODES (teacher mode) — decode students' results codes
+     for the sheet that is open.
+     ============================================================ */
+  function openCheck() {
+    let dlg = $('checkDlg');
+    if (!dlg) {
+      dlg = document.createElement('dialog');
+      dlg.id = 'checkDlg';
+      dlg.className = 'dlg dlg-wide';
+      dlg.innerHTML =
+        '<div class="dlg-body">' +
+          '<h2>Check results codes</h2>' +
+          '<p>Paste or type students’ codes, one per line (copied messages are fine — the codes are found in the text). ' +
+          'They are checked against the sheet that is open now.</p>' +
+          '<textarea id="checkInput" rows="5" spellcheck="false" placeholder="4K7P-QX9M-2TZ8-A"></textarea>' +
+          '<div id="checkOut"></div>' +
+          '<div class="dlg-actions">' +
+            '<button type="button" class="btn" id="checkRun">Check</button>' +
+            '<button type="button" class="btn primary" id="checkClose">Done</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(dlg);
+      $('checkClose').addEventListener('click', () => closeDialog(dlg));
+      $('checkRun').addEventListener('click', runCheck);
+    }
+    showDialog(dlg);
+  }
+
+  function runCheck() {
+    const lines = $('checkInput').value.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    const myDrill = drillHash(S.cfg), mySheet = sheetHash(S.specs, S.seed, S.settings);
+    const rows = lines.map(line => {
+      /* A code as shown (groups of 4 joined by "-"), else the longest run of
+         letters and digits (a code typed without dashes). */
+      const dashed = line.match(/\b[0-9A-Z]{4}(?:-[0-9A-Z]{1,4}){2,5}\b/gi);
+      const runs = (line.match(/[0-9A-Z]{10,}/gi) || []).sort((a, b) => b.length - a.length);
+      const code = dashed ? dashed[dashed.length - 1] : (runs[0] || line);
+      const who = line.replace(code, '').split('—')[0].replace(/code\s*$/i, '').trim().slice(0, 40);
+      const r = decodeResult(code);
+      let status = '';
+      if (!r) status = '<span class="bad">Not a valid code — check for typos</span>';
+      else if (r.drill !== myDrill) status = '<span class="bad">From a different drill</span>';
+      else if (r.sheet !== mySheet) status = '<span class="warn-t">A different sheet (other seed or settings)</span>';
+      const body = r ? (
+        '<td>' + r.marks.filter(x => x > 0).length + ' / ' + r.marks.length + '</td>' +
+        '<td>' + r.marks.filter(x => x === 1).length + '</td>' +
+        '<td>' + (r.minutes >= 63 ? '63+' : r.minutes) + ' min</td>' +
+        '<td><ol class="sum-marks small">' + r.marks.map(markHTML).join('') + '</ol>' + status + '</td>'
+      ) : '<td colspan="4">' + status + '</td>';
+      return '<tr><td>' + Drill.escape(who || '—') + '<div class="code">' + Drill.escape(code) + '</div></td>' + body + '</tr>';
+    });
+    $('checkOut').innerHTML = rows.length
+      ? '<div class="table-wrap"><table class="check-table"><thead><tr><th>Student</th><th>Correct</th><th>First time</th><th>Time</th><th>Questions</th></tr></thead><tbody>' +
+        rows.join('') + '</tbody></table></div>'
+      : '';
+  }
+
+  /* ---------------- small dialog helpers ---------------- */
+  function showDialog(dlg) { if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute('open', ''); }
+  function closeDialog(dlg) { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+  function stripTags(html) { const d = document.createElement('div'); d.innerHTML = html; return d.textContent; }
+  function copyText(text, btn) {
+    const done = () => { const old = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = old; }, 1500); };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { if (document.execCommand('copy')) done(); } catch (e) { /* ignore */ }
+      ta.remove();
+    };
+    if (navigator.clipboard && global.isSecureContext) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
   }
 
   /* ============================================================

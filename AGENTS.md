@@ -162,7 +162,22 @@ with these variables in `:root`, rather than overriding core rules:
   **Share to students**. It is on when the *Teacher mode on this device* switch
   on `index.html` is ticked, or the address has `?mode=teacher`.
 - **Share to students** gives a link and QR code with `lock=1`: exactly the same
-  questions, and the student can't change the seed or settings.
+  questions, and the student can't change the seed, settings or reset.
+
+## End of sheet and results
+
+- When the last question is solved there is a short confetti burst (skipped if
+  the device asks for reduced motion), then a **summary**: score, right first
+  time, time taken, a ✓ per question (✓2 = second try) and a **results code**.
+  **I've finished** at the bottom of the sheet opens the summary at any time.
+- The **results code** (e.g. `AR3Y-KMR1-5AQZ-0`) packs the drill, the exact
+  sheet, minutes taken and the tries for each question, with a check value.
+  Students can **Copy results** to send in Google Classroom or email.
+- Teachers open the same sheet and press **Check codes**, then paste codes
+  (whole copied messages are fine) to get a table of results. Codes from a
+  different drill or sheet are flagged.
+- Progress is saved in the browser for each sheet, so refreshing doesn't lose
+  work. Drills get all of this from `core/` — don't build your own.
 
 ## What makes a good drill (maths quality)
 
