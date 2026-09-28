@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quadratics &amp; Equations — Practice</title>
+
+<!-- KaTeX: try a local copy first (e.g. the katex/ folder in your repo),
+     and fall back to the jsDelivr CDN if it isn't there. -->
+<link rel="stylesheet" href="katex/katex.min.css">
+<script src="katex/katex.min.js"></script>
+<script>
+  if (typeof katex === 'undefined') {
+    document.write('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">');
+    document.write('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>');
+  }
+</script>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .katex{ font-size: 1em !important; }
+
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* topic picker row */
+  .topicbar{
+    position:sticky; top:0; z-index:49;
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px;
+    padding:10px 20px;
+    background:#1f2937; color:#e5e7eb;
+    border-top:1px solid #374151;
+    font-size:13px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  .topicbar[hidden]{display:none}
+  .topicbar .tb-label{font-weight:700; letter-spacing:.3px; color:#9ca3af}
+  .topicbar label{
+    display:flex; align-items:center; gap:6px; cursor:pointer;
+    padding:4px 10px; border-radius:999px;
+    background:#111827; border:1px solid #374151;
+    transition:background .12s, border-color .12s;
+  }
+  .topicbar label:hover{background:#374151}
+  .topicbar label.on{background:#1d4ed8; border-color:#3b82f6; color:#fff}
+
+  .sheet{
+    background:#fff;
+    max-width:1100px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:25px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted)}
+
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
+    gap:14px;
+  }
+  @media (max-width:900px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px;
+    min-height:80px;
+    margin:2px 0 12px;
+    padding:6px 2px;
+  }
+  .lhs{ font-size: 19px; text-align:center; }
+  .eq{ font-size: 19px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+
+  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:#dbeafe; transform:scale(1.05)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:112px; min-height:58px;
+    padding:8px 14px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; font-weight:800; color:#9ca3af;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
+
+  .options{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(168px,1fr));
+    gap:8px;
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px dashed #e5e7eb;
+  }
+
+  .option{
+    display:flex; align-items:center; gap:8px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fafafa;
+    padding:8px 10px;
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
+    min-width:0;
+  }
+  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+  .opt-letter{
+    flex:none;
+    width:20px; height:20px; border-radius:50%;
+    background:#e5e7eb; color:#374151;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt-visual{
+    flex:1;
+    font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+    min-height:30px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+    text-align:center;
+  }
+
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:10px 16px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);
+    font-size:15px;
+  }
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+  }
+
+  .q-feedback{
+    margin-top:8px; min-height:15px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
+    gap:6px 10px;
+    font-size:13px;
+    color:#374151;
+  }
+  .key-grid b{color:var(--ink)}
+
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🧮 Quadratics &amp; Equations Worksheet</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>4</option>
+      <option>6</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+      <option>15</option>
+    </select>
+  </label>
+  <label>Mode
+    <select id="modeSelect">
+      <option value="mixed" selected>Mixed (progressive)</option>
+      <option value="custom">Choose topics…</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="topicbar no-print" id="topicBar" hidden>
+  <span class="tb-label">Topics:</span>
+  <label class="chk on"><input type="checkbox" value="factorise" checked> Factorising</label>
+  <label class="chk on"><input type="checkbox" value="formula" checked> Quadratic formula</label>
+  <label class="chk on"><input type="checkbox" value="disguised" checked> Disguised (x⁴, x⁶)</label>
+  <label class="chk on"><input type="checkbox" value="surd" checked> Equations with √x</label>
+  <label class="chk on"><input type="checkbox" value="fraction" checked> Algebraic fractions</label>
+  <label class="chk on"><input type="checkbox" value="literal" checked> In terms of k / y</label>
+  <label class="chk on"><input type="checkbox" value="discriminant" checked> Difference of roots</label>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function gcd(a, b) {
+    a = Math.abs(a); b = Math.abs(b);
+    while (b) { const t = a % b; a = b; b = t; }
+    return a || 1;
+  }
+  /* n = s^2 * d  with d squarefree */
+  function squarefree(n) {
+    let s = 1, d = n;
+    for (let f = 2; f * f <= d; f++) {
+      while (d % (f * f) === 0) { d /= f * f; s *= f; }
+    }
+    return { s: s, d: d };
+  }
+
+  /* ============================================================
+     LaTeX / KaTeX RENDERING
+     ============================================================ */
+  function tex(latex) {
+    if (typeof katex === 'undefined') {
+      return '<code>' + String(latex).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</code>';
+    }
+    try {
+      return katex.renderToString(latex, { throwOnError: false, displayMode: false });
+    } catch (e) {
+      return '<code>' + latex + '</code>';
+    }
+  }
+
+  /* ============================================================
+     FORMATTING HELPERS
+     ============================================================ */
+  /* Build a polynomial from a list of {c, v} terms (v = latex for the
+     variable part, '' for a constant).  Signs / coefficients tidied. */
+  function poly(terms) {
+    let s = '', first = true;
+    for (let i = 0; i < terms.length; i++) {
+      const t = terms[i];
+      if (!t.c) continue;
+      const a = Math.abs(t.c);
+      const coef = (a === 1 && t.v) ? '' : String(a);
+      if (first) {
+        s += (t.c < 0 ? '-' : '') + coef + t.v;
+        first = false;
+      } else {
+        s += (t.c < 0 ? ' - ' : ' + ') + coef + t.v;
+      }
+    }
+    return s || '0';
+  }
+  function plusNum(c) {
+    if (c === 0) return '';
+    return c > 0 ? ' + ' + c : ' - ' + (-c);
+  }
+  /* coefficient times a latex body, e.g. -3, "\sqrt{x}" -> "-3\sqrt{x}" */
+  function coefBody(c, body) {
+    if (c === 0) return '0';
+    const sign = c < 0 ? '-' : '';
+    const a = Math.abs(c);
+    return sign + (a === 1 ? '' : String(a)) + body;
+  }
+  function xList(arr) { return 'x = ' + arr.join(',\\; x = '); }
+
+  /* Exact solutions of ax^2+bx+c = 0 as a latex fragment (no "x = "). */
+  function solveQuadLatex(a, b, c) {
+    const D = b * b - 4 * a * c;
+    if (D <= 0) return null;
+    const sf = squarefree(D);
+    const g = gcd(gcd(Math.abs(b), sf.s), Math.abs(2 * a));
+    let P = -b / g, Q = sf.s / g, R = (2 * a) / g;
+    if (R < 0) { P = -P; Q = -Q; R = -R; }
+    const rad = '\\sqrt{' + sf.d + '}';
+    const qstr = (Q === 1 ? '' : String(Q)) + rad;
+    const num = (P === 0) ? ('\\pm ' + qstr) : (P + ' \\pm ' + qstr);
+    if (R === 1) return num;
+    return '\\frac{' + num + '}{' + R + '}';
+  }
+
+  /* \pm\sqrt{u} in simplified form (u > 0) */
+  function pmSqrt(u) {
+    if (u <= 0) return null;
+    const r = Math.sqrt(u);
+    if (Number.isInteger(r)) return '\\pm ' + r;
+    const sf = squarefree(u);
+    const body = (sf.s === 1 ? '' : String(sf.s)) + '\\sqrt{' + sf.d + '}';
+    return '\\pm ' + body;
+  }
+  /* cube root of v in simplified form */
+  function cbrtTerm(v) {
+    const sign = v < 0 ? '-' : '';
+    const av = Math.abs(v);
+    const r = Math.cbrt(av);
+    if (Number.isInteger(r)) return sign + r;
+    return sign + '\\sqrt[3]{' + av + '}';
+  }
+
+  /* Build the 4-option list, dropping duplicates and padding if needed. */
+  function optionsFrom(correct, wrongs, fillers) {
+    const out = [{ latex: correct, ok: true }];
+    const seen = new Set([correct]);
+    for (let i = 0; i < wrongs.length && out.length < 4; i++) {
+      const w = wrongs[i];
+      if (!w || seen.has(w)) continue;
+      seen.add(w); out.push({ latex: w, ok: false });
+    }
+    const fb = (fillers || ['\\text{no real solutions}', '\\text{none of these}']);
+    for (let i = 0; i < fb.length && out.length < 4; i++) {
+      if (seen.has(fb[i])) continue;
+      seen.add(fb[i]); out.push({ latex: fb[i], ok: false });
+    }
+    return shuffle(out);
+  }
+
+  /* ============================================================
+     TOPIC 1 — Solving by factorising  (incl. rearranging)
+     ============================================================ */
+  function genFactorise() {
+    for (let guard = 0; guard < 200; guard++) {
+      let r1, r2;
+      do { r1 = ri(-7, 7); r2 = ri(-7, 7); }
+      while (r1 === r2 || r1 === 0 || r2 === 0 || r1 === -r2);
+
+      const roots = [r1, r2].sort((p, q) => p - q).map(String);
+      const correct = xList(roots);
+      const wrongs = [
+        xList([-r1, -r2].sort((p, q) => p - q).map(String)),
+        xList([-r1, r2].sort((p, q) => p - q).map(String)),
+        xList([r1, -r2].sort((p, q) => p - q).map(String))
+      ];
+
+      const sub = pick(['rearrange', 'rearrange', 'product']);
+      let lhs, sig;
+
+      if (sub === 'rearrange') {
+        const a = pick([1, 1, 2, 2, 3]);
+        const B = -a * (r1 + r2);
+        const C = a * r1 * r2;
+        let v = ri(-6, 6); if (v === 0) v = 1;
+        const u = B + v;
+        const w = -C;
+        lhs = poly([{ c: a, v: 'x^{2}' }, { c: u, v: 'x' }]) +
+              ' = ' +
+              poly([{ c: v, v: 'x' }, { c: w, v: '' }]);
+        sig = 'FA|' + a + '|' + r1 + '|' + r2 + '|' + v;
+      } else {
+        let p;
+        do { p = ri(-7, 7); } while (p === 0);
+        const q = p - (r1 + r2);
+        const k = -p * q - r1 * r2;
+        if (k === 0 || q === 0) continue;
+        lhs = '(x' + plusNum(-p) + ')(x' + plusNum(q) + ') = ' + k;
+        sig = 'FB|' + p + '|' + q + '|' + k;
+      }
+
+      return {
+        sig: sig,
+        prompt: 'Solve the equation by factorising.',
+        lhs: tex(lhs),
+        eq: tex('\\Rightarrow'),
+        options: optionsFrom(correct, wrongs)
+      };
+    }
+    /* extremely unlikely fallback */
+    return {
+      sig: 'FA|fallback',
+      prompt: 'Solve the equation by factorising.',
+      lhs: tex('x^{2} - 5x + 6 = 0'),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(xList(['2', '3']), ['x = -2,\\; x = -3', 'x = 2,\\; x = -3', 'x = -2,\\; x = 3'])
+    };
+  }
+
+  /* ============================================================
+     TOPIC 2 — Quadratic formula (exact / surd answers)
+     ============================================================ */
+  function genFormula() {
+    let a = 1, b = 3, c = 1, ans = null, sig = '';
+    for (let t = 0; t < 400; t++) {
+      const aa = pick([1, 1, 2, 2, 3]);
+      const bb = ri(-9, 9);
+      const cc = ri(-8, 8);
+      if (cc === 0) continue;
+      const D = bb * bb - 4 * aa * cc;
+      if (D <= 0) continue;
+      if (Number.isInteger(Math.sqrt(D))) continue;
+      if (squarefree(D).d > 30) continue;
+      const sol = solveQuadLatex(aa, bb, cc);
+      if (!sol) continue;
+      a = aa; b = bb; c = cc; ans = sol;
+      sig = 'QF|' + a + '|' + b + '|' + c;
+      break;
+    }
+    if (!ans) { a = 1; b = 3; c = 1; ans = solveQuadLatex(1, 3, 1); sig = 'QF|1|3|1'; }
+
+    const correct = 'x = ' + ans;
+    const wrongs = [];
+    const alts = [[a, -b, c], [a, b, -c], [2 * a, b, c], [a, b, 2 * c], [-a, b, c]];
+    for (let i = 0; i < alts.length; i++) {
+      const s = solveQuadLatex(alts[i][0], alts[i][1], alts[i][2]);
+      if (s) wrongs.push('x = ' + s);
+    }
+
+    const lhs = poly([{ c: a, v: 'x^{2}' }, { c: b, v: 'x' }, { c: c, v: '' }]) + ' = 0';
+
+    return {
+      sig: sig,
+      prompt: 'Use the quadratic formula to find the exact solutions.',
+      lhs: tex(lhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs, ['\\text{no real solutions}', '\\text{none of these}'])
+    };
+  }
+
+  /* ============================================================
+     TOPIC 3 — Disguised quadratics  (x^4 , x^6)
+     ============================================================ */
+  function genDisguised() {
+    const kind = pick(['quart', 'quart', 'sext']);
+
+    if (kind === 'quart') {
+      let u1, u2;
+      do {
+        u1 = ri(4, 12);
+        u2 = ri(-9, 12);
+      } while (u1 === u2 || u2 === 0);
+
+      const b = -(u1 + u2);
+      const c = u1 * u2;
+      const lhs = poly([{ c: 1, v: 'x^{4}' }, { c: b, v: 'x^{2}' }, { c: c, v: '' }]) + ' = 0';
+
+      const parts = [];
+      parts.push(pmSqrt(u1));
+      if (u2 > 0) parts.push(pmSqrt(u2));
+      const correct = xList(parts);
+
+      const wrongs = [];
+      /* forgot to take the square root */
+      const forgot = ['\\pm ' + u1];
+      if (u2 > 0) forgot.push('\\pm ' + u2);
+      wrongs.push(xList(forgot));
+      /* only the positive branch */
+      wrongs.push(xList(parts.map(s => s.replace('\\pm ', ''))));
+      /* only one root */
+      if (parts.length > 1) wrongs.push(xList([parts[0]]));
+      /* used the negative root as well */
+      if (u2 < 0) {
+        wrongs.push(xList([pmSqrt(u1), pmSqrt(Math.abs(u2))]));
+      } else {
+        wrongs.push(xList(['\\pm ' + (u1 + 1), '\\pm ' + (u2 + 1)]));
+      }
+
+      return {
+        sig: 'DQ|' + u1 + '|' + u2,
+        prompt: 'Solve the equation. (Give irrational answers in terms of surds.)',
+        lhs: tex(lhs),
+        eq: tex('\\Rightarrow'),
+        options: optionsFrom(correct, wrongs)
+      };
+    }
+
+    /* sextic:  v = x^3  */
+    let v1, v2;
+    do {
+      v1 = ri(-8, 8);
+      v2 = ri(-8, 8);
+    } while (v1 === v2 || v1 === 0 || v2 === 0);
+
+    const b = -(v1 + v2);
+    const c = v1 * v2;
+    const lhs = poly([{ c: 1, v: 'x^{6}' }, { c: b, v: 'x^{3}' }, { c: c, v: '' }]) + ' = 0';
+
+    const correct = xList([cbrtTerm(v1), cbrtTerm(v2)]);
+    const wrongs = [
+      xList([String(v1), String(v2)]),                       /* forgot cube root */
+      xList([cbrtTerm(v1)]),                                 /* only one root    */
+      xList([cbrtTerm(-v1), cbrtTerm(-v2)]),                 /* sign flip        */
+      xList([cbrtTerm(v2), cbrtTerm(v1)])                    /* swapped sign set */
+    ];
+
+    return {
+      sig: 'DQ6|' + v1 + '|' + v2,
+      prompt: 'Solve the equation. (Give irrational answers in terms of surds.)',
+      lhs: tex(lhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs)
+    };
+  }
+
+  /* ============================================================
+     TOPIC 4 — Equations involving √x
+     ============================================================ */
+  function genSurd() {
+    let u1, u2;
+    do {
+      u1 = ri(1, 8);
+      u2 = ri(-8, 8);
+    } while (u1 === u2);
+
+    const q = u1 + u2;      /* coefficient of √x */
+    const p = u1 * u2;      /* constant on the LHS */
+
+    if (q === 0) return genSurd();
+
+    const lhs = 'x' + plusNum(p) + ' = ' + coefBody(q, '\\sqrt{x}');
+
+    const valid = [];
+    if (u1 >= 0) valid.push(u1 * u1);
+    if (u2 >= 0) valid.push(u2 * u2);
+    valid.sort((a, b) => a - b);
+    const correct = xList(valid.map(String));
+
+    const wrongs = [];
+    /* forgot to square */
+    wrongs.push(xList([String(u1), String(u2)].sort()));
+    /* kept the negative root too */
+    if (u2 < 0) {
+      wrongs.push(xList([u1 * u1, u2 * u2].sort((a, b) => a - b).map(String)));
+    }
+    /* sign errors */
+    wrongs.push(xList(valid.map(v => String(-v))));
+    wrongs.push(xList([String((u1 + 1) * (u1 + 1))]));
+
+    return {
+      sig: 'SQ|' + u1 + '|' + u2,
+      prompt: 'Solve the equation, remembering to check for invalid (extraneous) roots.',
+      lhs: tex(lhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs)
+    };
+  }
+
+  /* ============================================================
+     TOPIC 5 — Equations with algebraic fractions
+     ============================================================ */
+  function genFraction() {
+    const kind = pick(['linoverx', 'linoverx', 'xoverlin', 'surdsqrt']);
+
+    if (kind === 'linoverx') {
+      let r1, r2;
+      do { r1 = ri(-6, 6); r2 = ri(-6, 6); }
+      while (r1 === r2 || r1 === 0 || r2 === 0 || r1 === -r2);
+
+      const a = pick([1, 1, 2, 2, 3]);
+      const B = -a * (r1 + r2);
+      const C = -a * r1 * r2;
+
+      const lhs = poly([{ c: a, v: 'x' }, { c: B, v: '' }]) + ' = ' +
+                  (C < 0 ? '-\\frac{' + (-C) + '}{x}' : '\\frac{' + C + '}{x}');
+
+      const roots = [r1, r2].sort((p, q) => p - q).map(String);
+      const correct = xList(roots);
+      const wrongs = [
+        xList([-r1, -r2].sort((p, q) => p - q).map(String)),
+        xList([-r1, r2].sort((p, q) => p - q).map(String)),
+        xList([r1, -r2].sort((p, q) => p - q).map(String))
+      ];
+      return {
+        sig: 'FR|' + a + '|' + r1 + '|' + r2,
+        prompt: 'Solve the equation by multiplying through by an appropriate expression.',
+        lhs: tex(lhs),
+        eq: tex('\\Rightarrow'),
+        options: optionsFrom(correct, wrongs)
+      };
+    }
+
+    if (kind === 'xoverlin') {
+      let r1, r2, c;
+      let ok = false;
+      do {
+        r1 = ri(-6, 6); r2 = ri(-6, 6);
+        c = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+        ok = (r1 !== r2) && (r1 !== -c) && (r2 !== -c);
+      } while (!ok);
+
+      const a = c + r1 + r2;
+      const b = -a * c - r1 * r2;
+      if (b === 0) return genFraction();
+
+      const denom = 'x' + plusNum(c);
+      const fp = '\\frac{' + Math.abs(b) + '}{' + denom + '}';
+      let rhs;
+      if (a === 0) rhs = (b < 0 ? '-' : '') + fp;
+      else rhs = a + (b < 0 ? ' - ' + fp : ' + ' + fp);
+
+      const roots = [r1, r2].sort((p, q) => p - q).map(String);
+      const correct = xList(roots);
+      const wrongs = [
+        xList([String(-c), String(-r1 - r2 - c)]),
+        xList([-r1, -r2].sort((p, q) => p - q).map(String)),
+        xList([r1, -r2].sort((p, q) => p - q).map(String))
+      ];
+      return {
+        sig: 'FX|' + r1 + '|' + r2 + '|' + c,
+        prompt: 'Solve the equation by multiplying through by an appropriate expression.',
+        lhs: tex('x = ' + rhs),
+        eq: tex('\\Rightarrow'),
+        options: optionsFrom(correct, wrongs)
+      };
+    }
+
+    /* √x = a + b/√x */
+    let u1, u2;
+    do {
+      u1 = ri(1, 8);
+      u2 = ri(-8, 8);
+    } while (u1 === u2);
+
+    const a = u1 + u2;
+    const b = -u1 * u2;
+    if (b === 0) return genFraction();
+
+    const fp = '\\frac{' + Math.abs(b) + '}{\\sqrt{x}}';
+    let rhs;
+    if (a === 0) rhs = (b < 0 ? '-' : '') + fp;
+    else rhs = a + (b < 0 ? ' - ' + fp : ' + ' + fp);
+
+    const valid = [];
+    if (u1 >= 0) valid.push(u1 * u1);
+    if (u2 >= 0) valid.push(u2 * u2);
+    valid.sort((p, q) => p - q);
+    const correct = xList(valid.map(String));
+
+    const wrongs = [
+      xList([String(u1), String(u2)].sort()),
+      xList([u1 * u1, u2 * u2].sort((p, q) => p - q).map(String)),
+      xList(valid.map(v => String(-v)))
+    ];
+
+    return {
+      sig: 'FS|' + u1 + '|' + u2,
+      prompt: 'Solve the equation, remembering to check for invalid (extraneous) roots.',
+      lhs: tex('\\sqrt{x} = ' + rhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs)
+    };
+  }
+
+  /* ============================================================
+     TOPIC 6 — Literal equations (in terms of k, or rearranged for x)
+     ============================================================ */
+  function genLiteral() {
+    const kind = pick(['k', 'k', 'y']);
+
+    if (kind === 'k') {
+      let m, n;
+      do { m = ri(1, 6); n = ri(1, 6); } while (m === n);
+
+      const A = m * n;
+      const B = m + n;
+      const lhs = 'x^{2} + ' + A + 'k^{2} = ' + B + 'kx';
+
+      const smaller = Math.min(m, n), bigger = Math.max(m, n);
+      const correct = xList([coefBody(smaller, 'k'), coefBody(bigger, 'k')]);
+      const wrongs = [
+        xList(['-' + coefBody(smaller, 'k'), '-' + coefBody(bigger, 'k')]),
+        xList([coefBody(smaller, 'k^{2}'), coefBody(bigger, 'k^{2}')]),
+        xList([String(smaller), String(bigger)]),
+        xList([coefBody(smaller, 'k'), '-' + coefBody(bigger, 'k')])
+      ];
+
+      return {
+        sig: 'LK|' + m + '|' + n,
+        prompt: 'Solve the equation, giving your answer in terms of <b>k</b>.',
+        lhs: tex(lhs),
+        eq: tex('\\Rightarrow'),
+        options: optionsFrom(correct, wrongs)
+      };
+    }
+
+    /* y = x^2 + 2mx + c  ->  x = -m ± √(y + m² - c) */
+    const m = ri(-6, 6);
+    const c = ri(-8, 8);
+    const lhs = 'y = ' + poly([{ c: 1, v: 'x^{2}' }, { c: 2 * m, v: 'x' }, { c: c, v: '' }]);
+
+    const d = m * m - c;
+    let rad;
+    if (d === 0) rad = '\\sqrt{y}';
+    else if (d > 0) rad = '\\sqrt{y + ' + d + '}';
+    else rad = '\\sqrt{y - ' + (-d) + '}';
+
+    const lead = (-m === 0) ? '' : String(-m) + ' ';
+    const correct = 'x = ' + lead + '\\pm ' + rad;
+
+    let rad2;
+    const d2 = m * m + c;
+    if (d2 === 0) rad2 = '\\sqrt{y}';
+    else if (d2 > 0) rad2 = '\\sqrt{y + ' + d2 + '}';
+    else rad2 = '\\sqrt{y - ' + (-d2) + '}';
+
+    const d3 = -m * m - c;
+    let rad3;
+    if (d3 === 0) rad3 = '\\sqrt{y}';
+    else if (d3 > 0) rad3 = '\\sqrt{y + ' + d3 + '}';
+    else rad3 = '\\sqrt{y - ' + (-d3) + '}';
+
+    const wrongs = [
+      'x = ' + (m === 0 ? '' : String(m) + ' ') + '\\pm ' + rad,
+      'x = ' + lead + '\\pm ' + rad2,
+      'x = ' + lead + '\\pm ' + rad3,
+      'x = ' + lead + '\\pm ' + '(y + ' + d + ')'
+    ];
+
+    return {
+      sig: 'LY|' + m + '|' + c,
+      prompt: 'Rearrange the equation to make <b>x</b> the subject.',
+      lhs: tex(lhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs, ['\\text{none of these}'])
+    };
+  }
+
+  /* ============================================================
+     TOPIC 7 — Difference of roots / discriminant
+     ============================================================ */
+  function genDiscriminant() {
+    let k0, c, D, ok = false;
+    for (let t = 0; t < 300 && !ok; t++) {
+      k0 = pick([5, 7, 9, 11, 13]);
+      c = ri(1, 8);
+      D = k0 * k0 - 4 * c;
+      if (D <= 0) continue;
+      if (Number.isInteger(Math.sqrt(D))) continue;
+      ok = true;
+    }
+    if (!ok) { k0 = 9; c = 3; D = 69; }
+
+    const lhs = 'x^{2} + kx + ' + c + ' = 0';
+
+    const correct = 'k = \\pm ' + k0;
+    const wrongs = [
+      'k = \\pm \\sqrt{' + D + '}',
+      'k = ' + k0,
+      'k = \\pm ' + (k0 * k0),
+      'k = \\pm ' + c
+    ];
+
+    return {
+      sig: 'DS|' + k0 + '|' + c,
+      prompt: 'The positive difference between the two solutions of the equation is ' +
+              tex('\\sqrt{' + D + '}') + '. Find the possible values of <b>k</b>.',
+      lhs: tex(lhs),
+      eq: tex('\\Rightarrow'),
+      options: optionsFrom(correct, wrongs, ['\\text{no such values}'])
+    };
+  }
+
+  /* ============================================================
+     REGISTRY + PROGRESSIVE ORDER
+     ============================================================ */
+  const GEN = {
+    factorise:    genFactorise,
+    formula:      genFormula,
+    disguised:    genDisguised,
+    surd:         genSurd,
+    fraction:     genFraction,
+    literal:      genLiteral,
+    discriminant: genDiscriminant
+  };
+  /* difficulty order used for the mixed (progressive) sheet */
+  const TOPIC_ORDER = ['factorise', 'formula', 'disguised', 'surd', 'fraction', 'literal', 'discriminant'];
+
+  /* ============================================================
+     QUESTION BUILDER
+     ============================================================ */
+  function buildQuestions(n, topics) {
+    const out = [];
+    const seen = new Set();
+    const list = topics.slice();
+
+    for (let i = 0; i < n; i++) {
+      const wanted = list[i % list.length];
+      let q = null;
+      for (let t = 0; t < 120 && !q; t++) {
+        const topic = (t < 80) ? wanted : pick(list);
+        const cand = GEN[topic]();
+        if (cand && !seen.has(cand.sig)) { q = cand; seen.add(cand.sig); }
+      }
+      if (q) out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
+        '<span class="opt-visual">' + tex(o.latex) + '</span>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="diagram">' +
+        '<span class="lhs">' + q.lhs + '</span>' +
+        '<span class="eq">' + q.eq + '</span>' +
+        '<div class="drop-zone"><div class="qmark">?</div></div>' +
+      '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function currentTopics() {
+    const mode = document.getElementById('modeSelect').value;
+    if (mode === 'mixed') return TOPIC_ORDER.slice();
+    const boxes = document.querySelectorAll('#topicBar input[type=checkbox]');
+    const chosen = [];
+    boxes.forEach(b => { if (b.checked) chosen.push(b.value); });
+    /* keep them in difficulty order */
+    const ordered = TOPIC_ORDER.filter(t => chosen.indexOf(t) !== -1);
+    return ordered.length ? ordered : TOPIC_ORDER.slice();
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+    const topics = currentTopics();
+
+    questions = buildQuestions(n, topics);
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => {
+        const idx = q.options.findIndex(o => o.ok);
+        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
+      })
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Quadratics &amp; Equations &mdash; Practice</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Solve each equation, choosing the correct answer. ' +
+        'Drag the answer into the <b>?</b> box \u2014 or simply tap / click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION
+     ============================================================ */
+  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+
+    const state = qState[qi];
+    if (state) state.attempts++;
+
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const ok = !!q.options[idx].ok;
+
+    if (slot) {
+      slot.innerHTML = tex(q.options[idx].latex);
+      slot.classList.add('filled');
+    }
+
+    if (ok) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const modeSel    = document.getElementById('modeSelect');
+  const topicBar   = document.getElementById('topicBar');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  /* --- topic bar visibility + highlighting --- */
+  function refreshTopicBar() {
+    const custom = modeSel.value === 'custom';
+    topicBar.hidden = !custom;
+    topicBar.querySelectorAll('label').forEach(lab => {
+      const box = lab.querySelector('input');
+      lab.classList.toggle('on', box.checked);
+    });
+  }
+
+  topicBar.addEventListener('change', e => {
+    if (e.target && e.target.tagName === 'INPUT') {
+      refreshTopicBar();
+      applySeed();
+      render();
+    }
+  });
+
+  modeSel.addEventListener('change', () => {
+    refreshTopicBar();
+    applySeed();
+    render();
+  });
+
+  /* --- share link --- */
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    url.searchParams.set('n', countSel.value);
+    url.searchParams.set('mode', modeSel.value);
+    if (modeSel.value === 'custom') {
+      const chosen = [];
+      topicBar.querySelectorAll('input[type=checkbox]').forEach(b => {
+        if (b.checked) chosen.push(b.value);
+      });
+      url.searchParams.set('topics', chosen.join(','));
+    }
+    navigator.clipboard.writeText(url.toString()).then(
+      () => {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '✅ Link copied';
+        setTimeout(() => { b.textContent = '🔗 Copy link'; }, 1500);
+      },
+      () => window.prompt('Copy this link:', url.toString())
+    );
+  });
+
+  /* --- seed handling --- */
+  function getParams() { return new URLSearchParams(window.location.search); }
+
+  function clearSeedFromURL() {
+    const url = new URL(window.location.href);
+    let changed = false;
+    ['seed', 'n', 'mode', 'topics'].forEach(k => {
+      if (url.searchParams.has(k)) { url.searchParams.delete(k); changed = true; }
+    });
+    if (changed) window.history.replaceState({}, '', url);
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  /* --- event wiring --- */
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => { applySeed(); render(); });
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  /* --- boot --- */
+  function boot() {
+    const params = getParams();
+
+    const seed = params.get('seed');
+    const n = params.get('n');
+    const mode = params.get('mode');
+    const topics = params.get('topics');
+
+    seedInput.value = (seed !== null && !isNaN(parseInt(seed, 10)))
+      ? parseInt(seed, 10)
+      : randomSeed();
+
+    if (n && ['4', '6', '8', '10', '12', '15'].indexOf(n) !== -1) {
+      countSel.value = n;
+    }
+    if (mode === 'custom' || mode === 'mixed') {
+      modeSel.value = mode;
+    }
+    if (topics) {
+      const wanted = topics.split(',');
+      topicBar.querySelectorAll('input[type=checkbox]').forEach(b => {
+        b.checked = wanted.indexOf(b.value) !== -1;
+      });
+    }
+
+    clearSeedFromURL();   /* a shared link works once; refresh = new sheet */
+    refreshTopicBar();
+    applySeed();
+    render();
+  }
+
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
