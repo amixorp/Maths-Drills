@@ -297,6 +297,7 @@
   <button id="regenBtn" class="primary">🎲 Generate New</button>
   <button id="resetBtn">↺ Reset answers</button>
   <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link to this sheet</button>
   <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
   <span class="score-chip" id="scoreTag">0 / 8 correct</span>
   <div class="toolbar-break"></div>
@@ -1000,6 +1001,39 @@
     rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
   }
 
+  /* --- share link --- */
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    navigator.clipboard.writeText(url.toString()).then(
+      () => {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '✅ Link copied';
+        setTimeout(() => { b.textContent = '🔗 Copy link to this sheet'; }, 1500);
+      },
+      () => window.prompt('Copy this link:', url.toString())
+    );
+  });
+
+  /* --- seed handling --- */
+
+  function getSeedFromURL() {
+    const m = /[?&]seed=(\d+)/.exec(window.location.search);
+    if (m) return parseInt(m[1], 10) >>> 0;
+    return null;
+  }
+
+  /* Remove ?seed=... once it has been consumed, so that reloading the
+     page generates a brand-new worksheet instead of replaying this one. */
+  function clearSeedFromURL() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('seed')) return;
+    url.searchParams.delete('seed');
+    window.history.replaceState({}, '', url);
+  }
+
+  /* A fresh, unpredictable seed on every page load. */
   function randomSeed() {
     if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
       const buf = new Uint32Array(1);
@@ -1011,23 +1045,12 @@
     ) % 1000000000;
   }
 
-  function getSeedFromURL() {
-    const m = /[?&]seed=(\d+)/.exec(window.location.search);
-    if (m) return parseInt(m[1], 10) >>> 0;
-    return null;
-  }
-
-  function setSeedInURL(seed) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('seed', seed);
-    window.history.replaceState({}, '', url);
-  }
+  /* --- event wiring --- */
 
   document.getElementById('regenBtn').addEventListener('click', () => {
     seedInput.value = randomSeed();
     applySeed();
     render();
-    setSeedInURL(seedInput.value);
   });
 
   document.getElementById('resetBtn').addEventListener('click', resetAnswers);
@@ -1035,7 +1058,6 @@
   seedInput.addEventListener('change', () => {
     applySeed();
     render();
-    setSeedInURL(seedInput.value);
   });
 
   countSel.addEventListener('change', () => { applySeed(); render(); });
@@ -1048,12 +1070,14 @@
     cb.addEventListener('change', () => { applySeed(); render(); });
   });
 
+  /* --- boot --- */
+
   function boot() {
     const urlSeed = getSeedFromURL();
     seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    clearSeedFromURL();        // shared link works once; refresh = new sheet
     applySeed();
     render();
-    setSeedInURL(seedInput.value);
   }
   if (document.readyState === 'complete') boot();
   else window.addEventListener('load', boot, { once: true });
