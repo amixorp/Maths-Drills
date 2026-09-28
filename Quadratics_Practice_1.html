@@ -65,7 +65,7 @@
     font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
   }
 
-  /* topic picker row */
+  /* topic picker row (shown only in Custom mode) */
   .topicbar{
     position:sticky; top:0; z-index:49;
     display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px;
@@ -280,10 +280,17 @@
       <option>15</option>
     </select>
   </label>
-  <label>Mode
-    <select id="modeSelect">
+  <label>Topic
+    <select id="topicSelect">
       <option value="mixed" selected>Mixed (progressive)</option>
-      <option value="custom">Choose topics…</option>
+      <option value="factorise">1 · Factorising</option>
+      <option value="formula">2 · Quadratic formula</option>
+      <option value="disguised">3 · Disguised (x⁴, x⁶)</option>
+      <option value="surd">4 · Equations with √x</option>
+      <option value="fraction">5 · Algebraic fractions</option>
+      <option value="literal">6 · In terms of k / y</option>
+      <option value="discriminant">7 · Difference of roots</option>
+      <option value="custom">★ Custom (pick several)…</option>
     </select>
   </label>
   <button id="regenBtn" class="primary">🎲 Generate New</button>
@@ -295,7 +302,7 @@
 </div>
 
 <div class="topicbar no-print" id="topicBar" hidden>
-  <span class="tb-label">Topics:</span>
+  <span class="tb-label">Pick topics:</span>
   <label class="chk on"><input type="checkbox" value="factorise" checked> Factorising</label>
   <label class="chk on"><input type="checkbox" value="formula" checked> Quadratic formula</label>
   <label class="chk on"><input type="checkbox" value="disguised" checked> Disguised (x⁴, x⁶)</label>
@@ -338,7 +345,6 @@
     while (b) { const t = a % b; a = b; b = t; }
     return a || 1;
   }
-  /* n = s^2 * d  with d squarefree */
   function squarefree(n) {
     let s = 1, d = n;
     for (let f = 2; f * f <= d; f++) {
@@ -364,8 +370,6 @@
   /* ============================================================
      FORMATTING HELPERS
      ============================================================ */
-  /* Build a polynomial from a list of {c, v} terms (v = latex for the
-     variable part, '' for a constant).  Signs / coefficients tidied. */
   function poly(terms) {
     let s = '', first = true;
     for (let i = 0; i < terms.length; i++) {
@@ -386,7 +390,6 @@
     if (c === 0) return '';
     return c > 0 ? ' + ' + c : ' - ' + (-c);
   }
-  /* coefficient times a latex body, e.g. -3, "\sqrt{x}" -> "-3\sqrt{x}" */
   function coefBody(c, body) {
     if (c === 0) return '0';
     const sign = c < 0 ? '-' : '';
@@ -395,7 +398,6 @@
   }
   function xList(arr) { return 'x = ' + arr.join(',\\; x = '); }
 
-  /* Exact solutions of ax^2+bx+c = 0 as a latex fragment (no "x = "). */
   function solveQuadLatex(a, b, c) {
     const D = b * b - 4 * a * c;
     if (D <= 0) return null;
@@ -410,7 +412,6 @@
     return '\\frac{' + num + '}{' + R + '}';
   }
 
-  /* \pm\sqrt{u} in simplified form (u > 0) */
   function pmSqrt(u) {
     if (u <= 0) return null;
     const r = Math.sqrt(u);
@@ -419,7 +420,6 @@
     const body = (sf.s === 1 ? '' : String(sf.s)) + '\\sqrt{' + sf.d + '}';
     return '\\pm ' + body;
   }
-  /* cube root of v in simplified form */
   function cbrtTerm(v) {
     const sign = v < 0 ? '-' : '';
     const av = Math.abs(v);
@@ -428,7 +428,6 @@
     return sign + '\\sqrt[3]{' + av + '}';
   }
 
-  /* Build the 4-option list, dropping duplicates and padding if needed. */
   function optionsFrom(correct, wrongs, fillers) {
     const out = [{ latex: correct, ok: true }];
     const seen = new Set([correct]);
@@ -494,7 +493,6 @@
         options: optionsFrom(correct, wrongs)
       };
     }
-    /* extremely unlikely fallback */
     return {
       sig: 'FA|fallback',
       prompt: 'Solve the equation by factorising.',
@@ -568,15 +566,11 @@
       const correct = xList(parts);
 
       const wrongs = [];
-      /* forgot to take the square root */
       const forgot = ['\\pm ' + u1];
       if (u2 > 0) forgot.push('\\pm ' + u2);
       wrongs.push(xList(forgot));
-      /* only the positive branch */
       wrongs.push(xList(parts.map(s => s.replace('\\pm ', ''))));
-      /* only one root */
       if (parts.length > 1) wrongs.push(xList([parts[0]]));
-      /* used the negative root as well */
       if (u2 < 0) {
         wrongs.push(xList([pmSqrt(u1), pmSqrt(Math.abs(u2))]));
       } else {
@@ -592,7 +586,6 @@
       };
     }
 
-    /* sextic:  v = x^3  */
     let v1, v2;
     do {
       v1 = ri(-8, 8);
@@ -605,10 +598,10 @@
 
     const correct = xList([cbrtTerm(v1), cbrtTerm(v2)]);
     const wrongs = [
-      xList([String(v1), String(v2)]),                       /* forgot cube root */
-      xList([cbrtTerm(v1)]),                                 /* only one root    */
-      xList([cbrtTerm(-v1), cbrtTerm(-v2)]),                 /* sign flip        */
-      xList([cbrtTerm(v2), cbrtTerm(v1)])                    /* swapped sign set */
+      xList([String(v1), String(v2)]),
+      xList([cbrtTerm(v1)]),
+      xList([cbrtTerm(-v1), cbrtTerm(-v2)]),
+      xList([cbrtTerm(v2), cbrtTerm(v1)])
     ];
 
     return {
@@ -630,8 +623,8 @@
       u2 = ri(-8, 8);
     } while (u1 === u2);
 
-    const q = u1 + u2;      /* coefficient of √x */
-    const p = u1 * u2;      /* constant on the LHS */
+    const q = u1 + u2;
+    const p = u1 * u2;
 
     if (q === 0) return genSurd();
 
@@ -644,13 +637,10 @@
     const correct = xList(valid.map(String));
 
     const wrongs = [];
-    /* forgot to square */
     wrongs.push(xList([String(u1), String(u2)].sort()));
-    /* kept the negative root too */
     if (u2 < 0) {
       wrongs.push(xList([u1 * u1, u2 * u2].sort((a, b) => a - b).map(String)));
     }
-    /* sign errors */
     wrongs.push(xList(valid.map(v => String(-v))));
     wrongs.push(xList([String((u1 + 1) * (u1 + 1))]));
 
@@ -732,7 +722,6 @@
       };
     }
 
-    /* √x = a + b/√x */
     let u1, u2;
     do {
       u1 = ri(1, 8);
@@ -801,7 +790,6 @@
       };
     }
 
-    /* y = x^2 + 2mx + c  ->  x = -m ± √(y + m² - c) */
     const m = ri(-6, 6);
     const c = ri(-8, 8);
     const lhs = 'y = ' + poly([{ c: 1, v: 'x^{2}' }, { c: 2 * m, v: 'x' }, { c: c, v: '' }]);
@@ -890,7 +878,6 @@
     literal:      genLiteral,
     discriminant: genDiscriminant
   };
-  /* difficulty order used for the mixed (progressive) sheet */
   const TOPIC_ORDER = ['factorise', 'formula', 'disguised', 'surd', 'fraction', 'literal', 'discriminant'];
 
   /* ============================================================
@@ -904,8 +891,8 @@
     for (let i = 0; i < n; i++) {
       const wanted = list[i % list.length];
       let q = null;
-      for (let t = 0; t < 120 && !q; t++) {
-        const topic = (t < 80) ? wanted : pick(list);
+      for (let t = 0; t < 200 && !q; t++) {
+        const topic = (t < 150) ? wanted : pick(list);
         const cand = GEN[topic]();
         if (cand && !seen.has(cand.sig)) { q = cand; seen.add(cand.sig); }
       }
@@ -945,15 +932,23 @@
     '</article>';
   }
 
+  /* Determine the list of topics (in difficulty order) to use
+     for the current sheet, based on the toolbar. */
   function currentTopics() {
-    const mode = document.getElementById('modeSelect').value;
-    if (mode === 'mixed') return TOPIC_ORDER.slice();
-    const boxes = document.querySelectorAll('#topicBar input[type=checkbox]');
-    const chosen = [];
-    boxes.forEach(b => { if (b.checked) chosen.push(b.value); });
-    /* keep them in difficulty order */
-    const ordered = TOPIC_ORDER.filter(t => chosen.indexOf(t) !== -1);
-    return ordered.length ? ordered : TOPIC_ORDER.slice();
+    const t = document.getElementById('topicSelect').value;
+
+    if (t === 'mixed') return TOPIC_ORDER.slice();
+
+    if (t === 'custom') {
+      const boxes = document.querySelectorAll('#topicBar input[type=checkbox]');
+      const chosen = [];
+      boxes.forEach(b => { if (b.checked) chosen.push(b.value); });
+      const ordered = TOPIC_ORDER.filter(x => chosen.indexOf(x) !== -1);
+      return ordered.length ? ordered : TOPIC_ORDER.slice();
+    }
+
+    /* single topic — all questions use that topic */
+    return [t];
   }
 
   function render() {
@@ -1169,11 +1164,11 @@
   /* ============================================================
      UI WIRING
      ============================================================ */
-  const seedInput  = document.getElementById('seedInput');
-  const countSel   = document.getElementById('countSelect');
-  const modeSel    = document.getElementById('modeSelect');
-  const topicBar   = document.getElementById('topicBar');
-  const answersChk = document.getElementById('answersChk');
+  const seedInput   = document.getElementById('seedInput');
+  const countSel    = document.getElementById('countSelect');
+  const topicSel    = document.getElementById('topicSelect');
+  const topicBar    = document.getElementById('topicBar');
+  const answersChk  = document.getElementById('answersChk');
 
   function applySeed() {
     const s = parseInt(seedInput.value, 10);
@@ -1182,7 +1177,7 @@
 
   /* --- topic bar visibility + highlighting --- */
   function refreshTopicBar() {
-    const custom = modeSel.value === 'custom';
+    const custom = topicSel.value === 'custom';
     topicBar.hidden = !custom;
     topicBar.querySelectorAll('label').forEach(lab => {
       const box = lab.querySelector('input');
@@ -1198,7 +1193,7 @@
     }
   });
 
-  modeSel.addEventListener('change', () => {
+  topicSel.addEventListener('change', () => {
     refreshTopicBar();
     applySeed();
     render();
@@ -1209,8 +1204,8 @@
     const url = new URL(window.location.href);
     url.searchParams.set('seed', seedInput.value);
     url.searchParams.set('n', countSel.value);
-    url.searchParams.set('mode', modeSel.value);
-    if (modeSel.value === 'custom') {
+    url.searchParams.set('topic', topicSel.value);
+    if (topicSel.value === 'custom') {
       const chosen = [];
       topicBar.querySelectorAll('input[type=checkbox]').forEach(b => {
         if (b.checked) chosen.push(b.value);
@@ -1233,7 +1228,7 @@
   function clearSeedFromURL() {
     const url = new URL(window.location.href);
     let changed = false;
-    ['seed', 'n', 'mode', 'topics'].forEach(k => {
+    ['seed', 'n', 'topic', 'topics', 'mode'].forEach(k => {
       if (url.searchParams.has(k)) { url.searchParams.delete(k); changed = true; }
     });
     if (changed) window.history.replaceState({}, '', url);
@@ -1268,9 +1263,9 @@
   function boot() {
     const params = getParams();
 
-    const seed = params.get('seed');
-    const n = params.get('n');
-    const mode = params.get('mode');
+    const seed   = params.get('seed');
+    const n      = params.get('n');
+    const topic  = params.get('topic');
     const topics = params.get('topics');
 
     seedInput.value = (seed !== null && !isNaN(parseInt(seed, 10)))
@@ -1280,14 +1275,25 @@
     if (n && ['4', '6', '8', '10', '12', '15'].indexOf(n) !== -1) {
       countSel.value = n;
     }
-    if (mode === 'custom' || mode === 'mixed') {
-      modeSel.value = mode;
+
+    /* Accept either the new ?topic= parameter or the legacy ?mode= one. */
+    const legacyMode = params.get('mode');
+    if (topic && GEN[topic]) {
+      topicSel.value = topic;
+    } else if (topic === 'mixed' || topic === 'custom') {
+      topicSel.value = topic;
+    } else if (legacyMode === 'custom') {
+      topicSel.value = 'custom';
+    } else if (legacyMode === 'mixed') {
+      topicSel.value = 'mixed';
     }
+
     if (topics) {
       const wanted = topics.split(',');
       topicBar.querySelectorAll('input[type=checkbox]').forEach(b => {
         b.checked = wanted.indexOf(b.value) !== -1;
       });
+      if (topicSel.value !== 'custom') topicSel.value = 'custom';
     }
 
     clearSeedFromURL();   /* a shared link works once; refresh = new sheet */
