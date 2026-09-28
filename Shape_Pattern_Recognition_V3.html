@@ -149,7 +149,7 @@
 
 <div class="toolbar no-print">
   <div class="tb-title">🧠 Easy IQ Worksheet Generator</div>
-  <label>Seed <input id="seedInput" type="number" min="0" step="1" value="12345"></label>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1"></label>
   <label>Questions
     <select id="countSelect">
       <option>6</option>
@@ -815,13 +815,42 @@
     rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
   }
 
+  /* ------------------------------------------------------------
+     Unpredictable starting seed.
+
+     GitHub Pages only serves the static HTML file — but this
+     script still executes inside the visitor's browser, so the
+     normal browser APIs (Web Crypto, Date, Math.random) are all
+     available.  No server-side code is needed.
+     ------------------------------------------------------------ */
+  function randomSeed() {
+    // Preferred: cryptographically strong entropy from the browser.
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      var buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;          // keep it a friendly 9-digit number
+    }
+    // Fallback: mix the clock with Math.random().
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  /* A ?seed=12345 URL parameter still wins, so a teacher can
+     bookmark / share an exact worksheet. */
+  function initialSeed() {
+    var m = /[?&]seed=(\d+)/.exec(window.location.search);
+    if (m) return parseInt(m[1], 10) >>> 0;
+    return randomSeed();
+  }
+
   function boot() {
     seedInput  = document.getElementById('seedInput');
     countSel   = document.getElementById('countSelect');
     answersChk = document.getElementById('answersChk');
 
     document.getElementById('regenBtn').addEventListener('click', function () {
-      seedInput.value = Math.floor(Math.random() * 1e9);
+      seedInput.value = randomSeed();
       applySeed();
       render();
     });
@@ -831,6 +860,7 @@
     answersChk.addEventListener('change', toggleKey);
     document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
 
+    seedInput.value = initialSeed();
     applySeed();
     render();
   }
