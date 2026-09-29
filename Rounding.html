@@ -378,6 +378,27 @@
     return fracOut ? intPart + '.' + fracOut : intPart;
   }
 
+  /* Format a value that is an exact multiple of 10^-dp so that it
+     always shows exactly `dp` digits after the decimal point. */
+  function scaledIntToFixed(n, dp) {
+    let s = String(n);
+    if (dp === 0) return s;
+    if (s.length <= dp) s = '0'.repeat(dp - s.length + 1) + s;
+    return s.slice(0, s.length - dp) + '.' + s.slice(s.length - dp);
+  }
+
+  /* Express a (digits, pos) pair as an integer number of 10^-dp units,
+     rounding to the nearest unit. */
+  function toScaledInt(digits, pos, dp) {
+    const exp = pos - digits.length + 1 + dp;
+    if (exp >= 0) return Number(digits + '0'.repeat(exp));
+    const cut = -exp;
+    if (cut >= digits.length) return 0;
+    const kept = digits.slice(0, digits.length - cut);
+    const nextDigit = parseInt(digits[digits.length - cut], 10);
+    return Number(kept) + (nextDigit >= 5 ? 1 : 0);
+  }
+
   /* ============================================================
      NUMBER REPRESENTATION
 
@@ -405,7 +426,17 @@
   /* Round a (digits, pos) pair to the nearest 10^targetPos. */
   function roundToPos(digits, pos, targetPos) {
     const keepCount = pos - targetPos + 1;
-    if (keepCount < 1) return { digits: digits, pos: pos };
+
+    /* The leading digit already sits below the target place, so the
+       value is less than one unit of that place. The answer is either
+       zero or a single unit, depending on the digit in the target
+       column's first place. */
+    if (keepCount < 1) {
+      if (targetPos - pos === 1 && parseInt(digits[0], 10) >= 5) {
+        return { digits: '1', pos: targetPos };
+      }
+      return { digits: '0', pos: targetPos };
+    }
 
     let kept, nextDigit;
     if (keepCount >= digits.length) {
@@ -506,7 +537,7 @@
   }
 
   /* ============================================================
-     DISTRACTOR POOL
+     DISTRACTOR POOLS
      ============================================================ */
 
   function makeDistractors(digits, pos, targetPos) {
@@ -574,7 +605,46 @@
     return pool;
   }
 
-    /* Convert a (digits, pos) pair to an integer when the value is a
+  /* Distractors for the decimal-place questions. Every candidate is
+     written to exactly `dp` decimal places, so a pupil cannot pick the
+     right answer out just by counting digits after the point.
+
+     Candidates are near misses on that same dp grid: the value rounded
+     one place too far to the left (a pupil who stopped a column short),
+     plus the answer nudged by one or two units in the last place. The
+     ±1 slips are listed twice because they are the mistakes pupils
+     actually make. */
+  function makeDpDistractors(digits, pos, targetPos, dp) {
+    const correct = roundToPos(digits, pos, targetPos);
+    const correctScaled = toScaledInt(correct.digits, correct.pos, dp);
+    const correctStr = scaledIntToFixed(correctScaled, dp);
+
+    const seen = new Set([correctStr]);
+    const pool = [];
+
+    const addScaled = (v) => {
+      if (!Number.isFinite(v)) return;
+      v = Math.round(v);
+      if (v <= 0) return;
+      const s = scaledIntToFixed(v, dp);
+      if (seen.has(s)) return;
+      seen.add(s);
+      pool.push(s);
+    };
+
+    /* Rounded to one place fewer than asked for. */
+    const coarse = roundToPos(digits, pos, targetPos - 1);
+    addScaled(toScaledInt(coarse.digits, coarse.pos, dp));
+
+    /* Near misses in the last displayed place. */
+    [1, -1, 1, -1, 2, -2, 2, -2, 5, -5].forEach(off => {
+      addScaled(correctScaled + off);
+    });
+
+    return pool;
+  }
+
+  /* Convert a (digits, pos) pair to an integer when the value is a
      whole number. Used by the whole-number rounding generator. */
   function digitsPosToInt(digits, pos) {
     return parseInt(digits, 10) * Math.pow(10, pos - digits.length + 1);
@@ -665,21 +735,23 @@
       const type = chooseType(pos, types);
 
       let digits, posOfFirst, targetPos, correct, promptText, sig;
+      let dpPlaces = 0;
 
       if (type === 'whole') {
         const src = genSourceWhole(pos);
-        const dp = makeDigitsPos(src.intPart, src.fracStr);
-        digits = dp.digits;
-        posOfFirst = dp.pos;
+        const np = makeDigitsPos(src.intPart, src.fracStr);
+        digits = np.digits;
+        posOfFirst = np.pos;
         targetPos = 0;
         promptText = 'Round this number to the nearest whole number.';
       } else if (type === 'dp1' || type === 'dp2' || type === 'dp3') {
         const targetDp = type === 'dp1' ? 1 : type === 'dp2' ? 2 : 3;
         const src = genSourceDp(pos, targetDp);
-        const dp = makeDigitsPos(src.intPart, src.fracStr);
-        digits = dp.digits;
-        posOfFirst = dp.pos;
+        const np = makeDigitsPos(src.intPart, src.fracStr);
+        digits = np.digits;
+        posOfFirst = np.pos;
         targetPos = -targetDp;
+        dpPlaces = targetDp;
         promptText = 'Round this number to ' + targetDp +
                      ' decimal place' + (targetDp > 1 ? 's' : '') + '.';
       } else {
@@ -694,16 +766,26 @@
 
       /* Compute the correct answer. */
       correct = roundToPos(digits, posOfFirst, targetPos);
-      const correctStr = formatNumber(correct.digits, correct.pos);
 
-      /* Build distractors. Whole-number rounding uses a dedicated
-      pool so that every option is itself a whole number. */
-      let distractors;
+      /* Build distractors. Each question type has its own pool, so the
+         options always look like answers to *this* question: whole-number
+         questions offer only whole numbers, decimal-place questions offer
+         only numbers written to exactly the requested number of decimal
+         places, and significant-figure questions use the general pool. */
+      let correctStr, distractors;
       if (type === 'whole') {
+        correctStr = formatNumber(correct.digits, correct.pos);
         const pool = makeWholeNumberDistractors(correct.digits, correct.pos);
         if (pool.length < 3) continue;
         distractors = shuffle(pool).slice(0, 3).map(n => String(n));
+      } else if (dpPlaces > 0) {
+        correctStr = scaledIntToFixed(
+          toScaledInt(correct.digits, correct.pos, dpPlaces), dpPlaces);
+        const pool = makeDpDistractors(digits, posOfFirst, targetPos, dpPlaces);
+        if (pool.length < 3) continue;
+        distractors = shuffle(pool).slice(0, 3);
       } else {
+        correctStr = formatNumber(correct.digits, correct.pos);
         const pool = makeDistractors(digits, posOfFirst, targetPos);
         if (pool.length < 3) continue;
         distractors = shuffle(pool).slice(0, 3);
