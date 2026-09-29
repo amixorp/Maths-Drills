@@ -316,32 +316,34 @@
   }
 
   /* ============================================================
-     UNITS  (no area; litres shown as capital L)
+     UNITS  (no area, no mg; litres as L/mL; tonnes in full;
+             three currencies: £, €, $)
      ============================================================ */
   const U = {
     mm:  { sym:'mm' },
     cm:  { sym:'cm' },
     m:   { sym:'m' },
     km:  { sym:'km' },
-    mg:  { sym:'mg' },
     g:   { sym:'g' },
     kg:  { sym:'kg' },
-    t:   { sym:'t' },
+    t:   { sym:'tonnes' },       /* written in full, spaced */
     ml:  { sym:'mL' },
     l:   { sym:'L' },
     s:   { sym:'s' },
     min: { sym:'min' },
     h:   { sym:'h' },
     p:   { sym:'p',   tight:true },
-    gbp: { sym:'\u00A3', pre:true, tight:true, dec:2 },
+    gbp: { sym:'\u00A3', pre:true, tight:true, dec:2 },   /* £ */
     c:   { sym:'c',   tight:true },
-    eur: { sym:'\u20AC', pre:true, tight:true, dec:2 }
+    eur: { sym:'\u20AC', pre:true, tight:true, dec:2 },   /* € */
+    usd: { sym:'$',     pre:true, tight:true, dec:2 }    /* $ */
   };
 
   /* Each entry: s = smaller unit key, L = larger unit key,
      m = how many of the smaller unit make one of the larger unit.
      No centilitres; km is paired only with m; time uses s:min and min:h.
-     No area pairs. */
+     No area pairs. Mass: g:kg and kg:tonnes only (no mg).
+     Currency: pence:pounds, cents:euros, cents:dollars. */
   const UNIT_PAIRS = [
     /* length */
     { s:'mm',  L:'cm',  m:10,    fam:'length'   },
@@ -349,7 +351,6 @@
     { s:'mm',  L:'m',   m:1000,  fam:'length'   },
     { s:'m',   L:'km',  m:1000,  fam:'length'   },
     /* mass */
-    { s:'mg',  L:'g',   m:1000,  fam:'mass'     },
     { s:'g',   L:'kg',  m:1000,  fam:'mass'     },
     { s:'kg',  L:'t',   m:1000,  fam:'mass'     },
     /* capacity */
@@ -359,7 +360,8 @@
     { s:'min', L:'h',   m:60,    fam:'time'     },
     /* currency */
     { s:'p',   L:'gbp', m:100,   fam:'currency' },
-    { s:'c',   L:'eur', m:100,   fam:'currency' }
+    { s:'c',   L:'eur', m:100,   fam:'currency' },
+    { s:'c',   L:'usd', m:100,   fam:'currency' }
   ];
 
   function fmtNum(v, unit) {
@@ -386,11 +388,12 @@
      GENERATOR
      ============================================================ */
 
+  /* Cap HCF at 20 so numbers stay Foundation-friendly
+     (max value the student sees is 10 x 20 = 200). */
   const K_VALUES = [
-    2, 3, 4, 5, 6, 7, 8, 9, 10,
-    12, 15, 16, 18, 20, 24, 25, 30, 36, 40, 50, 60, 72, 100, 200
+    2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 16, 18, 20
   ];
-  const BIG_K = [20, 25, 50, 60, 72, 100, 200];
+  const BIG_K = [16, 18, 20];
 
   /* Coprime pairs — the "shape" of the simplified answer.
      Listed with the smaller number first; a random swap then gives a
@@ -409,12 +412,42 @@
     [1,10],[3,10],[7,10],[9,10]
   ];
 
+  /* Family mix — currency should appear about 1 in 4 questions;
+     the rest is shared between length, mass, capacity and time. */
+  const FAMILY_WEIGHTS = [
+    { fam: 'length',   w: 0.38 },
+    { fam: 'mass',     w: 0.19 },
+    { fam: 'capacity', w: 0.10 },
+    { fam: 'time',     w: 0.08 },
+    { fam: 'currency', w: 0.25 }
+  ];
+  function pickFamily() {
+    let r = rng();
+    for (const f of FAMILY_WEIGHTS) {
+      r -= f.w;
+      if (r <= 0) return f.fam;
+    }
+    return FAMILY_WEIGHTS[FAMILY_WEIGHTS.length - 1].fam;
+  }
+
   function genRatioQuestion(pos, isLast) {
+    /* Choose the unit family up front so we can guarantee the mix:
+       roughly 1 in 4 questions should involve money. */
+    const fam = pickFamily();
+    /* For 90% of currency questions, insist on a value greater than 1
+       for the larger unit (£1.20, €2.50, $3.40 …).  The remaining 10%
+       may show something like 80c : €0.64. */
+    const currencyNeedsBigValue = (fam === 'currency') && (rng() < 0.9);
+
     for (let attempt = 0; attempt < 500; attempt++) {
 
       /* --- 1. the divisor (HCF) the student must spot --- */
       let k;
-      if (isLast && rng() < 0.05) {
+      if (fam === 'currency') {
+        /* No position bias for currency: we want a good chance of
+           reaching a value above 1 in the larger unit. */
+        k = weightedPick(K_VALUES, () => 1);
+      } else if (isLast && rng() < 0.05) {
         k = pick(BIG_K);
       } else {
         k = weightedPick(K_VALUES, x => Math.pow(x, 2 * pos - 1));
@@ -429,34 +462,29 @@
       const V = a * k;
       const W = b * k;
 
-      /* --- 3. which unit pairs give a tidy decimal for the larger-unit value? ---
+      /* For currency, keep the smaller-unit value under 100
+         (e.g. 80c : €1.20 rather than 144c : €1.12). */
+      if (fam === 'currency' && W >= 100) continue;
+
+      /* --- 3. pick a unit pair from the chosen family ---
          We need V / m to have at most 2 decimal places, i.e.
          m must divide 100 * V.  We also keep the displayed value X
          between 0.1 and 999 so the questions stay sensible.
          For time, we require X to be a whole number so pupils never
          meet awkward decimals like 0.4 minutes. */
-      const validPairs = [];
+      const famPairs = [];
       for (const up of UNIT_PAIRS) {
+        if (up.fam !== fam) continue;
         if ((100 * V) % up.m !== 0) continue;
         const X = V / up.m;
         if (X < 0.1 || X > 999) continue;
-        /* time must be whole-number minutes/hours */
-        if (up.fam === 'time' && !Number.isInteger(X)) continue;
-        /* Reduce the likelihood of time questions. */
-        const weight = (up.fam === 'time') ? 0.4 : 1;
-        validPairs.push({ up: up, X: X, weight: weight });
+        if (fam === 'time' && !Number.isInteger(X)) continue;
+        if (currencyNeedsBigValue && X <= 1) continue;
+        famPairs.push({ up: up, X: X });
       }
-      if (!validPairs.length) continue;
+      if (!famPairs.length) continue;
 
-      let totalW = 0;
-      for (const vp of validPairs) totalW += vp.weight;
-      let rW = rng() * totalW;
-      let chosen = validPairs[validPairs.length - 1];
-      for (const vp of validPairs) {
-        rW -= vp.weight;
-        if (rW <= 0) { chosen = vp; break; }
-      }
-
+      const chosen = pick(famPairs);
       const up = chosen.up;
       const m = up.m;
       const X = chosen.X;
