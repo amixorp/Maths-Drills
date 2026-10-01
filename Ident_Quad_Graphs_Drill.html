@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quadratic Graphs — Matching</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .katex{ font-size: 1em !important; }
+
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  .sheet{
+    background:#fff;
+    max-width:1100px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted)}
+
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));
+    gap:14px;
+  }
+  @media (max-width:760px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+  }
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  .graph-wrap{
+    display:flex; justify-content:center; align-items:center;
+    margin: 4px 0 6px;
+  }
+  .graph-svg{
+    width:100%; max-width:300px; height:auto; display:block;
+  }
+
+  .diagram{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:10px;
+    margin:4px 0 10px;
+    min-height:56px;
+  }
+  .eq{ font-size:20px; font-weight:700; color:var(--ink); white-space:nowrap; }
+
+  .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
+  .drop-zone.over{background:#dbeafe; transform:scale(1.04)}
+  .drop-zone.over .qmark{
+    border-color:var(--accent); color:var(--accent); background:#eff6ff;
+  }
+  .qmark{
+    min-width:170px; min-height:52px;
+    padding:6px 14px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px; font-weight:800; color:#9ca3af;
+    white-space:nowrap;
+    transition:border-color .15s, background .15s, color .15s;
+  }
+  .qmark.filled{border-style:solid; border-color:var(--ink); color:var(--ink)}
+
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-top:auto;
+    padding-top:10px;
+    border-top:1px dashed #e5e7eb;
+  }
+  @media (max-width:520px){ .options{grid-template-columns:1fr} }
+
+  .option{
+    display:flex; align-items:center; gap:8px;
+    cursor:grab; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fafafa;
+    padding:8px 10px;
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
+    min-width:0;
+  }
+  .option:focus-visible{outline:2.5px solid var(--accent); outline-offset:1px}
+  .option:hover{background:#f3f4f6}
+  .option:active{cursor:grabbing}
+  .option.dragging{opacity:.3}
+  .option.correct{background:#dcfce7; border-color:#16a34a; box-shadow:0 0 0 2px #16a34a}
+  .option.wrong{background:#fee2e2; border-color:#dc2626; box-shadow:0 0 0 2px #dc2626; animation:shake .3s ease}
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-5px)}
+    60%{transform:translateX(5px)}
+    80%{transform:translateX(-3px)}
+  }
+  .opt-letter{
+    flex:none;
+    width:20px; height:20px; border-radius:50%;
+    background:#e5e7eb; color:#374151;
+    font-size:11px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .opt-visual{
+    flex:1;
+    font-size:15px;
+    display:flex; align-items:center;
+    min-height:32px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    min-width:0;
+  }
+
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:10px 16px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--line);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    display:flex; align-items:center; justify-content:center;
+    transform:translate(-50%,-50%) scale(1.05);
+    font-size:15px;
+  }
+
+  body.dragging-active{user-select:none; -webkit-user-select:none}
+  body.dragging-active .drop-zone .qmark{
+    border-color:var(--accent); color:var(--accent);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{transform:scale(1)}
+    50%{transform:scale(1.06)}
+  }
+
+  .q-feedback{
+    margin-top:8px; min-height:15px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
+    gap:6px 10px;
+    font-size:13px;
+    color:#374151;
+  }
+  .key-grid b{color:var(--ink)}
+
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af}
+    .q-feedback{display:none !important}
+    body.dragging-active .drop-zone .qmark{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">📈 Quadratic Graphs — Matching</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>4</option>
+      <option>6</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+    </select>
+  </label>
+  <label>Difficulty
+    <select id="topicSelect">
+      <option value="mixed" selected>Mixed (progressive)</option>
+      <option value="l1">Level 1 — y = ±x² + c</option>
+      <option value="l2">Level 2 — add steepness</option>
+      <option value="l3">Level 3 — vertex off-axis</option>
+      <option value="l4">Level 4 — general challenge</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link to this sheet</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     LaTeX / KaTeX RENDERING
+     ============================================================ */
+  function tex(latex) {
+    if (typeof katex === 'undefined') {
+      return '<code>' + String(latex).replace(/[&<>]/g,
+        c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) + '</code>';
+    }
+    try {
+      return katex.renderToString(latex, { throwOnError: false, displayMode: false });
+    } catch (e) {
+      return '<code>' + latex + '</code>';
+    }
+  }
+
+  /* ============================================================
+     GRAPH RENDERING  (inline SVG)  — no tick marks
+     ============================================================ */
+  let svgUidCounter = 0;
+
+  function graphSVG(a, b, c) {
+    const uid = 'gclip' + (svgUidCounter++);
+    const W = 300, H = 240;
+    const padL = 30, padR = 18, padT = 14, padB = 26;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    const xmin = -5, xmax = 5;
+
+    const h = -b / (2 * a);
+    const k = c - b * b / (4 * a);
+
+    /* Centre the visible y-range around the interesting features:
+       vertex, y-intercept, and the origin. */
+    const yMinVal = Math.min(k, c, 0);
+    const yMaxVal = Math.max(k, c, 0);
+    const mid  = (yMinVal + yMaxVal) / 2;
+    const half = Math.max((yMaxVal - yMinVal) / 2, 3) * 1.18;
+    const ymin = mid - half;
+    const ymax = mid + half;
+
+    const xToPx = x => padL + (x - xmin) / (xmax - xmin) * plotW;
+    const yToPx = y => padT + (ymax - y) / (ymax - ymin) * plotH;
+
+    const x0 = xToPx(0);
+    const y0 = yToPx(0);
+
+    let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="graph-svg" ' +
+            'xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Parabola">';
+
+    s += '<defs><clipPath id="' + uid + '"><rect x="' + padL + '" y="' + padT +
+         '" width="' + plotW + '" height="' + plotH + '"/></clipPath></defs>';
+
+    /* Axes — no tick marks */
+    const xAxisEndX = padL + plotW - 6;
+    const yAxisTopY = padT + 6;
+
+    s += '<line x1="' + padL + '" y1="' + y0 + '" x2="' + xAxisEndX + '" y2="' + y0 +
+         '" stroke="#111827" stroke-width="1.4"/>';
+    s += '<polygon points="' + (xAxisEndX - 5) + ',' + (y0 - 4.5) + ' ' +
+         (xAxisEndX + 4) + ',' + y0 + ' ' + (xAxisEndX - 5) + ',' + (y0 + 4.5) +
+         '" fill="#111827"/>';
+
+    s += '<line x1="' + x0 + '" y1="' + (padT + plotH) + '" x2="' + x0 + '" y2="' +
+         yAxisTopY + '" stroke="#111827" stroke-width="1.4"/>';
+    s += '<polygon points="' + (x0 - 4.5) + ',' + (yAxisTopY + 5) + ' ' + x0 + ',' +
+         (yAxisTopY - 4) + ' ' + (x0 + 4.5) + ',' + (yAxisTopY + 5) + '" fill="#111827"/>';
+
+    /* Origin label — immediately bottom-left of the origin */
+    s += '<text x="' + (x0 - 4) + '" y="' + (y0 + 13) +
+         '" text-anchor="end" font-size="12" fill="#111827" font-style="italic">O</text>';
+
+    /* Axis labels */
+    s += '<text x="' + (padL + plotW - 4) + '" y="' + (y0 + 17) +
+         '" text-anchor="end" font-size="12" fill="#374151" font-style="italic">x</text>';
+    s += '<text x="' + (x0 + 8) + '" y="' + (padT + 12) +
+         '" text-anchor="start" font-size="12" fill="#374151" font-style="italic">y</text>';
+
+    /* Parabola (clipped) */
+    const N = 220;
+    const pts = [];
+    for (let i = 0; i <= N; i++) {
+      const x = xmin + (xmax - xmin) * i / N;
+      const y = a * x * x + b * x + c;
+      pts.push(xToPx(x).toFixed(2) + ',' + yToPx(y).toFixed(2));
+    }
+    s += '<path d="M ' + pts.join(' L ') + '" fill="none" stroke="#2563eb" ' +
+         'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" ' +
+         'clip-path="url(#' + uid + ')"/>';
+
+    /* Y-intercept marker + label */
+    if (c >= ymin && c <= ymax) {
+      const pyc = yToPx(c);
+      s += '<circle cx="' + x0 + '" cy="' + pyc + '" r="3.5" fill="#111827"/>';
+      s += '<text x="' + (x0 - 8) + '" y="' + (pyc + 4) +
+           '" text-anchor="end" font-size="12.5" font-weight="700" fill="#111827">' +
+           c + '</text>';
+    }
+
+    s += '</svg>';
+    return s;
+  }
+
+  /* ============================================================
+     QUADRATIC HELPERS
+     ============================================================ */
+
+  /* Right-hand side of y = ax² + bx + c, as a LaTeX string.
+     When b === 0, we sometimes reorder to "constant first" —
+     e.g. 5 - 2x² instead of -2x² + 5 — for variety. */
+  function quadEqLatex(a, b, c) {
+    if (b === 0 && rng() < 0.5) {
+      let s = String(c);
+      if (a === 1) s += ' + x^{2}';
+      else if (a === -1) s += ' - x^{2}';
+      else if (a > 0) s += ' + ' + a + 'x^{2}';
+      else s += ' - ' + Math.abs(a) + 'x^{2}';
+      return s;
+    }
+
+    let s = '';
+    if (a === 1) s += 'x^{2}';
+    else if (a === -1) s += '-x^{2}';
+    else s += a + 'x^{2}';
+
+    if (b !== 0) {
+      s += (b > 0 ? ' + ' : ' - ');
+      const ab = Math.abs(b);
+      s += (ab === 1 ? 'x' : ab + 'x');
+    }
+    if (c !== 0) {
+      s += (c > 0 ? ' + ' : ' - ') + Math.abs(c);
+    }
+    return s;
+  }
+
+  /* --- Can a student tell these two quadratics apart by sight? --- */
+  function differVisibly(q1, q2) {
+    /* (1) direction */
+    if (Math.sign(q1.a) !== Math.sign(q2.a)) return true;
+
+    /* (2) y-intercept */
+    if (Math.abs(q1.c - q2.c) >= 1) return true;
+
+    const h1 = -q1.b / (2 * q1.a);
+    const h2 = -q2.b / (2 * q2.a);
+
+    /* (3) vertex on opposite sides of the y-axis */
+    if (Math.abs(h1) >= 1 && Math.abs(h2) >= 1 && Math.sign(h1) !== Math.sign(h2)) {
+      return true;
+    }
+
+    /* (4) vertex clearly shifted horizontally */
+    if (Math.abs(h1 - h2) >= 2.5) return true;
+
+    return false;
+  }
+
+  function validParams(a, b, c) {
+    if (a === 0) return false;
+    if (Math.abs(a) > 3) return false;
+    if (Math.abs(b) > 6) return false;
+    if (Math.abs(c) > 8) return false;
+    if (c === 0) return false;
+    const h = -b / (2 * a);
+    const k = c - b * b / (4 * a);
+    if (Math.abs(h) > 3) return false;
+    if (Math.abs(k) > 9) return false;
+    return true;
+  }
+
+  /* ============================================================
+     OPTION BUILDER — 2 positive-a, 2 negative-a
+     ============================================================ */
+
+  function dedupe(list) {
+    const out = [];
+    for (const o of list) {
+      if (out.some(x => x.a === o.a && x.b === o.b && x.c === o.c)) continue;
+      out.push(o);
+    }
+    return out;
+  }
+
+  function buildOptions(a, b, c, level) {
+    const correct = {a, b, c};
+
+    /* ---- Level 1: sign-balanced by construction. ---- */
+    if (level === 1) {
+      return shuffle([
+        correct,
+        {a: -a, b, c},
+        {a, b, c: -c},
+        {a: -a, b, c: -c}
+      ]);
+    }
+
+    /* ---- Levels 2–4: two positive-a, two negative-a. ---- */
+    const correctSign = Math.sign(a);
+
+    const cands = [];
+    const add = (aa, bb, cc) => cands.push({a: aa, b: bb, c: cc});
+
+    /* Same a (share the correct answer's sign). */
+    add(a, b, c + 2); add(a, b, c - 2);
+    add(a, b, c + 3); add(a, b, c - 3);
+    add(a, b, c + 4); add(a, b, c - 4);
+    add(a, b, -c);
+    if (b !== 0) {
+      add(a, -b, c);
+      add(a, b + 3, c); add(a, b - 3, c);
+      add(a, b + 4, c); add(a, b - 4, c);
+      add(a, -b, c + 2); add(a, -b, c - 2);
+    } else {
+      add(a, 3, c); add(a, -3, c);
+      add(a, 4, c); add(a, -4, c);
+      add(a, 3, c + 2); add(a, -3, c - 2);
+    }
+
+    /* Flipped a (opposite sign). */
+    add(-a, b, c); add(-a, b, c + 2); add(-a, b, c - 2);
+    add(-a, b, c + 3); add(-a, b, c - 3);
+    add(-a, b, c + 4); add(-a, b, c - 4);
+    add(-a, b, -c);
+    if (b !== 0) {
+      add(-a, -b, c);
+      add(-a, b + 3, c); add(-a, b - 3, c);
+      add(-a, b + 4, c); add(-a, b - 4, c);
+      add(-a, -b, c + 2); add(-a, -b, c - 2);
+    } else {
+      add(-a, 3, c); add(-a, -3, c);
+      add(-a, 4, c); add(-a, -4, c);
+      add(-a, 3, c + 2); add(-a, -3, c - 2);
+    }
+
+    const uniq = dedupe(cands);
+
+    const sameSign = shuffle(uniq.filter(o =>
+      Math.sign(o.a) === correctSign &&
+      validParams(o.a, o.b, o.c) &&
+      differVisibly(correct, o)
+    ));
+    const oppSign = shuffle(uniq.filter(o =>
+      Math.sign(o.a) === -correctSign &&
+      validParams(o.a, o.b, o.c) &&
+      differVisibly(correct, o)
+    ));
+
+    for (const s of sameSign) {
+      for (let i = 0; i < oppSign.length; i++) {
+        const o1 = oppSign[i];
+        if (!differVisibly(s, o1)) continue;
+        for (let j = i + 1; j < oppSign.length; j++) {
+          const o2 = oppSign[j];
+          if (!differVisibly(s, o2)) continue;
+          if (!differVisibly(o1, o2)) continue;
+          return shuffle([correct, s, o1, o2]);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function makeQuestion(correct, options, level) {
+    return {
+      sig: 'L' + level + '|' + correct.a + '|' + correct.b + '|' + correct.c,
+      prompt: 'Which equation matches this graph?',
+      graph: graphSVG(correct.a, correct.b, correct.c),
+      options: options.map(o => ({
+        latex: quadEqLatex(o.a, o.b, o.c),   /* RHS only */
+        ok: (o.a === correct.a && o.b === correct.b && o.c === correct.c)
+      }))
+    };
+  }
+
+  function generateQuad(level) {
+    for (let attempt = 0; attempt < 200; attempt++) {
+      let a, b, c;
+
+      if (level === 1) {
+        a = pick([-1, 1]);
+        b = 0;
+        c = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+      } else if (level === 2) {
+        a = pick([-2, -1, 1, 2]);
+        b = 0;
+        c = pick([-5, -4, -3, -2, -1, 1, 2, 3, 4, 5]);
+      } else if (level === 3) {
+        a = pick([-1, 1]);
+        b = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+        c = pick([-4, -3, -2, -1, 1, 2, 3, 4]);
+      } else {
+        a = pick([-2, -1, 1, 2]);
+        b = pick([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]);
+        c = pick([-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6]);
+      }
+
+      if (!validParams(a, b, c)) continue;
+
+      const options = buildOptions(a, b, c, level);
+      if (options) return makeQuestion({a, b, c}, options, level);
+    }
+
+    /* Fallback — should rarely (if ever) be used. */
+    const fb = {a: 1, b: 0, c: -2};
+    return makeQuestion(fb, [
+      {a: 1, b: 0, c: -2},
+      {a: -1, b: 0, c: -2},
+      {a: 1, b: 0, c: 2},
+      {a: -1, b: 0, c: 2}
+    ], 1);
+  }
+
+  /* ============================================================
+     TOPIC MAP
+     ============================================================ */
+
+  const TOPIC_LEVELS = {
+    mixed: null,
+    l1: [1],
+    l2: [2],
+    l3: [3],
+    l4: [4]
+  };
+
+  /* ============================================================
+     QUESTION BUILDER
+     ============================================================ */
+  function buildQuestions(n, levelSpec) {
+    const out = [];
+    const seen = new Set();
+
+    for (let i = 0; i < n; i++) {
+      let q = null;
+
+      let level;
+      if (levelSpec === null) {
+        const raw = Math.ceil((i + 1) / (n / 4));
+        level = (i === n - 1) ? 4 : Math.min(4, Math.max(1, raw));
+      } else {
+        level = pick(levelSpec);
+      }
+
+      for (let t = 0; t < 80 && !q; t++) {
+        const tryLevel = (t < 60) ? level : ri(1, 4);
+        const candidate = generateQuad(tryLevel);
+        if (candidate && !seen.has(candidate.sig)) {
+          q = candidate;
+          seen.add(candidate.sig);
+        }
+      }
+      if (q) out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  const LETTERS = 'ABCD';
+  let questions = [];
+  let qState = [];
+
+  function renderQuestion(q, i) {
+    const optsHTML = q.options.map((o, j) =>
+      '<div class="option" data-opt="' + j + '" role="button" tabindex="0" ' +
+           'aria-label="Answer ' + LETTERS[j] + '">' +
+        '<span class="opt-letter">' + LETTERS[j] + '</span>' +
+        /* Prepend "y = " to every option */
+        '<span class="opt-visual">' + tex('y = ' + o.latex) + '</span>' +
+      '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">' + q.prompt + '</span>' +
+      '</div>' +
+      '<div class="graph-wrap">' + q.graph + '</div>' +
+      '<div class="diagram">' +
+        '<span class="eq">' + tex('y =') + '</span>' +
+        '<div class="drop-zone"><div class="qmark">?</div></div>' +
+      '</div>' +
+      '<div class="options">' + optsHTML + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+    const topic = document.getElementById('topicSelect').value;
+    const levels = TOPIC_LEVELS[topic];
+
+    questions = buildQuestions(n, levels);
+    qState = questions.map(() => ({ solved: false, attempts: 0 }));
+
+    const keyGrid = questions
+      .map((q, i) => {
+        const idx = q.options.findIndex(o => o.ok);
+        return '<span>' + (i + 1) + '. <b>' + LETTERS[idx] + '</b></span>';
+      })
+      .join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Quadratic Graphs &mdash; Matching</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'For each graph, choose the quadratic equation that matches it. ' +
+        'Drag the correct equation into the <b>?</b> box \u2014 or simply tap/click an answer. ' +
+        'You\'ll be told straight away whether you\'re right. (Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     INTERACTION
+     ============================================================ */
+  const PRAISE = ['Correct! \uD83C\uDF89', 'Yes! Well done.', "That's right! \u2B50", 'Great job! \uD83D\uDC4F', 'Perfect! \u2705'];
+
+  let drag = null;
+
+  function zoneAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    const z = el.closest('.drop-zone');
+    return (z && qEl.contains(z)) ? z : null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    const src = drag.opt.querySelector('.opt-visual');
+    g.innerHTML = src ? src.innerHTML : '';
+    g.style.left = drag.startX + 'px';
+    g.style.top  = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.opt.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top  = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = zoneAt(drag.qEl, x, y);
+    if (drag.zone && drag.zone !== z) drag.zone.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.zone = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    const qEl = opt.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    drag = {
+      opt: opt, qEl: qEl, id: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, zone: null
+    };
+    try { opt.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function endDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    const target = (!cancelled && d.moved) ? zoneAt(d.qEl, e.clientX, e.clientY) : null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.zone)  d.zone.classList.remove('over');
+    d.opt.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    const idx = parseInt(d.opt.dataset.opt, 10);
+    if (!d.moved || target) choose(d.qEl, idx);
+  }
+
+  function choose(qEl, idx) {
+    if (qEl.dataset.locked === '1') return;
+
+    const qi = parseInt(qEl.dataset.q, 10);
+    const q  = questions[qi];
+    if (!q) return;
+
+    const opt = qEl.querySelector('.option[data-opt="' + idx + '"]');
+    if (!opt) return;
+
+    qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+
+    const state = qState[qi];
+    if (state) state.attempts++;
+
+    const slot = qEl.querySelector('.drop-zone .qmark');
+    const ok = !!q.options[idx].ok;
+
+    if (slot) {
+      /* Slot keeps just the RHS — the diagram already reads "y = [?]" */
+      slot.innerHTML = tex(q.options[idx].latex);
+      slot.classList.add('filled');
+    }
+
+    if (ok) {
+      if (state) state.solved = true;
+      qEl.dataset.locked = '1';
+      opt.classList.add('correct');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      opt.classList.add('wrong');
+      setFeedback(qEl, 'no', 'Not quite \u2014 try again!');
+    }
+    updateScore();
+  }
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const solved = qState.filter(s => s.solved).length;
+    el.textContent = solved + ' / ' + qState.length + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.querySelectorAll('.option').forEach(o => o.classList.remove('correct', 'wrong'));
+      const slot = qEl.querySelector('.drop-zone .qmark');
+      if (slot) { slot.textContent = '?'; slot.classList.remove('filled'); }
+      setFeedback(qEl, '', '');
+    });
+    qState = qState.map(() => ({ solved: false, attempts: 0 }));
+    updateScore();
+  }
+
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup',     e => endDrag(e, false));
+  window.addEventListener('pointercancel', e => endDrag(e, true));
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const opt = e.target && e.target.closest ? e.target.closest('.option') : null;
+    if (!opt) return;
+    e.preventDefault();
+    const qEl = opt.closest('.q');
+    if (qEl) choose(qEl, parseInt(opt.dataset.opt, 10));
+  });
+
+  /* ============================================================
+     UI WIRING
+     ============================================================ */
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const topicSel   = document.getElementById('topicSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    navigator.clipboard.writeText(url.toString()).then(
+      () => {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '✅ Link copied';
+        setTimeout(() => { b.textContent = '🔗 Copy link to this sheet'; }, 1500);
+      },
+      () => window.prompt('Copy this link:', url.toString())
+    );
+  });
+
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function clearSeedFromURL() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('seed')) return;
+    url.searchParams.delete('seed');
+    window.history.replaceState({}, '', url);
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => {
+    applySeed();
+    render();
+  });
+
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  topicSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    clearSeedFromURL();
+    applySeed();
+    render();
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
