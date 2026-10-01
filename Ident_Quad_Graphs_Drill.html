@@ -30,7 +30,7 @@
     padding:12px 20px;
     background:#111827; color:#f9fafb;
     box-shadow:0 2px 8px rgba(0,0,0,.2);
-    font-size:14px;
+    font-size:15px;
   }
   .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
   .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
@@ -69,16 +69,16 @@
     border-bottom:3px solid var(--ink);
     padding-bottom:10px;
   }
-  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
-  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .sheet-head h1{margin:0; font-size:28px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:14px; color:#374151}
   .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
   .meta .line.short{width:80px}
   .meta .line.tiny{width:48px}
-  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted)}
+  .instructions{margin:14px 0 18px; font-size:15px; color:var(--muted)}
 
   .questions{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(380px, 1fr));
     gap:14px;
   }
   @media (max-width:760px){ .questions{grid-template-columns:1fr} }
@@ -95,20 +95,20 @@
   .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:8px}
   .q-num{
     flex:none;
-    width:22px; height:22px; border-radius:50%;
+    width:24px; height:24px; border-radius:50%;
     background:var(--ink); color:#fff;
-    font-size:12px; font-weight:700;
+    font-size:13px; font-weight:700;
     display:flex; align-items:center; justify-content:center;
     margin-top:1px;
   }
-  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+  .q-prompt{font-size:16px; line-height:1.4; font-weight:600}
 
   .graph-wrap{
     display:flex; justify-content:center; align-items:center;
     margin: 4px 0 6px;
   }
   .graph-svg{
-    width:100%; max-width:300px; height:auto; display:block;
+    width:100%; max-width:320px; height:auto; display:block;
   }
 
   .diagram{
@@ -116,7 +116,7 @@
     margin:4px 0 10px;
     min-height:56px;
   }
-  .eq{ font-size:20px; font-weight:700; color:var(--ink); white-space:nowrap; }
+  .eq{ font-size:22px; font-weight:700; color:var(--ink); white-space:nowrap; }
 
   .drop-zone{border-radius:12px; transition:transform .15s ease, background .15s ease}
   .drop-zone.over{background:#dbeafe; transform:scale(1.04)}
@@ -124,12 +124,12 @@
     border-color:var(--accent); color:var(--accent); background:#eff6ff;
   }
   .qmark{
-    min-width:170px; min-height:52px;
+    min-width:170px; min-height:56px;
     padding:6px 14px;
     border:2.5px dashed #9ca3af;
     border-radius:9px;
     display:flex; align-items:center; justify-content:center;
-    font-size:17px; font-weight:800; color:#9ca3af;
+    font-size:19px; font-weight:800; color:#9ca3af;
     white-space:nowrap;
     transition:border-color .15s, background .15s, color .15s;
   }
@@ -153,7 +153,7 @@
     border:1.5px solid var(--line);
     border-radius:9px;
     background:#fafafa;
-    padding:8px 10px;
+    padding:10px 12px;
     transition:background .12s ease, box-shadow .12s ease, border-color .12s ease;
     min-width:0;
   }
@@ -171,16 +171,16 @@
   }
   .opt-letter{
     flex:none;
-    width:20px; height:20px; border-radius:50%;
+    width:22px; height:22px; border-radius:50%;
     background:#e5e7eb; color:#374151;
-    font-size:11px; font-weight:700;
+    font-size:12px; font-weight:700;
     display:flex; align-items:center; justify-content:center;
   }
   .opt-visual{
     flex:1;
-    font-size:15px;
+    font-size:17px;
     display:flex; align-items:center;
-    min-height:32px;
+    min-height:34px;
     overflow-x:auto;
     overflow-y:hidden;
     min-width:0;
@@ -194,7 +194,7 @@
     box-shadow:0 10px 22px rgba(15,23,42,.28);
     display:flex; align-items:center; justify-content:center;
     transform:translate(-50%,-50%) scale(1.05);
-    font-size:15px;
+    font-size:17px;
   }
 
   body.dragging-active{user-select:none; -webkit-user-select:none}
@@ -209,7 +209,7 @@
 
   .q-feedback{
     margin-top:8px; min-height:15px; text-align:center;
-    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+    font-size:14px; font-weight:700; letter-spacing:.2px;
   }
   .q-feedback.ok{color:#15803d}
   .q-feedback.no{color:#b91c1c}
@@ -220,12 +220,12 @@
     padding-top:12px;
     break-inside:avoid;
   }
-  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key h2{margin:0 0 10px; font-size:17px; letter-spacing:.5px}
   .key-grid{
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(70px,1fr));
     gap:6px 10px;
-    font-size:13px;
+    font-size:14px;
     color:#374151;
   }
   .key-grid b{color:var(--ink)}
@@ -370,14 +370,14 @@
          (yAxisTopY - 4) + ' ' + (x0 + 4.5) + ',' + (yAxisTopY + 5) + '" fill="#111827"/>';
 
     /* Origin label — immediately bottom-left of the origin */
-    s += '<text x="' + (x0 - 4) + '" y="' + (y0 + 13) +
-         '" text-anchor="end" font-size="12" fill="#111827" font-style="italic">O</text>';
+    s += '<text x="' + (x0 - 4) + '" y="' + (y0 + 14) +
+         '" text-anchor="end" font-size="14" fill="#111827" font-style="italic">O</text>';
 
     /* Axis labels */
-    s += '<text x="' + (padL + plotW - 4) + '" y="' + (y0 + 17) +
-         '" text-anchor="end" font-size="12" fill="#374151" font-style="italic">x</text>';
-    s += '<text x="' + (x0 + 8) + '" y="' + (padT + 12) +
-         '" text-anchor="start" font-size="12" fill="#374151" font-style="italic">y</text>';
+    s += '<text x="' + (padL + plotW - 4) + '" y="' + (y0 + 18) +
+         '" text-anchor="end" font-size="14" fill="#374151" font-style="italic">x</text>';
+    s += '<text x="' + (x0 + 9) + '" y="' + (padT + 14) +
+         '" text-anchor="start" font-size="14" fill="#374151" font-style="italic">y</text>';
 
     /* Parabola (clipped) */
     const N = 220;
@@ -395,8 +395,8 @@
     if (c >= ymin && c <= ymax) {
       const pyc = yToPx(c);
       s += '<circle cx="' + x0 + '" cy="' + pyc + '" r="3.5" fill="#111827"/>';
-      s += '<text x="' + (x0 - 8) + '" y="' + (pyc + 4) +
-           '" text-anchor="end" font-size="12.5" font-weight="700" fill="#111827">' +
+      s += '<text x="' + (x0 - 9) + '" y="' + (pyc + 5) +
+           '" text-anchor="end" font-size="14.5" font-weight="700" fill="#111827">' +
            c + '</text>';
     }
 
