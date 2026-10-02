@@ -438,21 +438,28 @@
   }
 
   /* --- Can a student tell these two quadratics apart by sight? --- */
-    /* --- Can a student tell these two quadratics apart by sight? --- */
   function differVisibly(q1, q2) {
     /* (1) opening direction */
     if (Math.sign(q1.a) !== Math.sign(q2.a)) return true;
 
-    /* (2) steepness — integer values of a, so any change is visible */
-    if (q1.a !== q2.a) return true;
-
-    /* (3) y-intercept */
+    /* (2) y-intercept */
     if (Math.abs(q1.c - q2.c) >= 1) return true;
 
-    /* (4) horizontal position of the vertex */
     const h1 = -q1.b / (2 * q1.a);
     const h2 = -q2.b / (2 * q2.a);
-    if (Math.abs(h1 - h2) >= 1) return true;
+    const k1 = q1.c - q1.b * q1.b / (4 * q1.a);
+    const k2 = q2.c - q2.b * q2.b / (4 * q2.a);
+
+    /* (3) vertex clearly shifted horizontally */
+    if (Math.abs(h1 - h2) >= 1.5) return true;
+
+    /* (4) vertex clearly shifted vertically */
+    if (Math.abs(k1 - k2) >= 1.5) return true;
+
+    /* (5) vertex on opposite sides of the y-axis (or one on it) */
+    const s1 = Math.abs(h1) < 0.5 ? 0 : Math.sign(h1);
+    const s2 = Math.abs(h2) < 0.5 ? 0 : Math.sign(h2);
+    if (s1 !== s2) return true;
 
     return false;
   }
@@ -491,72 +498,93 @@
      identifies the correct equation on its own.  Distractors are
      built by varying the sign / magnitude of a and the value of b.
      ============================================================ */
-  function buildOptions(a, b, c, level) {
-    const correct = {a, b, c};
+    /* ============================================================
+     OPTION BUILDER
+     ------------------------------------------------------------
+     Preferred: all four options share the SAME y-intercept c, so
+     the labelled y-intercept on the graph never identifies the
+     correct equation on its own.
 
-    const cands = [];
-    const add = (aa, bb) => {
-      if (aa === 0) return;
-      cands.push({a: aa, b: bb, c: c});   /* c fixed — same y-intercept */
-    };
-
-    /* ---- 1. vary b, keep a ---- */
-    for (const db of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
-      add(a, b + db);
-    }
-    if (b !== 0) add(a, 0);
-    add(a, -b);
-
-    /* ---- 2. flip the sign of a ---- */
-    add(-a, b);
-    for (const db of [1, -1, 2, -2, 3, -3, 4, -4]) {
-      add(-a, b + db);
-    }
-    if (b !== 0) add(-a, 0);
-    add(-a, -b);
-
-    /* ---- 3. change the magnitude of a ---- */
-    const sgn = Math.sign(a);
-    for (const m of [1, 2, 3]) {
-      if (m === Math.abs(a)) continue;
-      add(sgn * m, b);
-      add(-sgn * m, b);
-      add(sgn * m, b + 2);
-      add(-sgn * m, b - 2);
-      add(sgn * m, b - 2);
-      add(-sgn * m, b + 2);
-    }
-
-    const uniq = dedupe(cands.filter(o =>
-      validParams(o.a, o.b, o.c) && differVisibly(correct, o)
-    ));
-
-    const sameSign = shuffle(uniq.filter(o => Math.sign(o.a) === Math.sign(a)));
-    const oppSign  = shuffle(uniq.filter(o => Math.sign(o.a) !== Math.sign(a)));
-
-    /* Prefer 1 same-sign + 2 opposite-sign (nice visual variety). */
-    for (const sCand of sameSign) {
-      for (let i = 0; i < oppSign.length; i++) {
-        const o1 = oppSign[i];
-        if (!differVisibly(sCand, o1)) continue;
-        for (let j = i + 1; j < oppSign.length; j++) {
-          const o2 = oppSign[j];
-          if (!differVisibly(sCand, o2)) continue;
-          if (!differVisibly(o1, o2)) continue;
-          return shuffle([correct, sCand, o1, o2]);
+     Fallback: if no three mutually distinguishable same-c
+     distractors exist, allow exactly one distractor to use -c
+     (the student can rule that option out from the graph, but at
+     least the other two can't be eliminated via the intercept).
+     ============================================================ */
+  function pickTriple(pool) {
+    if (pool.length < 3) return null;
+    const p = shuffle(pool);
+    for (let i = 0; i < p.length; i++) {
+      for (let j = i + 1; j < p.length; j++) {
+        if (!differVisibly(p[i], p[j])) continue;
+        for (let k = j + 1; k < p.length; k++) {
+          if (!differVisibly(p[i], p[k])) continue;
+          if (!differVisibly(p[j], p[k])) continue;
+          return [p[i], p[j], p[k]];
         }
       }
     }
+    return null;
+  }
 
-    /* Fallback: any 3 mutually distinguishable distractors. */
-    const pool = shuffle(uniq);
-    for (let i = 0; i < pool.length; i++) {
-      for (let j = i + 1; j < pool.length; j++) {
-        if (!differVisibly(pool[i], pool[j])) continue;
-        for (let k = j + 1; k < pool.length; k++) {
-          if (!differVisibly(pool[i], pool[k])) continue;
-          if (!differVisibly(pool[j], pool[k])) continue;
-          return shuffle([correct, pool[i], pool[j], pool[k]]);
+  function buildOptions(a, b, c, level) {
+    const correct = { a, b, c };
+    const sgn = Math.sign(a);
+
+    function makeCollector(list) {
+      return function (aa, bb, cc) {
+        if (aa === 0) return;
+        const o = { a: aa, b: bb, c: cc };
+        if (!validParams(o.a, o.b, o.c)) return;
+        if (aa === a && bb === b && cc === c) return;
+        if (list.some(x => x.a === o.a && x.b === o.b && x.c === o.c)) return;
+        if (!differVisibly(correct, o)) return;
+        list.push(o);
+      };
+    }
+
+    /* ---------- same-c candidates ---------- */
+    const sameC = [];
+    const addS = makeCollector(sameC);
+
+    for (let db = -8; db <= 8; db++) if (db !== 0) addS(a, b + db, c);
+    addS(a, -b, c);
+    if (b !== 0) addS(a, 0, c);
+
+    for (let db = -8; db <= 8; db++) addS(-a, b + db, c);
+    addS(-a, -b, c);
+
+    for (const m of [1, 2, 3]) {
+      if (m === Math.abs(a)) continue;
+      for (const db of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
+        addS(sgn * m,  b + db, c);
+        addS(-sgn * m, b + db, c);
+      }
+    }
+
+    const triple = pickTriple(sameC);
+    if (triple) return shuffle([correct].concat(triple));
+
+    /* ---------- fallback: allow one distractor with -c ---------- */
+    const oppC = [];
+    const addO = makeCollector(oppC);
+
+    for (let db = -8; db <= 8; db++) addO(a, b + db, -c);
+    addO(-a, b, -c);
+    addO(a, -b, -c);
+    addO(-a, -b, -c);
+    for (const m of [1, 2, 3]) {
+      if (m === Math.abs(a)) continue;
+      addO(sgn * m, b, -c);
+      addO(-sgn * m, b, -c);
+    }
+
+    for (let i = 0; i < sameC.length; i++) {
+      for (let j = i + 1; j < sameC.length; j++) {
+        if (!differVisibly(sameC[i], sameC[j])) continue;
+        for (let k = 0; k < oppC.length; k++) {
+          if (!differVisibly(sameC[i], oppC[k])) continue;
+          if (!differVisibly(sameC[j], oppC[k])) continue;
+          return shuffle([correct, sameC[i], sameC[j], oppC[k]]);
         }
       }
     }
