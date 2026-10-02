@@ -761,7 +761,7 @@
   /* ============================================================
      TOPIC 6 — Literal equations (in terms of k, or rearranged for x)
      ============================================================ */
-  function genLiteral() {
+    function genLiteral() {
     const kind = pick(['k', 'k', 'y']);
 
     if (kind === 'k') {
@@ -790,37 +790,36 @@
       };
     }
 
+    /* ---- y = x² + 2mx + c   ⟹   x = -m ± √(y + m² - c) ----------------
+       Every option below is a curve of the form
+            x = a ± √(y + a² − c)
+       and every one of those passes through (0, c) — the same y-intercept
+       as the original parabola — so the y-intercept gives no clue which
+       option is right. Only a = −m actually rearranges the given equation,
+       so the student has to complete the square properly.               */
     const m = ri(-6, 6);
     const c = ri(-8, 8);
     const lhs = 'y = ' + poly([{ c: 1, v: 'x^{2}' }, { c: 2 * m, v: 'x' }, { c: c, v: '' }]);
 
-    const d = m * m - c;
-    let rad;
-    if (d === 0) rad = '\\sqrt{y}';
-    else if (d > 0) rad = '\\sqrt{y + ' + d + '}';
-    else rad = '\\sqrt{y - ' + (-d) + '}';
+    function yOption(a) {
+      const d = a * a - c;                       // forces y-intercept c
+      let rad;
+      if (d === 0) rad = '\\sqrt{y}';
+      else if (d > 0) rad = '\\sqrt{y + ' + d + '}';
+      else rad = '\\sqrt{y - ' + (-d) + '}';
+      return 'x = ' + (a === 0 ? '' : a) + '\\pm ' + rad;
+    }
 
-    const lead = (-m === 0) ? '' : String(-m) + ' ';
-    const correct = 'x = ' + lead + '\\pm ' + rad;
+    const correct = yOption(-m);
 
-    let rad2;
-    const d2 = m * m + c;
-    if (d2 === 0) rad2 = '\\sqrt{y}';
-    else if (d2 > 0) rad2 = '\\sqrt{y + ' + d2 + '}';
-    else rad2 = '\\sqrt{y - ' + (-d2) + '}';
-
-    const d3 = -m * m - c;
-    let rad3;
-    if (d3 === 0) rad3 = '\\sqrt{y}';
-    else if (d3 > 0) rad3 = '\\sqrt{y + ' + d3 + '}';
-    else rad3 = '\\sqrt{y - ' + (-d3) + '}';
-
-    const wrongs = [
-      'x = ' + (m === 0 ? '' : String(m) + ' ') + '\\pm ' + rad,
-      'x = ' + lead + '\\pm ' + rad2,
-      'x = ' + lead + '\\pm ' + rad3,
-      'x = ' + lead + '\\pm ' + '(y + ' + d + ')'
-    ];
+    /* wrong options: same y-intercept, wrong vertex / wrong sign of m */
+    const cands = [m, -2 * m, -m + 1, -m - 1, m + 1, m - 1, 1, -1, 2, -2, 3, -3];
+    const wrongs = [];
+    for (let i = 0; i < cands.length && wrongs.length < 3; i++) {
+      if (cands[i] === -m) continue;
+      const s = yOption(cands[i]);
+      if (s !== correct && wrongs.indexOf(s) === -1) wrongs.push(s);
+    }
 
     return {
       sig: 'LY|' + m + '|' + c,
