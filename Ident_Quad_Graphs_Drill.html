@@ -438,23 +438,21 @@
   }
 
   /* --- Can a student tell these two quadratics apart by sight? --- */
+    /* --- Can a student tell these two quadratics apart by sight? --- */
   function differVisibly(q1, q2) {
-    /* (1) direction */
+    /* (1) opening direction */
     if (Math.sign(q1.a) !== Math.sign(q2.a)) return true;
 
-    /* (2) y-intercept */
+    /* (2) steepness — integer values of a, so any change is visible */
+    if (q1.a !== q2.a) return true;
+
+    /* (3) y-intercept */
     if (Math.abs(q1.c - q2.c) >= 1) return true;
 
+    /* (4) horizontal position of the vertex */
     const h1 = -q1.b / (2 * q1.a);
     const h2 = -q2.b / (2 * q2.a);
-
-    /* (3) vertex on opposite sides of the y-axis */
-    if (Math.abs(h1) >= 1 && Math.abs(h2) >= 1 && Math.sign(h1) !== Math.sign(h2)) {
-      return true;
-    }
-
-    /* (4) vertex clearly shifted horizontally */
-    if (Math.abs(h1 - h2) >= 2.5) return true;
+    if (Math.abs(h1 - h2) >= 1) return true;
 
     return false;
   }
@@ -485,79 +483,80 @@
     return out;
   }
 
+    /* ============================================================
+     OPTION BUILDER
+     ------------------------------------------------------------
+     All four options now share the SAME y-intercept (the same
+     value of c), so the labelled y-intercept on the graph never
+     identifies the correct equation on its own.  Distractors are
+     built by varying the sign / magnitude of a and the value of b.
+     ============================================================ */
   function buildOptions(a, b, c, level) {
     const correct = {a, b, c};
 
-    /* ---- Level 1: sign-balanced by construction. ---- */
-    if (level === 1) {
-      return shuffle([
-        correct,
-        {a: -a, b, c},
-        {a, b, c: -c},
-        {a: -a, b, c: -c}
-      ]);
-    }
-
-    /* ---- Levels 2–4: two positive-a, two negative-a. ---- */
-    const correctSign = Math.sign(a);
-
     const cands = [];
-    const add = (aa, bb, cc) => cands.push({a: aa, b: bb, c: cc});
+    const add = (aa, bb) => {
+      if (aa === 0) return;
+      cands.push({a: aa, b: bb, c: c});   /* c fixed — same y-intercept */
+    };
 
-    /* Same a (share the correct answer's sign). */
-    add(a, b, c + 2); add(a, b, c - 2);
-    add(a, b, c + 3); add(a, b, c - 3);
-    add(a, b, c + 4); add(a, b, c - 4);
-    add(a, b, -c);
-    if (b !== 0) {
-      add(a, -b, c);
-      add(a, b + 3, c); add(a, b - 3, c);
-      add(a, b + 4, c); add(a, b - 4, c);
-      add(a, -b, c + 2); add(a, -b, c - 2);
-    } else {
-      add(a, 3, c); add(a, -3, c);
-      add(a, 4, c); add(a, -4, c);
-      add(a, 3, c + 2); add(a, -3, c - 2);
+    /* ---- 1. vary b, keep a ---- */
+    for (const db of [1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6]) {
+      add(a, b + db);
+    }
+    if (b !== 0) add(a, 0);
+    add(a, -b);
+
+    /* ---- 2. flip the sign of a ---- */
+    add(-a, b);
+    for (const db of [1, -1, 2, -2, 3, -3, 4, -4]) {
+      add(-a, b + db);
+    }
+    if (b !== 0) add(-a, 0);
+    add(-a, -b);
+
+    /* ---- 3. change the magnitude of a ---- */
+    const sgn = Math.sign(a);
+    for (const m of [1, 2, 3]) {
+      if (m === Math.abs(a)) continue;
+      add(sgn * m, b);
+      add(-sgn * m, b);
+      add(sgn * m, b + 2);
+      add(-sgn * m, b - 2);
+      add(sgn * m, b - 2);
+      add(-sgn * m, b + 2);
     }
 
-    /* Flipped a (opposite sign). */
-    add(-a, b, c); add(-a, b, c + 2); add(-a, b, c - 2);
-    add(-a, b, c + 3); add(-a, b, c - 3);
-    add(-a, b, c + 4); add(-a, b, c - 4);
-    add(-a, b, -c);
-    if (b !== 0) {
-      add(-a, -b, c);
-      add(-a, b + 3, c); add(-a, b - 3, c);
-      add(-a, b + 4, c); add(-a, b - 4, c);
-      add(-a, -b, c + 2); add(-a, -b, c - 2);
-    } else {
-      add(-a, 3, c); add(-a, -3, c);
-      add(-a, 4, c); add(-a, -4, c);
-      add(-a, 3, c + 2); add(-a, -3, c - 2);
-    }
-
-    const uniq = dedupe(cands);
-
-    const sameSign = shuffle(uniq.filter(o =>
-      Math.sign(o.a) === correctSign &&
-      validParams(o.a, o.b, o.c) &&
-      differVisibly(correct, o)
-    ));
-    const oppSign = shuffle(uniq.filter(o =>
-      Math.sign(o.a) === -correctSign &&
-      validParams(o.a, o.b, o.c) &&
-      differVisibly(correct, o)
+    const uniq = dedupe(cands.filter(o =>
+      validParams(o.a, o.b, o.c) && differVisibly(correct, o)
     ));
 
-    for (const s of sameSign) {
+    const sameSign = shuffle(uniq.filter(o => Math.sign(o.a) === Math.sign(a)));
+    const oppSign  = shuffle(uniq.filter(o => Math.sign(o.a) !== Math.sign(a)));
+
+    /* Prefer 1 same-sign + 2 opposite-sign (nice visual variety). */
+    for (const sCand of sameSign) {
       for (let i = 0; i < oppSign.length; i++) {
         const o1 = oppSign[i];
-        if (!differVisibly(s, o1)) continue;
+        if (!differVisibly(sCand, o1)) continue;
         for (let j = i + 1; j < oppSign.length; j++) {
           const o2 = oppSign[j];
-          if (!differVisibly(s, o2)) continue;
+          if (!differVisibly(sCand, o2)) continue;
           if (!differVisibly(o1, o2)) continue;
-          return shuffle([correct, s, o1, o2]);
+          return shuffle([correct, sCand, o1, o2]);
+        }
+      }
+    }
+
+    /* Fallback: any 3 mutually distinguishable distractors. */
+    const pool = shuffle(uniq);
+    for (let i = 0; i < pool.length; i++) {
+      for (let j = i + 1; j < pool.length; j++) {
+        if (!differVisibly(pool[i], pool[j])) continue;
+        for (let k = j + 1; k < pool.length; k++) {
+          if (!differVisibly(pool[i], pool[k])) continue;
+          if (!differVisibly(pool[j], pool[k])) continue;
+          return shuffle([correct, pool[i], pool[j], pool[k]]);
         }
       }
     }
