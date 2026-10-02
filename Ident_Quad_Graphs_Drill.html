@@ -510,81 +510,73 @@
      (the student can rule that option out from the graph, but at
      least the other two can't be eliminated via the intercept).
      ============================================================ */
-  function pickTriple(pool) {
-    if (pool.length < 3) return null;
-    const p = shuffle(pool);
-    for (let i = 0; i < p.length; i++) {
-      for (let j = i + 1; j < p.length; j++) {
-        if (!differVisibly(p[i], p[j])) continue;
-        for (let k = j + 1; k < p.length; k++) {
-          if (!differVisibly(p[i], p[k])) continue;
-          if (!differVisibly(p[j], p[k])) continue;
-          return [p[i], p[j], p[k]];
-        }
-      }
-    }
-    return null;
-  }
+    /* ============================================================
+     OPTION BUILDER
+     ------------------------------------------------------------
+     Produces four options:
+       • the correct one,
+       • 1 distractor with the SAME sign of a (same "opening
+         direction" as the correct answer),
+       • 2 distractors with the OPPOSITE sign of a.
+     So every question has exactly two upright and two inverted
+     parabolas.
 
+     Every option shares the correct answer's y-intercept c, so
+     the labelled y-intercept on the graph never identifies the
+     correct equation on its own.
+
+     All pairs of options are required to be visually
+     distinguishable from each other (see differVisibly).
+     ============================================================ */
   function buildOptions(a, b, c, level) {
     const correct = { a, b, c };
-    const sgn = Math.sign(a);
+    const correctSign = Math.sign(a);
+    const oppSign = -correctSign;
 
-    function makeCollector(list) {
-      return function (aa, bb, cc) {
-        if (aa === 0) return;
-        const o = { a: aa, b: bb, c: cc };
-        if (!validParams(o.a, o.b, o.c)) return;
-        if (aa === a && bb === b && cc === c) return;
-        if (list.some(x => x.a === o.a && x.b === o.b && x.c === o.c)) return;
-        if (!differVisibly(correct, o)) return;
-        list.push(o);
-      };
-    }
+    /* ---- collect every candidate that keeps c fixed ---- */
+    const all = [];
+    const addCand = (aa, bb) => {
+      if (aa === 0) return;
+      const o = { a: aa, b: bb, c: c };
+      if (!validParams(o.a, o.b, o.c)) return;
+      if (aa === a && bb === b) return;                       /* skip correct */
+      if (all.some(x => x.a === aa && x.b === bb)) return;    /* dedupe */
+      if (!differVisibly(correct, o)) return;
+      all.push(o);
+    };
 
-    /* ---------- same-c candidates ---------- */
-    const sameC = [];
-    const addS = makeCollector(sameC);
+    /* 1. same a, vary b */
+    for (let db = -8; db <= 8; db++) if (db !== 0) addCand(a, b + db);
+    if (b !== 0) addCand(a, 0);
+    addCand(a, -b);
 
-    for (let db = -8; db <= 8; db++) if (db !== 0) addS(a, b + db, c);
-    addS(a, -b, c);
-    if (b !== 0) addS(a, 0, c);
+    /* 2. flip sign of a, vary b */
+    for (let db = -8; db <= 8; db++) addCand(-a, b + db);
+    addCand(-a, -b);
 
-    for (let db = -8; db <= 8; db++) addS(-a, b + db, c);
-    addS(-a, -b, c);
-
+    /* 3. change magnitude of a */
     for (const m of [1, 2, 3]) {
       if (m === Math.abs(a)) continue;
       for (const db of [0, 1, -1, 2, -2, 3, -3, 4, -4]) {
-        addS(sgn * m,  b + db, c);
-        addS(-sgn * m, b + db, c);
+        addCand(correctSign * m, b + db);
+        addCand(oppSign  * m, b + db);
       }
     }
 
-    const triple = pickTriple(sameC);
-    if (triple) return shuffle([correct].concat(triple));
+    const sameSide = shuffle(all.filter(o => Math.sign(o.a) === correctSign));
+    const oppSide  = shuffle(all.filter(o => Math.sign(o.a) === oppSign));
 
-    /* ---------- fallback: allow one distractor with -c ---------- */
-    const oppC = [];
-    const addO = makeCollector(oppC);
-
-    for (let db = -8; db <= 8; db++) addO(a, b + db, -c);
-    addO(-a, b, -c);
-    addO(a, -b, -c);
-    addO(-a, -b, -c);
-    for (const m of [1, 2, 3]) {
-      if (m === Math.abs(a)) continue;
-      addO(sgn * m, b, -c);
-      addO(-sgn * m, b, -c);
-    }
-
-    for (let i = 0; i < sameC.length; i++) {
-      for (let j = i + 1; j < sameC.length; j++) {
-        if (!differVisibly(sameC[i], sameC[j])) continue;
-        for (let k = 0; k < oppC.length; k++) {
-          if (!differVisibly(sameC[i], oppC[k])) continue;
-          if (!differVisibly(sameC[j], oppC[k])) continue;
-          return shuffle([correct, sameC[i], sameC[j], oppC[k]]);
+    /* 1 same-sign + 2 opposite-sign distractors,
+       with every pair mutually distinguishable. */
+    for (const s1 of sameSide) {
+      for (let i = 0; i < oppSide.length; i++) {
+        const o1 = oppSide[i];
+        if (!differVisibly(s1, o1)) continue;
+        for (let j = i + 1; j < oppSide.length; j++) {
+          const o2 = oppSide[j];
+          if (!differVisibly(s1, o2)) continue;
+          if (!differVisibly(o1, o2)) continue;
+          return shuffle([correct, s1, o1, o2]);
         }
       }
     }
@@ -632,13 +624,13 @@
       if (options) return makeQuestion({a, b, c}, options, level);
     }
 
-    /* Fallback — should rarely (if ever) be used. */
-    const fb = {a: 1, b: 0, c: -2};
+    /* Fallback — same y-intercept, 2 upright + 2 inverted. */
+    const fb = { a: 1, b: 0, c: -2 };
     return makeQuestion(fb, [
-      {a: 1, b: 0, c: -2},
-      {a: -1, b: 0, c: -2},
-      {a: 1, b: 0, c: 2},
-      {a: -1, b: 0, c: 2}
+      { a:  1, b: 0, c: -2 },
+      { a: -1, b: 0, c: -2 },
+      { a:  2, b: 0, c: -2 },
+      { a: -2, b: 0, c: -2 }
     ], 1);
   }
 
