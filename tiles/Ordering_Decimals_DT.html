@@ -84,6 +84,7 @@
   @media (max-width:900px){ .questions{grid-template-columns:1fr} }
 
   .q{
+    position:relative;
     border:1.5px solid var(--line);
     border-radius:10px;
     padding:10px 12px 12px;
@@ -255,15 +256,43 @@
   .key-item{ font-variant-numeric:tabular-nums; line-height:1.5; }
   .key-item b{ color:var(--ink); }
 
+  /* ---------- celebration ---------- */
+  @keyframes cardPop{
+    0%   { transform:scale(1); }
+    35%  { transform:scale(1.015); }
+    100% { transform:scale(1); }
+  }
+  .q.ok{ animation:cardPop .45s ease; }
+
+  .celebrate-layer{
+    position:absolute; inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    border-radius:10px;
+    z-index:5;
+  }
+  .confetti{
+    position:absolute;
+    display:block;
+    border-radius:2px;
+    will-change:transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .q.ok{ animation:none; }
+    .slots.shake{ animation:none; }
+  }
+
   /* ---------- print ---------- */
   @page{ size:A4; margin:12mm; }
   @media print{
     body{background:#fff}
     .no-print{display:none !important}
     .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
-    .q{border-color:#9ca3af; background:#fff !important}
+    .q{border-color:#9ca3af; background:#fff !important; animation:none !important}
     .q-feedback{display:none !important}
     .tile{ box-shadow:none; }
+    .celebrate-layer{display:none !important}
   }
 </style>
 </head>
@@ -285,6 +314,7 @@
   <button id="printBtn">🖨️ Print</button>
   <button id="shareBtn">🔗 Copy link to this sheet</button>
   <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <label class="chk"><input type="checkbox" id="soundChk" checked> 🔊 Sound</label>
   <span class="score-chip" id="scoreTag">0 / 10 correct</span>
 </div>
 
@@ -804,6 +834,121 @@
   }
 
   /* ============================================================
+     CELEBRATION  —  confetti + chime
+     ------------------------------------------------------------
+     The chime is synthesised with the Web Audio API, so there are
+     no audio files to host.  The confetti is a small burst of DOM
+     particles animated with the Web Animations API, contained to
+     the question card so it never obscures the rest of the sheet.
+     Both are suppressed when the user has asked for reduced motion
+     (confetti) or has muted sound (chime).
+     ============================================================ */
+
+  const SOUND_KEY = 'mathsDrills.sound';
+  let soundOn = true;
+  try {
+    const saved = localStorage.getItem(SOUND_KEY);
+    if (saved !== null) soundOn = (saved === '1');
+  } catch (err) { /* localStorage unavailable — keep the default */ }
+
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { audioCtx = new AC(); } catch (err) { return null; }
+    }
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch (err) { /* ignore */ }
+    }
+    return audioCtx;
+  }
+
+  /* A short, warm four-note arpeggio: C5 – E5 – G5 – C6. */
+  function playChime() {
+    if (!soundOn) return;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+
+    notes.forEach((freq, i) => {
+      const t = now + i * 0.075;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      /* soft attack, gentle decay */
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    });
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function burstConfetti(qEl) {
+    if (prefersReducedMotion()) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'celebrate-layer';
+    qEl.appendChild(layer);
+
+    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
+    const COUNT = 24;
+
+    for (let i = 0; i < COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti';
+      p.style.background = colours[i % colours.length];
+      p.style.left = '50%';
+      p.style.top  = '48%';
+
+      const w = 5 + Math.random() * 6;
+      const h = 8 + Math.random() * 8;
+      p.style.width  = w + 'px';
+      p.style.height = h + 'px';
+      if (Math.random() < 0.4) p.style.borderRadius = '50%';
+
+      layer.appendChild(p);
+
+      /* Spray outwards from the centre, with a little upward bias. */
+      const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
+      const dist  = 55 + Math.random() * 95;
+      const dx    = Math.cos(angle) * dist;
+      const dy    = Math.sin(angle) * dist - 25;
+      const rot   = (Math.random() - 0.5) * 720;
+
+      p.animate(
+        [
+          { transform: 'translate(-50%,-50%) scale(.35)', opacity: 1 },
+          { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) ' +
+                       'rotate(' + rot + 'deg) scale(1)', opacity: 0 }
+        ],
+        {
+          duration: 750 + Math.random() * 450,
+          delay: Math.random() * 90,
+          easing: 'cubic-bezier(.15,.7,.3,1)',
+          fill: 'forwards'
+        }
+      );
+    }
+
+    setTimeout(function () { layer.remove(); }, 1500);
+  }
+
+  /* ============================================================
      MARKING
      ============================================================ */
   const PRAISE = [
@@ -857,6 +1002,10 @@
       qEl.classList.add('ok');
       qEl.classList.remove('no');
       setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+
+      /* celebration! */
+      burstConfetti(qEl);
+      playChime();
     } else {
       qEl.classList.add('no');
       qEl.classList.remove('ok');
@@ -878,6 +1027,8 @@
     document.querySelectorAll('.q').forEach(qEl => {
       delete qEl.dataset.locked;
       qEl.classList.remove('ok', 'no');
+      const layer = qEl.querySelector('.celebrate-layer');
+      if (layer) layer.remove();
       const pool = qEl.querySelector('.pool');
       qEl.querySelectorAll('.slot .tile').forEach(t => pool.appendChild(t));
       /* re-shuffle the tray so it doesn't look like the previous attempt */
@@ -929,6 +1080,14 @@
   const seedInput  = document.getElementById('seedInput');
   const countSel   = document.getElementById('countSelect');
   const answersChk = document.getElementById('answersChk');
+  const soundChk   = document.getElementById('soundChk');
+
+  soundChk.checked = soundOn;
+  soundChk.addEventListener('change', () => {
+    soundOn = soundChk.checked;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch (err) {}
+    if (soundOn) playChime();          /* little preview when re-enabling */
+  });
 
   function applySeed() {
     const s = parseInt(seedInput.value, 10);
