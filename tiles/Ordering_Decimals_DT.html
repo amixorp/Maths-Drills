@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ordering Decimals</title>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    background:#fff;
+    max-width:1120px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted); line-height:1.55}
+
+  /* ---------- questions ---------- */
+  .questions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(470px, 1fr));
+    gap:14px;
+  }
+  @media (max-width:900px){ .questions{grid-template-columns:1fr} }
+
+  .q{
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px 12px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .q.ok{ border-color:#86efac; background:#f0fdf4; }
+  .q.no{ border-color:#fca5a5; background:#fff7f7; }
+
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:10px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  /* ---------- slots ---------- */
+  .slots{
+    display:grid;
+    grid-template-columns:repeat(5, minmax(0,1fr));
+    gap:7px;
+  }
+  .slot{
+    position:relative;
+    min-height:58px;
+    padding:3px;
+    border:2.5px dashed #9ca3af;
+    border-radius:9px;
+    background:#f9fafb;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .slot .slot-num{
+    position:absolute; top:3px; left:6px;
+    font-size:10px; font-weight:800; color:#9ca3af;
+    line-height:1; pointer-events:none;
+  }
+  .slot.over{
+    border-color:var(--accent); background:#dbeafe; transform:scale(1.05);
+  }
+  .slot.filled{
+    border-color:#e5e7eb; background:#fff; padding:3px;
+  }
+  .slot > .tile{
+    width:100%;
+    min-height:48px;
+    padding:4px 2px;
+    font-size:17px;
+    border-color:#c7d2fe;
+    background:#eef2ff;
+    box-shadow:none;
+  }
+  .slot > .tile:hover{ background:#e0e7ff; }
+
+  .slots-axis{
+    display:flex; justify-content:space-between;
+    margin:5px 2px 10px;
+    font-size:11px; font-weight:700; letter-spacing:.6px;
+    text-transform:uppercase; color:#9ca3af;
+  }
+
+  /* ---------- pool of tiles ---------- */
+  .pool{
+    display:flex; flex-wrap:wrap; gap:8px;
+    align-items:center; justify-content:center;
+    min-height:68px;
+    padding:8px;
+    border:1.5px dashed #d1d5db;
+    border-radius:10px;
+    background:#f9fafb;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .pool.over{ background:#dbeafe; border-color:var(--accent); }
+  .pool:empty::after{
+    content:"drop a tile here to take it back out";
+    font-size:12px; color:#9ca3af; font-style:italic;
+  }
+
+  /* ---------- tile ---------- */
+  .tile{
+    display:flex; align-items:center; justify-content:center;
+    min-height:48px;
+    padding:6px 14px;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    background:#fff;
+    font-size:19px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    letter-spacing:.3px;
+    white-space:nowrap;
+    cursor:grab;
+    user-select:none; -webkit-user-select:none;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 1px 2px rgba(15,23,42,.08);
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease, opacity .12s ease;
+  }
+  .tile:hover{ background:#f3f4f6; }
+  .tile:active{ cursor:grabbing; }
+  .tile:focus-visible{ outline:2.5px solid var(--accent); outline-offset:2px; }
+  .tile.selected{
+    border-color:var(--accent);
+    background:#eff6ff;
+    box-shadow:0 0 0 3px rgba(37,99,235,.25);
+  }
+  .tile.dragging{ opacity:.35; }
+
+  .q.ok .slot > .tile{
+    background:#dcfce7; border-color:#16a34a; color:#14532d;
+  }
+  .q.no .slot{ border-color:#dc2626; }
+  .q.no .slot > .tile{
+    background:#fee2e2; border-color:#dc2626; color:#7f1d1d;
+  }
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    60%{transform:translateX(6px)}
+    80%{transform:translateX(-3px)}
+  }
+  .slots.shake{ animation:shake .38s ease; }
+
+  /* ---------- drag ghost ---------- */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    padding:8px 16px;
+    border-radius:9px;
+    background:#fff; border:1.5px solid var(--accent);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    font-size:19px; font-weight:700; font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+    transform:translate(-50%,-50%) scale(1.06);
+  }
+  body.dragging-active{ user-select:none; -webkit-user-select:none; }
+  body.dragging-active .slot{ border-color:#93c5fd; }
+
+  /* ---------- per-question feedback ---------- */
+  .q-feedback{
+    margin-top:8px; min-height:16px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* ---------- answer key ---------- */
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+    gap:6px 18px;
+    font-size:13.5px;
+    color:#374151;
+  }
+  .key-item{ font-variant-numeric:tabular-nums; line-height:1.5; }
+  .key-item b{ color:var(--ink); }
+
+  /* ---------- print ---------- */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af; background:#fff !important}
+    .q-feedback{display:none !important}
+    .tile{ box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔢 Ordering Decimals</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Questions
+    <select id="countSelect">
+      <option>4</option>
+      <option>8</option>
+      <option selected>10</option>
+      <option>12</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link to this sheet</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <span class="score-chip" id="scoreTag">0 / 10 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  function randInt(a, b) { return a + Math.floor(rng() * (b - a + 1)); }
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     DECIMAL HELPERS  (string-based, so no floating-point traps)
+     ============================================================ */
+  function cmpDec(a, b) {
+    a = String(a); b = String(b);
+    const pa = a.split('.'), pb = b.split('.');
+    const ia = parseInt(pa[0], 10), ib = parseInt(pb[0], 10);
+    if (ia !== ib) return ia < ib ? -1 : 1;
+    const fa = pa[1] || '', fb = pb[1] || '';
+    const len = Math.max(fa.length, fb.length);
+    const x = fa.padEnd(len, '0'), y = fb.padEnd(len, '0');
+    if (x === y) return 0;
+    return x < y ? -1 : 1;
+  }
+
+  /* Collect n values that are distinct *as decimals*. */
+  function distinct(n, gen, tries) {
+    const out = [];
+    for (let t = 0; t < (tries || 600) && out.length < n; t++) {
+      const s = gen();
+      if (s == null) continue;
+      if (out.every(o => cmpDec(o, s) !== 0)) out.push(s);
+    }
+    return out.length === n ? out : null;
+  }
+
+  /* ============================================================
+     GENERATORS  (each returns 5 decimal strings, or null)
+     Difficulty ratings: 1 = straightforward, 3 = challenging.
+     All values use at most THREE decimal places.
+     ============================================================ */
+
+  /* 1 — same whole part, one decimal place            e.g. 8.2 … 8.7 */
+  function gSameInt1dp() {
+    const ip = randInt(1, 9);
+    const tenths = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 5);
+    return tenths.map(t => ip + '.' + t);
+  }
+
+  /* 2 — different whole parts, one decimal place      e.g. 1.7 6.9 5.2 … */
+  function gDiffInt1dp() {
+    const ints = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 5);
+    return ints.map(i => i + '.' + randInt(0, 9));
+  }
+
+  /* 3 — mixed magnitudes (some below 1, some larger)  e.g. 0.7 7.7 0.77 … */
+  function gMixedMagnitude() {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const k = randInt(4, 9);
+      const vals = distinct(5, () => {
+        const ip = rng() < 0.5 ? 0 : k;
+        const dp = randInt(1, 2);
+        let f = '';
+        for (let i = 0; i < dp; i++) f += randInt(0, 9);
+        return ip + '.' + f;
+      });
+      if (!vals) continue;
+      const hasSmall = vals.some(v => v.charAt(0) === '0');
+      const hasBig = vals.some(v => v.charAt(0) === String(k));
+      if (hasSmall && hasBig) return vals;
+    }
+    return null;
+  }
+
+  /* 4 — two "families" of prefixes                e.g. 2.01 2.011 2.1 2.11 2.111 */
+  function gPrefixFamilies() {
+    const ip = randInt(1, 9);
+    const leads = shuffle([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 2).sort((a, b) => a - b);
+    const sizes = rng() < 0.5 ? [3, 2] : [2, 3];
+    const out = [];
+    leads.forEach((d, i) => {
+      let f = String(d);
+      for (let j = 0; j < sizes[i]; j++) {
+        out.push(ip + '.' + f);
+        f += randInt(1, 9);          /* never append 0 → no accidental ties */
+      }
+    });
+    return out;
+  }
+
+  /* 5 — trailing-zero traps                        e.g. 4.4 4.44 4.404 4.044 4.004 */
+  function gTrailingZeros() {
+    const ip = randInt(1, 9);
+    const a = randInt(1, 9), b = randInt(1, 9), c = randInt(1, 9);
+    return [
+      ip + '.' + a,
+      ip + '.' + a + b,
+      ip + '.' + a + '0' + c,
+      ip + '.0' + b + c,
+      ip + '.00' + c
+    ];
+  }
+
+  /* 6 — place-value zeros (≤ 3 dp)                 e.g. 5.3 5.03 0.3 0.03 0.003 */
+  function gPlaceValueZeros() {
+    const d = randInt(1, 9);
+    const k = randInt(2, 9);
+    return [
+      k + '.' + d,       /* 5.3   */
+      k + '.0' + d,      /* 5.03  */
+      '0.' + d,          /* 0.3   */
+      '0.0' + d,         /* 0.03  */
+      '0.00' + d         /* 0.003 */
+    ];
+  }
+
+  /* 7 — three decimal places, small digit pool      e.g. 0.616 0.166 0.661 … */
+  function gThreeDigit() {
+    const ip = randInt(0, 3);
+    const pool = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3);
+    return distinct(5, () => {
+      let f = '';
+      for (let i = 0; i < 3; i++) f += pick(pool);
+      return ip + '.' + f;
+    });
+  }
+
+  /* 8 — two-digit whole part, mixed decimal places  e.g. 15.123 15.231 15.33 … */
+  function gTwoDigitIp() {
+    const ip = randInt(11, 39);
+    const abc = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3);
+    const a = abc[0], b = abc[1], c = abc[2];
+    return [
+      ip + '.' + a + b + c,
+      ip + '.' + a + c + b,
+      ip + '.' + a + b,
+      ip + '.0' + b + c,
+      ip + '.' + a + c
+    ];
+  }
+
+  /* ---------- catalogue with difficulty ratings ---------- */
+  const GENERATORS = [
+    { fn: gSameInt1dp,     d: 1 },
+    { fn: gDiffInt1dp,     d: 1 },
+    { fn: gMixedMagnitude, d: 2 },
+    { fn: gThreeDigit,     d: 2 },
+    { fn: gPlaceValueZeros,d: 2 },
+    { fn: gPrefixFamilies, d: 3 },
+    { fn: gTrailingZeros,  d: 3 },
+    { fn: gTwoDigitIp,     d: 3 }
+  ];
+
+  /* ============================================================
+     BUILD QUESTIONS — progressive difficulty
+     ------------------------------------------------------------
+     The target difficulty ramps smoothly from 1 (easiest) to 3
+     (hardest) across the worksheet.  At every position we draw a
+     generator whose difficulty is the closest available value to
+     that target, and we never step *down* in difficulty: once the
+     sheet has reached level 2 it stays at level 2 or above, and
+     likewise for level 3.  Within a level, generator types are
+     cycled so consecutive questions don't repeat the same shape.
+     ============================================================ */
+  function buildQuestions(n) {
+    const out = [];
+    const seen = new Set();
+
+    /* Per-difficulty decks so that within a level we cycle through
+       the available generator types rather than repeating one. */
+    const decks = { 1: [], 2: [], 3: [] };
+    function refillDeck(d) {
+      decks[d] = shuffle(
+        GENERATORS.filter(g => g.d === d).map(g => g.fn)
+      );
+    }
+    refillDeck(1); refillDeck(2); refillDeck(3);
+
+    /* Keep only values that are distinct as decimals. */
+    function uniqueFrom(vals) {
+      if (!vals || vals.length !== 5) return null;
+      const uniq = [];
+      for (const v of vals) {
+        if (uniq.every(u => cmpDec(u, v) !== 0)) uniq.push(v);
+      }
+      return uniq.length === 5 ? uniq : null;
+    }
+
+    /* Turn a set of 5 values into a question object (or null if a
+       question with this exact answer has already been produced). */
+    function makeQuestion(vals) {
+      const sorted = vals.slice().sort(cmpDec);
+      const sig = sorted.join('|');
+      if (seen.has(sig)) return null;
+      seen.add(sig);
+
+      /* Shuffle the display order, and make sure it isn't already
+         sorted from smallest to largest. */
+      let shuffled = shuffle(vals);
+      for (let k = 0; k < 30; k++) {
+        const alreadySorted = shuffled.every((v, j) => cmpDec(v, sorted[j]) === 0);
+        if (!alreadySorted) break;
+        shuffled = shuffle(vals);
+      }
+      return { sorted, shuffled, sig };
+    }
+
+    let lastDiff = 1;
+
+    for (let i = 0; i < n; i++) {
+      /* Target difficulty ramps from 1 → 3 as i goes 0 → n-1. */
+      const f = n > 1 ? i / (n - 1) : 0.5;
+      const target = 1 + 2 * f;
+
+      /* Difficulty levels we're allowed to use here: never below
+         the level used for the previous question. */
+      const levels = [1, 2, 3].filter(d => d >= lastDiff);
+
+      /* Pick the level closest to the target (lower on ties). */
+      let level = levels[0];
+      let bestDist = Math.abs(level - target);
+      for (const d of levels) {
+        const dist = Math.abs(d - target);
+        if (dist < bestDist - 1e-9) { bestDist = dist; level = d; }
+      }
+
+      /* Try to build a fresh question at this difficulty level. */
+      let placed = false;
+      for (let attempt = 0; attempt < 120 && !placed; attempt++) {
+        if (decks[level].length === 0) refillDeck(level);
+        const gen = decks[level].pop();
+        let vals = null;
+        try { vals = gen(); } catch (err) { vals = null; }
+        const uniq = uniqueFrom(vals);
+        if (!uniq) continue;
+        const q = makeQuestion(uniq);
+        if (!q) continue;
+        out.push(q);
+        lastDiff = level;
+        placed = true;
+      }
+
+      /* Fallback: if for some reason we couldn't place a question at
+         the chosen level, try any generator at all. */
+      if (!placed) {
+        for (let attempt = 0; attempt < 200 && !placed; attempt++) {
+          const gen = pick(GENERATORS).fn;
+          let vals = null;
+          try { vals = gen(); } catch (err) { vals = null; }
+          const uniq = uniqueFrom(vals);
+          if (!uniq) continue;
+          const q = makeQuestion(uniq);
+          if (!q) continue;
+          out.push(q);
+          placed = true;
+        }
+      }
+    }
+
+    /* Absolute fallback if anything at all went wrong. */
+    let g2 = 0;
+    while (out.length < n && g2 < 500) {
+      g2++;
+      const vals = gSameInt1dp();
+      const sorted = vals.slice().sort(cmpDec);
+      const sig = sorted.join('|') + '#' + g2;
+      if (seen.has(sig)) continue;
+      seen.add(sig);
+      out.push({ sorted, shuffled: shuffle(vals), sig });
+    }
+
+    return out.slice(0, n);
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  let questions = [];
+
+  function renderQuestion(q, i) {
+    const slots = [0, 1, 2, 3, 4].map(k =>
+      '<div class="slot" data-slot="' + k + '" tabindex="0" role="button" ' +
+           'aria-label="Position ' + (k + 1) + '">' +
+        '<span class="slot-num">' + (k + 1) + '</span>' +
+      '</div>'
+    ).join('');
+
+    const tiles = q.shuffled.map(v =>
+      '<div class="tile" data-val="' + v + '" tabindex="0" role="button" ' +
+           'aria-label="Decimal ' + v + '">' + v + '</div>'
+    ).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">Order these decimals from smallest to largest.</span>' +
+      '</div>' +
+      '<div class="slots">' + slots + '</div>' +
+      '<div class="slots-axis"><span>smallest</span><span>largest</span></div>' +
+      '<div class="pool">' + tiles + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+
+    questions = buildQuestions(n);
+
+    const keyGrid = questions.map((q, i) =>
+      '<div class="key-item"><b>' + (i + 1) + '.</b> ' +
+        q.sorted.join(' &lt; ') +
+      '</div>'
+    ).join('');
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Ordering Decimals</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Order each set of decimals from <b>smallest to largest</b>. ' +
+        'Drag a tile into one of the numbered boxes \u2014 or tap a tile and then tap a box. ' +
+        'To change your mind, drag a tile back out to the tray, or tap it and tap a different box. ' +
+        'When all five boxes are full you\u2019ll be told straight away whether the order is correct. ' +
+        '(Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + questions.map(renderQuestion).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-grid">' + keyGrid + '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    /* make sure every slot reports its filled state */
+    document.querySelectorAll('.q').forEach(syncSlots);
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     DRAG & DROP  /  TAP-TO-PLACE
+     ============================================================ */
+  let drag = null;
+  let selectedTile = null;
+
+  function clearSelection() {
+    if (selectedTile) selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+
+  function setSelection(tile) {
+    if (selectedTile === tile) { clearSelection(); return; }
+    clearSelection();
+    selectedTile = tile;
+    tile.classList.add('selected');
+  }
+
+  function syncSlots(qEl) {
+    if (!qEl) return;
+    qEl.querySelectorAll('.slot').forEach(s => {
+      s.classList.toggle('filled', !!s.querySelector('.tile'));
+    });
+  }
+
+  function dropTargetAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el || !el.closest) return null;
+    const slot = el.closest('.slot');
+    if (slot && qEl.contains(slot)) return slot;
+    const pool = el.closest('.pool');
+    if (pool && qEl.contains(pool)) return pool;
+    return null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    g.textContent = drag.tile.dataset.val;
+    g.style.left = drag.startX + 'px';
+    g.style.top = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.tile.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = dropTargetAt(drag.qEl, x, y);
+    if (drag.over && drag.over !== z) drag.over.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.over = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const qEl = t.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = t.closest('.tile');
+    const slot = t.closest('.slot');
+
+    drag = {
+      id: e.pointerId,
+      qEl: qEl,
+      tile: (tile && qEl.contains(tile)) ? tile : null,
+      slot: slot,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      ghost: null,
+      over: null
+    };
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      if (!drag.tile) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      clearSelection();
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function finishDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.over) d.over.classList.remove('over');
+    if (d.tile) d.tile.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    if (d.moved) {
+      const target = dropTargetAt(d.qEl, e.clientX, e.clientY);
+      if (target && d.tile) placeTile(d.tile, target);
+    } else {
+      if (d.tile) {
+        setSelection(d.tile);
+      } else if (d.slot && selectedTile && d.qEl.contains(selectedTile)) {
+        const t = selectedTile;
+        clearSelection();
+        placeTile(t, d.slot);
+      }
+    }
+  }
+
+  /* Move a tile into a slot, or back into the tray.
+     If the destination already holds a tile, the two swap. */
+  function placeTile(tile, dest) {
+    const from = tile.parentElement;
+    if (!from || from === dest) return;
+
+    const occupant = dest.classList.contains('slot') ? dest.querySelector('.tile') : null;
+    if (occupant && occupant !== tile) from.appendChild(occupant);
+
+    dest.appendChild(tile);
+
+    const qEl = tile.closest('.q');
+    clearSelection();
+    syncSlots(qEl);
+    evaluate(qEl);
+  }
+
+  /* ============================================================
+     MARKING
+     ============================================================ */
+  const PRAISE = [
+    'Correct! \uD83C\uDF89',
+    'Yes \u2014 perfect order! \u2B50',
+    'That\u2019s right! Well done. \uD83D\uDC4F',
+    'Spot on! \u2705',
+    'Excellent ordering! \uD83C\uDFAF'
+  ];
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function shakeSlots(qEl) {
+    const s = qEl.querySelector('.slots');
+    if (!s) return;
+    s.classList.remove('shake');
+    void s.offsetWidth;
+    s.classList.add('shake');
+  }
+
+  function evaluate(qEl) {
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const vals = [];
+    let full = true;
+    qEl.querySelectorAll('.slot').forEach(s => {
+      const t = s.querySelector('.tile');
+      if (!t) full = false;
+      else vals.push(t.dataset.val);
+    });
+
+    if (!full) {
+      qEl.classList.remove('ok', 'no');
+      setFeedback(qEl, '', '');
+      updateScore();
+      return;
+    }
+
+    let ok = true;
+    for (let i = 1; i < vals.length; i++) {
+      if (cmpDec(vals[i - 1], vals[i]) >= 0) { ok = false; break; }
+    }
+
+    if (ok) {
+      qEl.dataset.locked = '1';
+      qEl.classList.add('ok');
+      qEl.classList.remove('no');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+    } else {
+      qEl.classList.add('no');
+      qEl.classList.remove('ok');
+      setFeedback(qEl, 'no', 'Not quite \u2014 the order isn\u2019t right yet. Have another go!');
+      shakeSlots(qEl);
+    }
+    updateScore();
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const total = document.querySelectorAll('.q').length;
+    const solved = document.querySelectorAll('.q.ok').length;
+    el.textContent = solved + ' / ' + total + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(qEl => {
+      delete qEl.dataset.locked;
+      qEl.classList.remove('ok', 'no');
+      const pool = qEl.querySelector('.pool');
+      qEl.querySelectorAll('.slot .tile').forEach(t => pool.appendChild(t));
+      /* re-shuffle the tray so it doesn't look like the previous attempt */
+      const tiles = Array.from(pool.querySelectorAll('.tile'));
+      shuffle(tiles).forEach(t => pool.appendChild(t));
+      syncSlots(qEl);
+      setFeedback(qEl, '', '');
+    });
+    clearSelection();
+    updateScore();
+  }
+
+  /* ============================================================
+     EVENT WIRING
+     ============================================================ */
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', e => finishDrag(e, false));
+  window.addEventListener('pointercancel', e => finishDrag(e, true));
+
+  /* keyboard: Enter / Space to select a tile, then to drop it in a box */
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const el = e.target;
+    if (!el || !el.closest) return;
+    const qEl = el.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = el.closest('.tile');
+    if (tile) {
+      e.preventDefault();
+      setSelection(tile);
+      return;
+    }
+    const slot = el.closest('.slot');
+    if (slot && selectedTile && qEl.contains(selectedTile)) {
+      e.preventDefault();
+      const t = selectedTile;
+      clearSelection();
+      placeTile(t, slot);
+    }
+  });
+
+  /* clicking empty space clears the selection */
+  document.addEventListener('click', e => {
+    if (!e.target.closest || !e.target.closest('.tile, .slot')) clearSelection();
+  });
+
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const answersChk = document.getElementById('answersChk');
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', () => {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', () => { applySeed(); render(); });
+  countSel.addEventListener('change', () => { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+
+  document.getElementById('shareBtn').addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    navigator.clipboard.writeText(url.toString()).then(
+      () => {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '✅ Link copied';
+        setTimeout(() => { b.textContent = '🔗 Copy link to this sheet'; }, 1500);
+      },
+      () => window.prompt('Copy this link:', url.toString())
+    );
+  });
+
+  /* ============================================================
+     SEED HANDLING & BOOT
+     ============================================================ */
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function clearSeedFromURL() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('seed')) return;
+    url.searchParams.delete('seed');
+    window.history.replaceState({}, '', url);
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    clearSeedFromURL();
+    applySeed();
+    render();
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
