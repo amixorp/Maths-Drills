@@ -3,121 +3,255 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title></title>
+<title>Tile-Dragging Activities</title>
 <style>
+  :root{
+    --green-50:  #f0fdf4;
+    --green-100: #dcfce7;
+    --green-200: #bbf7d0;
+    --green-300: #86efac;
+    --green-400: #4ade80;
+    --green-600: #16a34a;
+    --green-700: #15803d;
+    --green-800: #166534;
+    --green-900: #14532d;
+
+    --ink:   #111827;
+    --muted: #6b7280;
+    --line:  #d1d5db;
+  }
+
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
+
   body{
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    color:#111827;
-    background:#eef1f5;
+    color:var(--ink);
+    background:linear-gradient(165deg,#f1faf4 0%, #e3f2e9 55%, #d7ebdf 100%);
+    background-attachment:fixed;
     min-height:100vh;
     display:flex;
     align-items:center;
     justify-content:center;
     padding:40px 20px;
   }
+
+  /* ---------- card ---------- */
   .card{
     background:#fff;
-    max-width:560px;
+    max-width:580px;
     width:100%;
-    padding:34px 36px 30px;
-    border-radius:12px;
-    box-shadow:0 6px 24px rgba(15,23,42,.10);
-  }
-  h1{
-    margin:0 0 6px;
-    font-size:26px;
-    letter-spacing:.4px;
-  }
-  p.lede{
-    margin:0 0 20px;
-    color:#6b7280;
-    font-size:14px;
-    line-height:1.5;
+    padding:36px 38px 28px;
+    border-radius:16px;
+    border:1px solid rgba(134,239,172,.5);
+    box-shadow:
+      0 10px 30px rgba(20,83,45,.10),
+      0 2px 6px rgba(20,83,45,.05);
   }
 
-  /* ---------- back-link (mirrors the nav button on index) ---------- */
-  .nav-btn{
+  .eyebrow{
+    margin:0 0 6px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--green-600);
+  }
+
+  h1{
+    margin:0 0 8px;
+    font-size:26px;
+    letter-spacing:.3px;
+    color:var(--green-900);
+  }
+
+  p.lede{
+    margin:0 0 18px;
+    color:#4b6b58;
+    font-size:14px;
+    line-height:1.55;
+  }
+
+  /* ---------- decorative tile row ---------- */
+  .tile-row{
     display:flex;
-    align-items:center;
-    gap:10px;
-    width:100%;
-    padding:11px 16px;
+    gap:6px;
     margin:0 0 22px;
-    border:1.5px solid #d1d5db;
+  }
+  .tile-row span{
+    width:16px;
+    height:16px;
+    border-radius:5px;
+    background:var(--green-100);
+  }
+  .tile-row span:nth-child(2){ background:var(--green-200); }
+  .tile-row span:nth-child(3){ background:var(--green-300); }
+  .tile-row span:nth-child(4){ background:var(--green-400); }
+
+  /* ---------- back link ---------- */
+  .nav-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 15px;
+    margin:0 0 22px;
+    border:1px solid var(--line);
     background:#f9fafb;
-    border-radius:9px;
+    border-radius:999px;
     color:#374151;
     text-decoration:none;
     font-weight:600;
-    font-size:14px;
-    transition:background .12s, border-color .12s;
+    font-size:13px;
+    transition:background .15s, border-color .15s, color .15s;
   }
   .nav-btn:hover{
-    background:#f3f4f6;
-    border-color:#9ca3af;
+    background:var(--green-50);
+    border-color:var(--green-300);
+    color:var(--green-700);
+  }
+  .nav-btn:focus-visible{
+    outline:2.5px solid var(--green-400);
+    outline-offset:2px;
   }
 
+  /* ---------- activity links ---------- */
   ul{
     list-style:none;
     margin:0;
     padding:0;
+    display:grid;
+    gap:12px;
   }
-  li{margin-bottom:10px}
+
   a.ws-link{
-    display:block;
-    padding:14px 16px;
-    border:1.5px solid #d1d5db;
-    border-radius:9px;
-    color:#111827;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:16px 18px;
+    border:1.5px solid var(--green-200);
+    background:var(--green-50);
+    border-radius:12px;
+    color:var(--green-900);
     text-decoration:none;
-    font-weight:600;
-    transition:background .12s, border-color .12s, transform .12s;
+    transition:background .15s, border-color .15s,
+               transform .15s, box-shadow .15s;
   }
   a.ws-link:hover{
-    background:#f3f4f6;
-    border-color:#9ca3af;
+    background:var(--green-100);
+    border-color:var(--green-300);
+    transform:translateY(-2px);
+    box-shadow:0 6px 16px rgba(22,163,74,.14);
   }
-  a.ws-link span{
+  a.ws-link:focus-visible{
+    outline:2.5px solid var(--green-400);
+    outline-offset:2px;
+  }
+
+  .ws-icon{
+    flex:none;
+    width:44px;
+    height:44px;
+    border-radius:11px;
+    background:#fff;
+    border:1px solid var(--green-200);
+    display:grid;
+    place-items:center;
+    font-size:21px;
+    line-height:1;
+    box-shadow:0 1px 2px rgba(20,83,45,.05);
+  }
+
+  .ws-body{
+    flex:1;
+    min-width:0;
+  }
+  .ws-title{
     display:block;
+    font-weight:700;
+    font-size:15px;
+    color:var(--green-900);
+  }
+  .ws-desc{
+    display:block;
+    margin-top:3px;
     font-weight:400;
     font-size:12.5px;
-    color:#6b7280;
-    margin-top:3px;
+    line-height:1.45;
+    color:#4b6b58;
   }
+
+  .ws-chevron{
+    flex:none;
+    font-size:18px;
+    font-weight:700;
+    color:var(--green-600);
+    transition:transform .15s;
+  }
+  a.ws-link:hover .ws-chevron{ transform:translateX(3px); }
+
+  /* ---------- footer ---------- */
   footer{
-    margin-top:22px;
-    padding-top:14px;
-    border-top:1px solid #e5e7eb;
+    margin-top:24px;
+    padding-top:16px;
+    border-top:1px solid var(--green-100);
     font-size:12px;
     color:#9ca3af;
     text-align:center;
+  }
+
+  /* ---------- small screens ---------- */
+  @media (max-width:480px){
+    .card{ padding:28px 22px 22px; }
+    h1{ font-size:22px; }
+    a.ws-link{ padding:14px 14px; gap:12px; }
+    .ws-icon{ width:38px; height:38px; font-size:18px; border-radius:10px; }
+  }
+
+  /* ---------- reduced motion ---------- */
+  @media (prefers-reduced-motion: reduce){
+    a.ws-link{ transition:none; }
+    a.ws-link:hover{ transform:none; }
+    a.ws-link:hover .ws-chevron{ transform:none; }
   }
 </style>
 </head>
 <body>
   <main class="card">
+
+    <p class="eyebrow">Maths Drills</p>
     <h1>Tile-Dragging Activities</h1>
-    <p class="lede">Tile dragging activities.</p>
+    <p class="lede">
+      Interactive puzzles where you drag the right tiles into place.
+      Each one gives instant feedback as you go.
+    </p>
+
+    <div class="tile-row" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
 
     <a class="nav-btn" href="index.html">← Back to Maths Drills</a>
 
     <ul>
       <li>
-          <a class="ws-link" href="tiles/Ordering_Decimals_DT.html">>
-          Ordering Decimals
-          <span>Drag tiles to place decimals in order.</span>
+        <a class="ws-link" href="tiles/Ordering_Decimals_DT.html">
+          <span class="ws-icon" aria-hidden="true">🔢</span>
+          <span class="ws-body">
+            <span class="ws-title">Ordering Decimals</span>
+            <span class="ws-desc">Drag tiles to place decimals in order from smallest to largest.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
-	<li>
-          <a class="ws-link" href="tiles/Trapezia_DT.html">>
-          Finding Trapezia
-          <span>Can you find the four trapezia mixed in with other shapes?</span>
+      <li>
+        <a class="ws-link" href="tiles/Trapezia_DT.html">
+          <span class="ws-icon" aria-hidden="true">🔷</span>
+          <span class="ws-body">
+            <span class="ws-title">Finding Trapezia</span>
+            <span class="ws-desc">Can you find the four trapezia mixed in with the other shapes?</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
-
-
     </ul>
 
     <footer>Click a link to begin.</footer>
