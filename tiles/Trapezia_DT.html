@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Identifying Trapezia</title>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    background:#fff;
+    max-width:1120px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted); line-height:1.55}
+
+  /* ---------- boards ---------- */
+  .questions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+  }
+
+  .q{
+    position:relative;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px 16px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .q.ok{ border-color:#86efac; background:#f0fdf4; }
+  .q.no{ border-color:#fca5a5; background:#fff7f7; }
+
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:14px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  /* ---------- slots ---------- */
+  .slots{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    gap:12px;
+    max-width:520px;
+    width:100%;
+    margin:0 auto 8px;
+  }
+  .slot{
+    position:relative;
+    aspect-ratio:1 / 1;
+    border:2.5px dashed #9ca3af;
+    border-radius:12px;
+    background:#f9fafb;
+    display:grid;
+    place-items:center;
+    padding:6px;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .slot.over{
+    border-color:var(--accent); background:#dbeafe; transform:scale(1.04);
+  }
+  .slot.filled{
+    border-style:solid;
+    border-color:#e5e7eb;
+    background:#fff;
+  }
+  .slot > .tile{
+    width:100%; height:100%;
+    aspect-ratio:auto;
+    padding:4px;
+    border-color:#c7d2fe;
+    background:#eef2ff;
+    box-shadow:none;
+  }
+  .slot > .tile:hover{ background:#e0e7ff; }
+
+  .slots-caption{
+    text-align:center;
+    margin:0 0 16px;
+    font-size:11px; font-weight:700; letter-spacing:.7px;
+    text-transform:uppercase; color:#9ca3af;
+  }
+
+  /* ---------- pool of tiles ---------- */
+  .pool{
+    display:flex; flex-wrap:wrap; gap:10px;
+    align-items:center; justify-content:center;
+    min-height:130px;
+    padding:14px;
+    border:1.5px dashed #d1d5db;
+    border-radius:12px;
+    background:#f9fafb;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .pool.over{ background:#dbeafe; border-color:var(--accent); }
+
+  /* ---------- tile ---------- */
+  .tile{
+    width:112px; height:112px;
+    display:flex; align-items:center; justify-content:center;
+    padding:8px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    cursor:grab;
+    user-select:none; -webkit-user-select:none;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 1px 2px rgba(15,23,42,.08);
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease, opacity .12s ease;
+  }
+  .tile:hover{ background:#f3f4f6; }
+  .tile:active{ cursor:grabbing; }
+  .tile:focus-visible{ outline:2.5px solid var(--accent); outline-offset:2px; }
+  .tile.selected{
+    border-color:var(--accent);
+    background:#eff6ff;
+    box-shadow:0 0 0 3px rgba(37,99,235,.25);
+  }
+  .tile.dragging{ opacity:.35; }
+
+  .tile svg{ width:100%; height:100%; display:block; }
+
+  .q.ok .slot > .tile{
+    background:#dcfce7; border-color:#16a34a;
+  }
+  .q.no .slot{ border-color:#dc2626; }
+  .q.no .slot > .tile{
+    background:#fee2e2; border-color:#dc2626;
+  }
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    60%{transform:translateX(6px)}
+    80%{transform:translateX(-3px)}
+  }
+  .slots.shake{ animation:shake .38s ease; }
+
+  /* ---------- drag ghost ---------- */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    width:96px; height:96px;
+    padding:6px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--accent);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    transform:translate(-50%,-50%) scale(1.06);
+  }
+  .drag-ghost svg{ width:100%; height:100%; display:block; }
+  body.dragging-active{ user-select:none; -webkit-user-select:none; }
+  body.dragging-active .slot{ border-color:#93c5fd; }
+
+  /* ---------- per-question feedback ---------- */
+  .q-feedback{
+    margin-top:10px; min-height:16px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* ---------- answer key ---------- */
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-note{ font-size:13px; color:#374151; line-height:1.6; }
+  .key-note ul{ margin:8px 0 0 18px; padding:0; }
+  .key-note li{ margin-bottom:3px; }
+
+  /* ---------- celebration ---------- */
+  @keyframes cardPop{
+    0%   { transform:scale(1); }
+    35%  { transform:scale(1.015); }
+    100% { transform:scale(1); }
+  }
+  .q.ok{ animation:cardPop .45s ease; }
+
+  .celebrate-layer{
+    position:absolute; inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    border-radius:12px;
+    z-index:5;
+  }
+  .confetti{
+    position:absolute;
+    display:block;
+    border-radius:2px;
+    will-change:transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .q.ok{ animation:none; }
+    .slots.shake{ animation:none; }
+  }
+
+  /* ---------- small screens ---------- */
+  @media (max-width:640px){
+    .sheet{padding:22px 16px 30px}
+    .slots{ gap:8px }
+    .pool{ gap:8px; padding:10px }
+    .tile{ width:76px; height:76px; padding:5px }
+  }
+
+  /* ---------- print ---------- */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    .q{border-color:#9ca3af; background:#fff !important; animation:none !important}
+    .q-feedback{display:none !important}
+    .tile{ box-shadow:none; }
+    .celebrate-layer{display:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔷 Identifying Trapezia</div>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Boards
+    <select id="countSelect">
+      <option selected>1</option>
+      <option>2</option>
+      <option>3</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link to this sheet</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <label class="chk"><input type="checkbox" id="soundChk" checked> 🔊 Sound</label>
+  <span class="score-chip" id="scoreTag">0 / 1 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  function randInt(a, b) { return a + Math.floor(rng() * (b - a + 1)); }
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     QUADRILATERAL CATALOGUE
+     ------------------------------------------------------------
+     Each shape is a list of four [x, y] vertices, drawn on a
+     100 × 100 grid.
+
+     A trapezium is taken in its GCSE sense: EXACTLY ONE pair of
+     parallel sides.  So the square, rectangle, both parallelograms
+     and the rhombus below are not trapezia, because each has two
+     pairs of parallel sides.  The kite and the two irregular
+     quadrilaterals have no parallel sides at all.
+     ============================================================ */
+
+  /* --- the four trapezia --- */
+
+  const TRAPEZIA = [
+    /* Right trapezium: horizontal top and bottom, vertical left side. */
+    [[10,80],[90,80],[70,20],[10,20]],
+
+    /* Isosceles trapezium: horizontal parallels, symmetrical legs. */
+    [[10,80],[90,80],[68,22],[32,22]],
+
+    /* Non-isosceles trapezium: horizontal parallels, unequal legs. */
+    [[12,82],[92,82],[78,18],[38,18]],
+
+    /* Tilted trapezium: the parallel pair runs diagonally. */
+    [[15,25],[80,41.25],[75,86.25],[30,75]]
+  ];
+
+  /* --- the eight distractors --- */
+
+  const OTHERS = [
+    /* Square */
+    [[20,20],[80,20],[80,80],[20,80]],
+
+    /* Rectangle */
+    [[10,32],[90,32],[90,68],[10,68]],
+
+    /* Parallelogram (slanted, horizontal parallels) */
+    [[25,20],[90,20],[75,80],[10,80]],
+
+    /* Rhombus */
+    [[50,15],[85,50],[50,85],[15,50]],
+
+    /* Kite — two pairs of equal adjacent sides, no parallel sides */
+    [[50,12],[80,45],[50,88],[20,45]],
+
+    /* Irregular quadrilateral — no parallel sides */
+    [[15,25],[85,15],[75,80],[25,90]],
+
+    /* Parallelogram (tilted) */
+    [[20,70],[45,15],[85,25],[60,80]],
+
+    /* The trap: looks like a trapezium, but the top edge is tilted,
+       so there are no parallel sides at all. */
+    [[15,32],[85,18],[80,80],[20,80]]
+  ];
+
+  /* ============================================================
+     ORIENTATION  —  reflects / rotates a shape about the centre
+     of the 100 × 100 square, so it always stays inside the box.
+     Both reflections and quarter-turns preserve parallel sides,
+     so classification is never affected.
+     ============================================================ */
+  function orient(points, flip, turns) {
+    return points.map(function (p) {
+      let x = p[0], y = p[1];
+      if (flip) x = 100 - x;
+      let dx = x - 50, dy = y - 50;
+      for (let i = 0; i < turns; i++) {
+        const nx = -dy, ny = dx;   /* a quarter turn about (50,50) */
+        dx = nx; dy = ny;
+      }
+      return [50 + dx, 50 + dy];
+    });
+  }
+
+  /* ============================================================
+     SVG RENDERING
+     ============================================================ */
+  function shapeSVG(points) {
+    const pts = points
+      .map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2))
+      .join(' ');
+    return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+             '<polygon points="' + pts + '" ' +
+                     'fill="#ffffff" stroke="#1f2937" ' +
+                     'stroke-width="2.5" stroke-linejoin="round"/>' +
+           '</svg>';
+  }
+
+  /* ============================================================
+     BUILD BOARDS
+     ------------------------------------------------------------
+     Every board has exactly four trapezia and eight other
+     quadrilaterals, each independently reflected and rotated so
+     that the same twelve shapes never look the same twice.
+     ============================================================ */
+  function buildBoard() {
+    const traps = shuffle(TRAPEZIA).map(function (pts) {
+      return { pts: orient(pts, rng() < 0.5, randInt(0, 3)), trap: true };
+    });
+    const others = shuffle(OTHERS).map(function (pts) {
+      return { pts: orient(pts, rng() < 0.5, randInt(0, 3)), trap: false };
+    });
+    return shuffle(traps.concat(others));
+  }
+
+  function buildBoards(n) {
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(buildBoard());
+    return out;
+  }
+
+  /* ============================================================
+     RENDER
+     ============================================================ */
+  let boards = [];
+
+  function renderBoard(board, i) {
+    const slots = [0, 1, 2, 3].map(function (k) {
+      return '<div class="slot" data-slot="' + k + '" tabindex="0" role="button" ' +
+             'aria-label="Drop zone ' + (k + 1) + '"></div>';
+    }).join('');
+
+    const tiles = board.map(function (sh, j) {
+      return '<div class="tile" data-trap="' + (sh.trap ? '1' : '0') + '" ' +
+                  'tabindex="0" role="button" aria-label="Quadrilateral ' + (j + 1) + '">' +
+               shapeSVG(sh.pts) +
+             '</div>';
+    }).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">Drag the four trapezia into the boxes.</span>' +
+      '</div>' +
+      '<div class="slots">' + slots + '</div>' +
+      '<div class="slots-caption">your four trapezia</div>' +
+      '<div class="pool">' + tiles + '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  function render() {
+    const sheet = document.getElementById('sheet');
+    const n = parseInt(document.getElementById('countSelect').value, 10);
+
+    boards = buildBoards(n);
+
+    const keyNote =
+      '<div class="key-note">' +
+        'On each board, the four trapezia are the shapes with ' +
+        '<b>exactly one</b> pair of parallel sides.' +
+        '<ul>' +
+          '<li>A square, rectangle, parallelogram or rhombus has ' +
+              '<b>two</b> pairs of parallel sides, so it is not a trapezium.</li>' +
+          '<li>A kite and a general irregular quadrilateral have ' +
+              '<b>no</b> parallel sides.</li>' +
+        '</ul>' +
+      '</div>';
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Identifying Trapezia</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'A <b>trapezium</b> has exactly one pair of parallel sides. ' +
+        'Drag the four trapezia from the shapes below into the four boxes \u2014 ' +
+        'the order doesn\u2019t matter. You can also tap a shape and then tap a box. ' +
+        'When all four boxes are full you\u2019ll be told straight away whether you\u2019re right. ' +
+        '(Seed: <span id="seedTag"></span>)' +
+      '</p>' +
+      '<div class="questions">' + boards.map(renderBoard).join('') + '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' + keyNote +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = document.getElementById('seedInput').value;
+
+    document.querySelectorAll('.q').forEach(syncSlots);
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    const show = document.getElementById('answersChk').checked;
+    const key = document.getElementById('keySection');
+    if (key) key.style.display = show ? '' : 'none';
+  }
+
+  /* ============================================================
+     DRAG & DROP  /  TAP-TO-PLACE
+     ============================================================ */
+  let drag = null;
+  let selectedTile = null;
+
+  function clearSelection() {
+    if (selectedTile) selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+
+  function setSelection(tile) {
+    if (selectedTile === tile) { clearSelection(); return; }
+    clearSelection();
+    selectedTile = tile;
+    tile.classList.add('selected');
+  }
+
+  function syncSlots(qEl) {
+    if (!qEl) return;
+    qEl.querySelectorAll('.slot').forEach(function (s) {
+      s.classList.toggle('filled', !!s.querySelector('.tile'));
+    });
+  }
+
+  function dropTargetAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el || !el.closest) return null;
+    const slot = el.closest('.slot');
+    if (slot && qEl.contains(slot)) return slot;
+    const pool = el.closest('.pool');
+    if (pool && qEl.contains(pool)) return pool;
+    return null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    g.innerHTML = drag.tile.innerHTML;
+    g.style.left = drag.startX + 'px';
+    g.style.top = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.tile.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = dropTargetAt(drag.qEl, x, y);
+    if (drag.over && drag.over !== z) drag.over.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.over = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const qEl = t.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = t.closest('.tile');
+    const slot = t.closest('.slot');
+
+    drag = {
+      id: e.pointerId,
+      qEl: qEl,
+      tile: (tile && qEl.contains(tile)) ? tile : null,
+      slot: slot,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      ghost: null,
+      over: null
+    };
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      if (!drag.tile) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      clearSelection();
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function finishDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.over) d.over.classList.remove('over');
+    if (d.tile) d.tile.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    if (d.moved) {
+      const target = dropTargetAt(d.qEl, e.clientX, e.clientY);
+      if (target && d.tile) placeTile(d.tile, target);
+    } else {
+      if (d.tile) {
+        setSelection(d.tile);
+      } else if (d.slot && selectedTile && d.qEl.contains(selectedTile)) {
+        const t = selectedTile;
+        clearSelection();
+        placeTile(t, d.slot);
+      }
+    }
+  }
+
+  /* Move a tile into a slot, or back to the tray.
+     If the destination already holds a tile, the two swap. */
+  function placeTile(tile, dest) {
+    const from = tile.parentElement;
+    if (!from || from === dest) return;
+
+    const occupant = dest.classList.contains('slot') ? dest.querySelector('.tile') : null;
+    if (occupant && occupant !== tile) from.appendChild(occupant);
+
+    dest.appendChild(tile);
+
+    const qEl = tile.closest('.q');
+    clearSelection();
+    syncSlots(qEl);
+    evaluate(qEl);
+  }
+
+  /* ============================================================
+     CELEBRATION  —  confetti + chime
+     ============================================================ */
+
+  const SOUND_KEY = 'mathsDrills.sound';
+  let soundOn = true;
+  try {
+    const saved = localStorage.getItem(SOUND_KEY);
+    if (saved !== null) soundOn = (saved === '1');
+  } catch (err) { /* localStorage unavailable — keep the default */ }
+
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { audioCtx = new AC(); } catch (err) { return null; }
+    }
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch (err) { /* ignore */ }
+    }
+    return audioCtx;
+  }
+
+  /* A short, warm four-note arpeggio: C5 – E5 – G5 – C6. */
+  function playChime() {
+    if (!soundOn) return;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+
+    notes.forEach(function (freq, i) {
+      const t = now + i * 0.075;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    });
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function burstConfetti(qEl) {
+    if (prefersReducedMotion()) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'celebrate-layer';
+    qEl.appendChild(layer);
+
+    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
+    const COUNT = 26;
+
+    for (let i = 0; i < COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti';
+      p.style.background = colours[i % colours.length];
+      p.style.left = '50%';
+      p.style.top  = '45%';
+
+      const w = 5 + Math.random() * 6;
+      const h = 8 + Math.random() * 8;
+      p.style.width  = w + 'px';
+      p.style.height = h + 'px';
+      if (Math.random() < 0.4) p.style.borderRadius = '50%';
+
+      layer.appendChild(p);
+
+      const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
+      const dist  = 70 + Math.random() * 120;
+      const dx    = Math.cos(angle) * dist;
+      const dy    = Math.sin(angle) * dist - 30;
+      const rot   = (Math.random() - 0.5) * 720;
+
+      p.animate(
+        [
+          { transform: 'translate(-50%,-50%) scale(.35)', opacity: 1 },
+          { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) ' +
+                       'rotate(' + rot + 'deg) scale(1)', opacity: 0 }
+        ],
+        {
+          duration: 800 + Math.random() * 500,
+          delay: Math.random() * 90,
+          easing: 'cubic-bezier(.15,.7,.3,1)',
+          fill: 'forwards'
+        }
+      );
+    }
+
+    setTimeout(function () { layer.remove(); }, 1600);
+  }
+
+  /* ============================================================
+     MARKING
+     ============================================================ */
+  const PRAISE = [
+    'Correct! \uD83C\uDF89',
+    'Yes \u2014 all four trapezia! \u2B50',
+    'That\u2019s right! Well done. \uD83D\uDC4F',
+    'Spot on! \u2705',
+    'Excellent \u2014 you spotted them all! \uD83C\uDFAF'
+  ];
+
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function shakeSlots(qEl) {
+    const s = qEl.querySelector('.slots');
+    if (!s) return;
+    s.classList.remove('shake');
+    void s.offsetWidth;
+    s.classList.add('shake');
+  }
+
+  function evaluate(qEl) {
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const slots = Array.prototype.slice.call(qEl.querySelectorAll('.slot'));
+    const filled = slots.filter(function (s) { return !!s.querySelector('.tile'); });
+
+    if (filled.length < slots.length) {
+      qEl.classList.remove('ok', 'no');
+      setFeedback(qEl, '', '');
+      updateScore();
+      return;
+    }
+
+    const allTrapezia = filled.every(function (s) {
+      const t = s.querySelector('.tile');
+      return t && t.dataset.trap === '1';
+    });
+
+    if (allTrapezia) {
+      qEl.dataset.locked = '1';
+      qEl.classList.add('ok');
+      qEl.classList.remove('no');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+
+      burstConfetti(qEl);
+      playChime();
+    } else {
+      qEl.classList.add('no');
+      qEl.classList.remove('ok');
+      setFeedback(qEl, 'no',
+        'Not quite \u2014 not all of these are trapezia. ' +
+        'A trapezium has exactly one pair of parallel sides.');
+      shakeSlots(qEl);
+    }
+    updateScore();
+  }
+
+  function updateScore() {
+    const el = document.getElementById('scoreTag');
+    if (!el) return;
+    const total = document.querySelectorAll('.q').length;
+    const solved = document.querySelectorAll('.q.ok').length;
+    el.textContent = solved + ' / ' + total + ' correct';
+  }
+
+  function resetAnswers() {
+    document.querySelectorAll('.q').forEach(function (qEl) {
+      delete qEl.dataset.locked;
+      qEl.classList.remove('ok', 'no');
+      const layer = qEl.querySelector('.celebrate-layer');
+      if (layer) layer.remove();
+      const pool = qEl.querySelector('.pool');
+      qEl.querySelectorAll('.slot .tile').forEach(function (t) { pool.appendChild(t); });
+      const tiles = Array.prototype.slice.call(pool.querySelectorAll('.tile'));
+      shuffle(tiles).forEach(function (t) { pool.appendChild(t); });
+      syncSlots(qEl);
+      setFeedback(qEl, '', '');
+    });
+    clearSelection();
+    updateScore();
+  }
+
+  /* ============================================================
+     EVENT WIRING
+     ============================================================ */
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', function (e) { finishDrag(e, false); });
+  window.addEventListener('pointercancel', function (e) { finishDrag(e, true); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const el = e.target;
+    if (!el || !el.closest) return;
+    const qEl = el.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = el.closest('.tile');
+    if (tile) {
+      e.preventDefault();
+      setSelection(tile);
+      return;
+    }
+    const slot = el.closest('.slot');
+    if (slot && selectedTile && qEl.contains(selectedTile)) {
+      e.preventDefault();
+      const t = selectedTile;
+      clearSelection();
+      placeTile(t, slot);
+    }
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('.tile, .slot')) clearSelection();
+  });
+
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSelect');
+  const answersChk = document.getElementById('answersChk');
+  const soundChk   = document.getElementById('soundChk');
+
+  soundChk.checked = soundOn;
+  soundChk.addEventListener('change', function () {
+    soundOn = soundChk.checked;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch (err) {}
+    if (soundOn) playChime();
+  });
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', function () {
+    seedInput.value = randomSeed();
+    applySeed();
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', function () { applySeed(); render(); });
+  countSel.addEventListener('change', function () { applySeed(); render(); });
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+
+  document.getElementById('shareBtn').addEventListener('click', function () {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    navigator.clipboard.writeText(url.toString()).then(
+      function () {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '✅ Link copied';
+        setTimeout(function () { b.textContent = '🔗 Copy link to this sheet'; }, 1500);
+      },
+      function () { window.prompt('Copy this link:', url.toString()); }
+    );
+  });
+
+  /* ============================================================
+     SEED HANDLING & BOOT
+     ============================================================ */
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function clearSeedFromURL() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('seed')) return;
+    url.searchParams.delete('seed');
+    window.history.replaceState({}, '', url);
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    clearSeedFromURL();
+    applySeed();
+    render();
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
