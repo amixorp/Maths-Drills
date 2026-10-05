@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simplifying Expressions — Worksheet Generator</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-size:16px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ---------------- toolbar ---------------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:12px 20px;
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;
+  }
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],
+  .toolbar input[type=text],
+  .toolbar select{
+    padding:7px 9px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit;
+  }
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:215px}
+  .toolbar button{
+    padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{
+    background:#15803d; border-color:#16a34a;
+  }
+  .toolbar button.reveal-on:hover{background:#166534}
+
+  /* ---------------- paper ---------------- */
+  .viewport{
+    overflow:hidden;
+    padding-top:28px;
+    padding-bottom:6px;
+  }
+  .page{
+    position:relative;
+    width:210mm;
+    height:297mm;
+    background:#fff;
+    box-shadow:0 6px 26px rgba(15,23,42,.16);
+    left:50%;
+    margin-left:-105mm;
+    transform-origin:top center;
+    font-family:Helvetica,Arial,sans-serif;
+    color:#000;
+  }
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .tx i{font-style:italic}
+  .page .ln{
+    position:absolute; height:0; border-top-style:solid; border-color:#000;
+  }
+  .page .rr{
+    position:absolute;
+    border-style:solid;
+    border-color:#000;
+    box-sizing:border-box;
+  }
+
+  /* ---------- inline answers: hidden by default, shown on reveal ---------- */
+  .page .ans{
+    display: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .page.reveal .ans{
+    display: block;
+  }
+
+  .hint{
+    text-align:center; color:var(--muted);
+    font-size:13px; line-height:1.5;
+    padding:4px 16px 34px;
+  }
+  .hint kbd{
+    background:#e2e8f0; border-radius:5px; padding:1px 6px;
+    font-family:inherit; font-size:12px;
+  }
+
+  /* ---------------- print ---------------- */
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{height:auto !important; padding:0 !important; overflow:visible !important}
+    .page{
+      transform:none !important;
+      left:0 !important;
+      margin-left:0 !important;
+      box-shadow:none !important;
+      width:210mm;
+      height:296.9mm;
+    }
+    /* Answers NEVER print — regardless of on-screen reveal state. */
+    .page .ans{ display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">✏️ Simplifying Expressions</span>
+
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Simplifying Expressions" spellcheck="false">
+  </label>
+
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+
+  <label>Questions
+    <select id="countSel">
+      <option>10</option>
+      <option>12</option>
+      <option>16</option>
+      <option selected>20</option>
+      <option>24</option>
+      <option>30</option>
+      <option>40</option>
+    </select>
+  </label>
+
+  <label>Columns
+    <select id="colsSel">
+      <option value="auto" selected>Auto</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+  </label>
+
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="viewport" id="viewport">
+  <div class="page" id="page"></div>
+</div>
+
+<p class="hint no-print">
+  Progressive difficulty: <b>A</b> two like terms → <b>B</b> three like terms →
+  <b>C</b> subtraction → <b>D</b> like terms with a constant →
+  <b>E</b> four mixed terms → <b>F</b> constants first, five terms, negative answers.<br>
+  Every question uses a single letter, so all terms are like terms. Coefficients stay small
+  and the answer never collapses to zero.<br>
+  <b>Reveal answers</b> shows them inline on screen — they're never printed.
+  <b>Worksheet PDF</b> / <b>Answers PDF</b> download them as separate files.<br>
+  Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd>
+  to open it already revealed.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+
+  function weightedPick(pairs) {
+    let total = 0;
+    for (let i = 0; i < pairs.length; i++) total += pairs[i][1];
+    let r = rng() * total;
+    for (let i = 0; i < pairs.length; i++) {
+      r -= pairs[i][1];
+      if (r <= 0) return pairs[i][0];
+    }
+    return pairs[pairs.length - 1][0];
+  }
+
+  function shuffleArr(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     FONT METRICS  (Helvetica / Arial, units per 1000 em)
+     ============================================================ */
+  const W_REG = [
+    278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584
+  ];
+  const W_BOLD = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    333,333,584,584,584,611,975,
+    722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    333,278,333,584,556,333,
+    556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+    389,280,389,584
+  ];
+
+  /* width overrides for non-ASCII glyphs (units per 1000 em) */
+  const SPECIAL_W = {
+    0x2212: 584,   /* proper minus sign */
+    0x2014: 1000,  /* em dash */
+    0x2013: 556,   /* en dash */
+    0x2018: 222, 0x2019: 222, 0x201C: 333, 0x201D: 333
+  };
+
+  function textWidth(str, size, bold) {
+    const t = bold ? W_BOLD : W_REG;
+    let w = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      if (SPECIAL_W[c] !== undefined) { w += SPECIAL_W[c]; continue; }
+      w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
+    }
+    return w * size / 1000;
+  }
+
+  /* ============================================================
+     TEXT SEGMENTATION  (italic variable letters)
+     ============================================================ */
+  /* Split a string into runs, flagging runs of Latin letters as italic. */
+  function mkSegs(str, italicLetters) {
+    if (!italicLetters) return [{ s: str, i: false }];
+    const segs = [];
+    let cur = null;
+    for (let k = 0; k < str.length; k++) {
+      const ch = str[k];
+      const isIt = /[a-zA-Z]/.test(ch);
+      if (cur && cur.i === isIt) {
+        cur.s += ch;
+      } else {
+        if (cur) segs.push(cur);
+        cur = { s: ch, i: isIt };
+      }
+    }
+    if (cur) segs.push(cur);
+    return segs;
+  }
+
+  function segsWidth(segs, size, bold) {
+    let w = 0;
+    for (let i = 0; i < segs.length; i++) w += textWidth(segs[i].s, size, bold);
+    return w;
+  }
+
+  /* ============================================================
+     QUESTION GENERATION
+     ------------------------------------------------------------
+     A term is  { c: coefficient, v: letter }  for a variable term
+     or         { c: value,       v: null   }  for a constant.
+
+     Every question uses ONE letter, so all variable terms are
+     like terms and the answer is just "collect the coefficients".
+     ============================================================ */
+
+  const LETTERS = ['a','b','c','d','e','f','g','h','j','k','m','n',
+                   'p','r','t','u','v','w','x','y','z'];
+
+  function T(v, c) { return { c: c, v: v }; }
+  function K(c)    { return { c: c, v: null }; }
+
+  /* proper minus sign U+2212 */
+  const MINUS = '\u2212';
+
+  function fmtMag(abs, v) {
+    if (!v) return String(abs);
+    return abs === 1 ? v : abs + v;
+  }
+
+  function formatExpr(terms) {
+    let s = '';
+    for (let i = 0; i < terms.length; i++) {
+      const t = terms[i];
+      const mag = fmtMag(Math.abs(t.c), t.v);
+      if (i === 0) s += (t.c < 0 ? MINUS : '') + mag;
+      else         s += (t.c < 0 ? ' ' + MINUS + ' ' : ' + ') + mag;
+    }
+    return s;
+  }
+
+  function mkQ(terms, v) {
+    let vc = 0, kc = 0;
+    for (let i = 0; i < terms.length; i++) {
+      if (terms[i].v) vc += terms[i].c; else kc += terms[i].c;
+    }
+    if (vc === 0 && kc === 0) return null;
+
+    const simp = [];
+    if (vc !== 0) simp.push(T(v, vc));
+    if (kc !== 0) simp.push(K(kc));
+
+    return { expr: formatExpr(terms), ans: formatExpr(simp) };
+  }
+
+  function genA() {
+    const v  = pick(LETTERS);
+    const c1 = ri(2, 9);
+    const c2 = rng() < 0.35 ? 1 : ri(2, 9);
+    return mkQ([T(v, c1), T(v, c2)], v);
+  }
+
+  function genB() {
+    const v  = pick(LETTERS);
+    const c1 = ri(2, 6);
+    const c2 = ri(2, 6);
+    const c3 = rng() < 0.4 ? 1 : ri(2, 6);
+    return mkQ([T(v, c1), T(v, c2), T(v, c3)], v);
+  }
+
+  function genC() {
+    const v  = pick(LETTERS);
+    const c1 = ri(3, 12);
+    let   c2 = rng() < 0.4 ? 1 : ri(2, c1 - 1);
+    if (c2 >= c1) c2 = 1;
+    return mkQ([T(v, c1), T(v, -c2)], v);
+  }
+
+  function genD() {
+    const v = pick(LETTERS);
+    const a = T(v, ri(2, 9));
+    const b = T(v, rng() < 0.3 ? 1 : ri(2, 9));
+    const k = K(ri(1, 12));
+    const terms = rng() < 0.5 ? [a, k, b] : [a, b, k];
+    return mkQ(terms, v);
+  }
+
+  function genE() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const v   = pick(LETTERS);
+      const cv1 = ri(1, 9);
+      const cv2 = ri(1, 9);
+      const k1  = ri(1, 12);
+      const k2  = ri(1, 12);
+      const s2  = rng() < 0.6 ? 1 : -1;
+      const s3  = rng() < 0.6 ? 1 : -1;
+      const s4  = -1;
+      const terms = [T(v, cv1), K(s2 * k1), T(v, s3 * cv2), K(s4 * k2)];
+      const q = mkQ(terms, v);
+      if (q) return q;
+    }
+    return null;
+  }
+
+  function genF() {
+    for (let attempt = 0; attempt < 80; attempt++) {
+      const v    = pick(LETTERS);
+      const nVar = ri(2, 3);
+      const nCon = ri(1, 2);
+      const terms = [];
+
+      for (let i = 0; i < nVar; i++) terms.push(T(v, ri(1, 10)));
+      for (let i = 0; i < nCon; i++) terms.push(K(ri(1, 15)));
+
+      shuffleArr(terms);
+
+      let negatives = 0;
+      for (let i = 1; i < terms.length; i++) {
+        if (rng() < 0.5) { terms[i].c = -terms[i].c; negatives++; }
+      }
+      if (negatives === 0) continue;
+
+      const q = mkQ(terms, v);
+      if (!q) continue;
+      if (q.ans.indexOf(v) === -1) continue;
+      return q;
+    }
+    return null;
+  }
+
+  const GENERATORS = { A: genA, B: genB, C: genC, D: genD, E: genE, F: genF };
+
+  function pickStageForIndex(i, n) {
+    const t = (n <= 1) ? 0 : (i / (n - 1));
+    if (t < 0.15) return weightedPick([['A', 7], ['B', 2]]);
+    if (t < 0.32) return weightedPick([['A', 1], ['B', 5], ['C', 2]]);
+    if (t < 0.50) return weightedPick([['B', 1], ['C', 5], ['D', 2]]);
+    if (t < 0.68) return weightedPick([['C', 1], ['D', 5], ['E', 2]]);
+    if (t < 0.85) return weightedPick([['D', 1], ['E', 5], ['F', 2]]);
+    return weightedPick([['E', 1], ['F', 7]]);
+  }
+
+  function generateSet(count) {
+    const seen = new Set();
+    const out  = [];
+    for (let i = 0; i < count; i++) {
+      const stage = pickStageForIndex(i, count);
+      let q = null, tries = 0;
+      while (tries++ < 300) {
+        const cand = GENERATORS[stage]();
+        if (!cand) continue;
+        if (seen.has(cand.expr)) continue;
+        seen.add(cand.expr);
+        q = cand;
+        break;
+      }
+      if (!q) q = { expr: '2x + 3x', ans: '5x' };
+      out.push(q);
+    }
+    return out;
+  }
+
+  /* ============================================================
+     LAYOUT ENGINE
+     ============================================================ */
+  const PW = 595.276;
+  const PH = 841.890;
+  const MG = 42.52;
+
+  const FS_BY_COLS = { 1: 17, 2: 15, 3: 13, 4: 11 };
+
+  function layoutSheet(opts) {
+    const title     = opts.title;
+    const questions = opts.questions;
+    const cols      = opts.cols;
+
+    const items  = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    /* title */
+    const ts = 19;
+    const tw = textWidth(title, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true,
+                 segments: [{ s: title, i: false }] });
+    top = bl + ts * 0.32 + 6;
+
+    /* rule */
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 17;
+
+    /* name / date */
+    const ns = 10.5;
+    bl = top + ns * 0.78;
+
+    const nl = 'Name:';
+    items.push({ t: 'text', x: MG, y: bl, size: ns, bold: false,
+                 segments: [{ s: nl, i: false }] });
+    const nlw = textWidth(nl, ns, false);
+    items.push({ t: 'line', x1: MG + nlw + 6, y1: bl + 2.2,
+                 x2: MG + innerW * 0.46, y2: bl + 2.2, w: 0.6 });
+
+    const dl = 'Date:';
+    const dx = MG + innerW * 0.60;
+    items.push({ t: 'text', x: dx, y: bl, size: ns, bold: false,
+                 segments: [{ s: dl, i: false }] });
+    const dlw = textWidth(dl, ns, false);
+    items.push({ t: 'line', x1: dx + dlw + 6, y1: bl + 2.2,
+                 x2: PW - MG, y2: bl + 2.2, w: 0.6 });
+
+    top = bl + 22;
+
+    /* instruction line */
+    const insSize = 10.5;
+    const instruction = 'Simplify the following expressions by collecting like terms.';
+    const iw = textWidth(instruction, insSize, false);
+    bl = top + insSize * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - iw) / 2), y: bl,
+                 size: insSize, bold: false,
+                 segments: [{ s: instruction, i: false }] });
+    top = bl + 22;
+
+    /* grid */
+    const n      = questions.length;
+    const rows   = Math.ceil(n / cols);
+    const gridTop = top;
+    const gridH   = PH - MG - gridTop;
+    const colW    = innerW / cols;
+
+    const MAX_ROW_H = 130;
+    const rawRowH   = gridH / rows;
+    const rowH      = Math.min(MAX_ROW_H, rawRowH);
+    const gridTotalH = rowH * rows;
+    const gridY0     = gridTop + Math.max(0, (gridH - gridTotalH) / 2);
+
+    const baseFs = FS_BY_COLS[cols] || 12;
+    const R = 6;
+    const INSET = 2;
+    const PAD = 8;
+
+    questions.forEach(function (q, i) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const cx = MG + c * colW;
+      const cy = gridY0 + r * rowH;
+
+      items.push({
+        t: 'rrect',
+        x: cx + INSET,
+        y: cy + INSET,
+        w: colW - 2 * INSET,
+        h: rowH - 2 * INSET,
+        r: R,
+        lw: 0.8
+      });
+
+      const numStr = (i + 1) + '.';
+      const qs     = q.expr + ' =';
+      const availW = (colW - 2 * INSET) - 2 * PAD;
+
+      let fs   = baseFs;
+      let numW = textWidth(numStr, fs, true) + 4;
+      let qW   = textWidth(qs, fs, false);
+      if (numW + qW > availW) {
+        fs   = Math.max(6.5, fs * (availW / (numW + qW)) * 0.97);
+        numW = textWidth(numStr, fs, true) + 4;
+        qW   = textWidth(qs, fs, false);
+      }
+
+      const base = cy + INSET + PAD + fs * 0.78;
+
+      items.push({ t: 'text', x: cx + INSET + PAD, y: base,
+                   size: fs, bold: true,
+                   segments: [{ s: numStr, i: false }] });
+
+      /* expression: numbers upright, letters italic */
+      items.push({ t: 'text', x: cx + INSET + PAD + numW, y: base,
+                   size: fs, bold: false,
+                   segments: mkSegs(qs, true) });
+
+      /* inline answer */
+      const ansSegs  = mkSegs(q.ans, true);
+      const ansY     = base + fs * 2.2;
+      const boxRight = cx + INSET + (colW - 2 * INSET) - PAD;
+      const ansW     = segsWidth(ansSegs, fs, true);
+      items.push({
+        t: 'answer',
+        x: boxRight - ansW,
+        y: ansY,
+        size: fs,
+        bold: true,
+        segments: ansSegs
+      });
+    });
+
+    return items;
+  }
+
+  /* ---------- separate one-page answer key ---------- */
+  function layoutAnswerKey(opts) {
+    const title     = opts.title;
+    const questions = opts.questions;
+    const seed      = opts.seed;
+
+    const items  = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' \u2014 Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true,
+                 segments: [{ s: heading, i: false }] });
+    top = bl + ts * 0.32 + 6;
+
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 20;
+
+    const n = questions.length;
+    let cols, fs, rowH;
+    if (n <= 12)      { cols = 2; fs = 12;  rowH = 24; }
+    else if (n <= 24) { cols = 2; fs = 11;  rowH = 21; }
+    else if (n <= 30) { cols = 3; fs = 9.5; rowH = 18; }
+    else              { cols = 3; fs = 9;   rowH = 16; }
+
+    const colW  = innerW / cols;
+    const avail = colW - 12;
+
+    let maxW = 0;
+    questions.forEach(function (q, i) {
+      const numStr = (i + 1) + '.';
+      const body   = ' ' + q.expr + ' = ' + q.ans;
+      const w = textWidth(numStr, fs, true) + 4 + textWidth(body, fs, false);
+      if (w > maxW) maxW = w;
+    });
+    if (maxW > avail) fs = Math.max(6.5, fs * avail / maxW);
+
+    const rows   = Math.ceil(n / cols);
+    const blockH = rows * rowH;
+    const startY = top + Math.max(0, (PH - MG - top - blockH - 40) / 2);
+
+    questions.forEach(function (q, i) {
+      const r  = Math.floor(i / cols);
+      const c  = i % cols;
+      const x0 = MG + c * colW;
+      const y  = startY + r * rowH + fs * 0.78;
+
+      const numStr = (i + 1) + '.';
+      items.push({ t: 'text', x: x0, y: y, size: fs, bold: true,
+                   segments: [{ s: numStr, i: false }] });
+      const numW = textWidth(numStr, fs, true) + 4;
+
+      const body = ' ' + q.expr + ' = ' + q.ans;
+      items.push({ t: 'text', x: x0 + numW, y: y, size: fs, bold: false,
+                   segments: mkSegs(body, true) });
+    });
+
+    const note     = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW    = textWidth(note, noteSize, false);
+    items.push({ t: 'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false,
+                 segments: [{ s: note, i: false }] });
+
+    return items;
+  }
+
+  /* ============================================================
+     HTML RENDERER
+     ============================================================ */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function segsToHTML(segs) {
+    let out = '';
+    for (let i = 0; i < segs.length; i++) {
+      const s = esc(segs[i].s);
+      out += segs[i].i ? '<i>' + s + '</i>' : s;
+    }
+    return out;
+  }
+
+  function drawHTML(items) {
+    const page  = document.getElementById('page');
+    const parts = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+
+      if (it.t === 'text' || it.t === 'answer') {
+        const t = it.y - it.size * 0.755;
+        const cls = it.t === 'answer' ? 'tx ans' : 'tx';
+        parts.push('<span class="' + cls + '" style="left:' + it.x.toFixed(2) +
+          'pt;top:' + t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+          (it.bold ? 'font-weight:700;' : '') + '">' +
+          segsToHTML(it.segments) + '</span>');
+
+      } else if (it.t === 'line') {
+        parts.push('<span class="ln" style="left:' + it.x1.toFixed(2) + 'pt;top:' +
+          it.y1.toFixed(2) + 'pt;width:' + (it.x2 - it.x1).toFixed(2) +
+          'pt;border-top-width:' + it.w.toFixed(2) + 'pt;"></span>');
+
+      } else if (it.t === 'rrect') {
+        parts.push('<span class="rr" style="left:' + it.x.toFixed(2) + 'pt;top:' +
+          it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) + 'pt;height:' +
+          it.h.toFixed(2) + 'pt;border-radius:' + it.r.toFixed(2) + 'pt;' +
+          'border-width:' + it.lw.toFixed(2) + 'pt;"></span>');
+      }
+    }
+    page.innerHTML = parts.join('');
+  }
+
+  /* ============================================================
+     PDF WRITER
+     ============================================================ */
+  function pdfEsc(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const code = ch.charCodeAt(0);
+      /* proper minus U+2212 → byte 0x2D, remapped to /minus glyph */
+      if (code === 0x2212) { out += '-'; continue; }
+      if (code === 0x2014) { out += '\x97'; continue; }   /* em dash (WinAnsi 0x97) */
+      if (code === 0x2013) { out += '\x96'; continue; }   /* en dash (WinAnsi 0x96) */
+      if (code > 126 || code < 32) { out += '?'; continue; }
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '(') out += '\\(';
+      else if (ch === ')') out += '\\)';
+      else out += ch;
+    }
+    return out;
+  }
+
+  const KAPPA = 0.5522847498;
+
+  function contentStream(items) {
+    const ops = [];
+    const f = v => v.toFixed(2);
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'answer') continue;   /* never written into the question PDF */
+
+      if (it.t === 'text') {
+        const y = PH - it.y;
+        ops.push('BT');
+        let x = it.x;
+        for (let k = 0; k < it.segments.length; k++) {
+          const seg = it.segments[k];
+          const fontName = it.bold
+            ? (seg.i ? 'F4' : 'F2')
+            : (seg.i ? 'F3' : 'F1');
+          ops.push('/' + fontName + ' ' + it.size.toFixed(2) +
+            ' Tf 1 0 0 1 ' + x.toFixed(2) + ' ' + y.toFixed(2) +
+            ' Tm (' + pdfEsc(seg.s) + ') Tj');
+          x += textWidth(seg.s, it.size, it.bold);
+        }
+        ops.push('ET');
+
+      } else if (it.t === 'line') {
+        ops.push(it.w.toFixed(2) + ' w ' + it.x1.toFixed(2) + ' ' +
+          (PH - it.y1).toFixed(2) + ' m ' + it.x2.toFixed(2) + ' ' +
+          (PH - it.y2).toFixed(2) + ' l S');
+
+      } else if (it.t === 'rrect') {
+        const X = it.x;
+        const Y = PH - it.y - it.h;
+        const W = it.w;
+        const H = it.h;
+        const R = it.r;
+        const k = R * KAPPA;
+
+        ops.push(f(it.lw) + ' w');
+        ops.push(f(X + R) + ' ' + f(Y) + ' m');
+        ops.push(f(X + W - R) + ' ' + f(Y) + ' l');
+        ops.push(f(X + W - R + k) + ' ' + f(Y) + ' ' +
+                 f(X + W) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + W) + ' ' + f(Y + R) + ' c');
+        ops.push(f(X + W) + ' ' + f(Y + H - R) + ' l');
+        ops.push(f(X + W) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X + W - R + k) + ' ' + f(Y + H) + ' ' +
+                 f(X + W - R) + ' ' + f(Y + H) + ' c');
+        ops.push(f(X + R) + ' ' + f(Y + H) + ' l');
+        ops.push(f(X + R - k) + ' ' + f(Y + H) + ' ' +
+                 f(X) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X) + ' ' + f(Y + H - R) + ' c');
+        ops.push(f(X) + ' ' + f(Y + R) + ' l');
+        ops.push(f(X) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + R - k) + ' ' + f(Y) + ' ' +
+                 f(X + R) + ' ' + f(Y) + ' c');
+        ops.push('S');
+      }
+    }
+    return ops.join('\n');
+  }
+
+  function assemblePDF(content) {
+    const objects = [];
+    objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objects[2] = '<< /Type /Pages /Kids [8 0 R] /Count 1 >>';
+
+    /* remap WinAnsi code 45 (hyphen) to the Helvetica /minus glyph.
+       Since the only occurrences of code 45 in the content are proper
+       minus signs (converted by pdfEsc), this is safe. */
+    const ENC = '/Encoding << /BaseEncoding /WinAnsiEncoding /Differences [45 /minus] >>';
+    objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica ' + ENC + ' >>';
+    objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold ' + ENC + ' >>';
+    objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique ' + ENC + ' >>';
+    objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique ' + ENC + ' >>';
+    objects[7] = '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream';
+    objects[8] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+                 '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+                 '/Contents 7 0 R >>';
+
+    let out = '%PDF-1.4\n';
+    const offsets = [];
+    for (let i = 1; i < objects.length; i++) {
+      offsets[i] = out.length;
+      out += i + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xrefPos = out.length;
+    out += 'xref\n0 ' + objects.length + '\n';
+    out += '0000000000 65535 f \n';
+    for (let i = 1; i < objects.length; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += 'trailer\n<< /Size ' + objects.length + ' /Root 1 0 R >>\n';
+    out += 'startxref\n' + xrefPos + '\n%%EOF\n';
+    return out;
+  }
+
+  function downloadPDF(items, filename) {
+    const pdfStr = assemblePDF(contentStream(items));
+    const bytes  = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  /* ============================================================
+     STATE + RENDER
+     ============================================================ */
+  const titleInput = document.getElementById('titleInput');
+  const seedInput  = document.getElementById('seedInput');
+  const countSel   = document.getElementById('countSel');
+  const colsSel    = document.getElementById('colsSel');
+  const revealBtn  = document.getElementById('revealBtn');
+  const pageEl     = document.getElementById('page');
+
+  let currentQuestions = [];
+  let lastItems        = [];
+  let lastAnswerItems  = [];
+
+  function chosenCols(n) {
+    const v = colsSel.value;
+    if (v !== 'auto') return parseInt(v, 10);
+    if (n <= 20) return 2;
+    if (n <= 30) return 3;
+    return 4;
+  }
+
+  function sheetTitle() {
+    const t = titleInput.value.trim();
+    return t || 'Simplifying Expressions';
+  }
+
+  function renderSheet() {
+    lastItems = layoutSheet({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      cols: chosenCols(currentQuestions.length)
+    });
+    drawHTML(lastItems);
+
+    lastAnswerItems = layoutAnswerKey({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+
+    fitPage();
+  }
+
+  function regenerate() {
+    const n = parseInt(countSel.value, 10);
+    currentQuestions = generateSet(n);
+    renderSheet();
+  }
+
+  function fitPage() {
+    const vp = document.getElementById('viewport');
+    const pg = document.getElementById('page');
+    const pw = 210 * 96 / 25.4;
+    const ph = 297 * 96 / 25.4;
+    const avail = vp.clientWidth - 40;
+    const z = Math.max(0.22, Math.min(1, avail / pw));
+    pg.style.transform = 'scale(' + z + ')';
+    vp.style.height = (ph * z + 44) + 'px';
+  }
+
+  function setRevealed(on) {
+    pageEl.classList.toggle('reveal', !!on);
+    revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!pageEl.classList.contains('reveal'));
+  });
+
+  /* ============================================================
+     SEED / URL
+     ============================================================ */
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  function getSeedFromURL() {
+    const p = new URLSearchParams(window.location.search).get('seed');
+    if (p === null) return null;
+    const n = parseInt(p, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function getAnswersFromURL() {
+    const p = new URLSearchParams(window.location.search).get('answers');
+    return p === '1' || p === 'true';
+  }
+
+  function setSeedInURL(seed) {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('seed', seed);
+      window.history.replaceState({}, '', url);
+    } catch (e) { /* ignore on file:// */ }
+  }
+
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+
+  function safeFilename(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  /* ============================================================
+     EVENTS
+     ============================================================ */
+  document.getElementById('regenBtn').addEventListener('click', function () {
+    seedInput.value = dateSeed();
+    applySeed();
+    regenerate();
+    setSeedInURL(seedInput.value);
+  });
+
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    if (!lastItems.length) return;
+    const name = 'expressions-' + safeFilename(sheetTitle()) +
+                 '-' + seedInput.value + '.pdf';
+    downloadPDF(lastItems, name);
+  });
+
+  document.getElementById('dlAnsBtn').addEventListener('click', function () {
+    if (!lastAnswerItems.length) return;
+    const name = 'expressions-' + safeFilename(sheetTitle()) +
+                 '-ANSWERS-' + seedInput.value + '.pdf';
+    downloadPDF(lastAnswerItems, name);
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function () {
+    window.print();
+  });
+
+  seedInput.addEventListener('change', function () {
+    applySeed();
+    regenerate();
+    setSeedInURL(seedInput.value);
+  });
+
+  countSel.addEventListener('change', function () { applySeed(); regenerate(); });
+  colsSel.addEventListener('change', renderSheet);
+  titleInput.addEventListener('input', renderSheet);
+
+  window.addEventListener('resize', fitPage);
+
+  /* ============================================================
+     BOOT
+     ============================================================ */
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    applySeed();
+    regenerate();
+    setSeedInURL(seedInput.value);
+    fitPage();
+
+    if (getAnswersFromURL()) setRevealed(true);
+  }
+
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
