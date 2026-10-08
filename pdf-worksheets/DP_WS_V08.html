@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direct Proportion — Worksheet Generator</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-size:16px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:12px 20px;
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;
+  }
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],
+  .toolbar input[type=text],
+  .toolbar select{
+    padding:7px 9px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit;
+  }
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:195px}
+  .toolbar button{
+    padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{background:#15803d; border-color:#16a34a}
+  .toolbar button.reveal-on:hover{background:#166534}
+
+  .viewport{padding:28px 0 6px;}
+  .pages{
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+  }
+  .page-wrap{
+    position:relative; overflow:hidden;
+  }
+  .page{
+    position:absolute; top:0; left:0;
+    width:210mm; height:297mm;
+    background:#fff;
+    box-shadow:0 6px 26px rgba(15,23,42,.16);
+    transform-origin:top left;
+    font-family:Helvetica,Arial,sans-serif;
+    color:#000;
+  }
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .ln{position:absolute; height:0; border-top-style:solid;}
+  .page .ans{display:none; color:var(--accent); font-weight:700;}
+  .pages.revealed .ans{display:block;}
+
+  .hint{
+    text-align:center; color:var(--muted);
+    font-size:13px; line-height:1.5;
+    padding:4px 16px 34px;
+  }
+  .hint kbd{background:#e2e8f0; border-radius:5px; padding:1px 6px; font-family:inherit; font-size:12px;}
+
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{padding:0 !important;}
+    .pages{display:block;}
+    .page-wrap{
+      width:auto !important;
+      height:auto !important;
+      overflow:visible !important;
+      page-break-after:always;
+      break-after:page;
+    }
+    .page-wrap:last-child{page-break-after:auto; break-after:auto;}
+    .page{
+      position:relative !important;
+      transform:none !important;
+      width:210mm !important;
+      height:296.9mm !important;
+      box-shadow:none !important;
+    }
+    .pages .ans{ display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">📐 Direct Proportion</span>
+
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Direct Proportion" spellcheck="false">
+  </label>
+
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+
+  <label>Currency
+    <select id="curSel">
+      <option value="£" selected>£</option>
+      <option value="$">$</option>
+      <option value="€">€</option>
+    </select>
+  </label>
+
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="viewport" id="viewport">
+  <div class="pages" id="pages"></div>
+</div>
+
+<p class="hint no-print">
+  <b>Reveal answers</b> shows them inline on screen — nothing downloads, and they're never printed.<br>
+  <b>Worksheet PDF</b> saves the questions only. <b>Answers PDF</b> saves a separate key.<br>
+  Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd> to open with answers shown.
+</p>
+
+<script src="banks.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ============================================================
+     PROPORTION BANK (starter copy if banks.js lacks it)
+     ------------------------------------------------------------
+     Markup inside stems:
+       `x`         → x renders in italic
+       \frac{a}{b} → a/b renders as a stacked fraction
+     fracAllowed: true  → the generator may occasionally use a
+                          fractional constant for this context.
+     ============================================================ */
+  if (!window.BANKS) window.BANKS = {};
+  if (!window.BANKS.proportion) {
+    window.BANKS.proportion = {
+      contexts: [
+        { id:'pipe',    fracAllowed: true,
+          stem:'The mass, `m` kg, of a length of pipe is directly proportional to its length, `l` m.',
+          Asym:'m', Bsym:'l', k:[2,12], B0:[2,9],  B1:[2,12], B2:[2,12] },
+        { id:'tap',     fracAllowed: false,
+          stem:'The volume, `V` litres, of water that comes out of a tap is directly proportional to the time, `T` minutes, for which the tap is turned on.',
+          Asym:'V', Bsym:'T', k:[10,60], B0:[2,6], B1:[2,8],  B2:[2,8] },
+        { id:'paint',   fracAllowed: true,
+          stem:'The quantity, `P` litres, of paint needed to cover a wall is directly proportional to the area, `A` m\u00B2, of the wall.',
+          Asym:'P', Bsym:'A', k:[2,5],  B0:[4,12], B1:[4,15], B2:[4,15] },
+        { id:'shadow',  fracAllowed: true,
+          stem:'The length, `L` m, of a shadow is directly proportional to the height, `H` m, of the object casting it.',
+          Asym:'L', Bsym:'H', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'current', fracAllowed: false,
+          stem:'The electric current, `I` amps, in a lamp is directly proportional to the voltage, `V` volts.',
+          Asym:'I', Bsym:'V', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'spring',  fracAllowed: true,
+          stem:'The extension, `e` cm, of a spring is directly proportional to the force, `F` newtons, applied to it.',
+          Asym:'e', Bsym:'F', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'flour',   fracAllowed: false,
+          stem:'The mass, `m` g, of flour needed for a recipe is directly proportional to the number of people, `n`, the recipe is for.',
+          Asym:'m', Bsym:'n', k:[30,90], B0:[2,8], B1:[2,10], B2:[2,10] }
+      ],
+      rates: [
+        { noun:'olive oil',     unit:'ml' },
+        { noun:'sunflower oil', unit:'ml' },
+        { noun:'orange juice',  unit:'ml' },
+        { noun:'honey',         unit:'g'  },
+        { noun:'flour',         unit:'g'  },
+        { noun:'rice',          unit:'g'  },
+        { noun:'coffee beans',  unit:'g'  }
+      ]
+    };
+  }
+  const PROP     = window.BANKS.proportion;
+  const CONTEXTS = PROP.contexts || [];
+  const RATES    = PROP.rates || [];
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri   = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function weightedPick(pairs) {
+    let total = 0;
+    for (const p of pairs) total += p[1];
+    let r = rng() * total;
+    for (const p of pairs) {
+      r -= p[1];
+      if (r <= 0) return p[0];
+    }
+    return pairs[pairs.length - 1][0];
+  }
+
+  /* ============================================================
+     FONT METRICS
+     ============================================================ */
+  const W_REG = [
+    278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584
+  ];
+  const W_BOLD = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    333,333,584,584,584,611,975,
+    722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    333,278,333,584,556,333,
+    556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+    389,280,389,584
+  ];
+  function textWidth(str, size, bold) {
+    const t = bold ? W_BOLD : W_REG;
+    let w = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      if (c === 96) continue;
+      w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
+    }
+    return w * size / 1000;
+  }
+
+  /* ============================================================
+     RUN / TOKEN MODEL
+     ============================================================ */
+  function parseRuns(text) {
+    const runs = [];
+    let i = 0;
+    while (i < text.length) {
+      const tick = text.indexOf('`', i);
+      const frac = text.indexOf('\\frac{', i);
+      if (tick === -1 && frac === -1) {
+        if (i < text.length) runs.push({ kind:'text', text: text.slice(i), italic: false });
+        break;
+      }
+      const isFrac = (frac !== -1) && (tick === -1 || frac < tick);
+      const next = isFrac ? frac : tick;
+      if (next > i) runs.push({ kind:'text', text: text.slice(i, next), italic: false });
+      if (!isFrac) {
+        const close = text.indexOf('`', next + 1);
+        if (close === -1) {
+          runs.push({ kind:'text', text: text.slice(next), italic: false });
+          break;
+        }
+        runs.push({ kind:'text', text: text.slice(next + 1, close), italic: true });
+        i = close + 1;
+      } else {
+        const open1  = text.indexOf('{', next);
+        const close1 = open1 === -1 ? -1 : text.indexOf('}', open1);
+        const open2  = close1 === -1 ? -1 : text.indexOf('{', close1);
+        const close2 = open2 === -1 ? -1 : text.indexOf('}', open2);
+        if (open1 === -1 || close1 === -1 || open2 === -1 || close2 === -1) {
+          runs.push({ kind:'text', text: text.slice(next), italic: false });
+          break;
+        }
+        runs.push({ kind:'frac',
+                    num: text.slice(open1 + 1, close1),
+                    den: text.slice(open2 + 1, close2) });
+        i = close2 + 1;
+      }
+    }
+    const merged = [];
+    for (const r of runs) {
+      const last = merged[merged.length - 1];
+      if (r.kind === 'text' && last && last.kind === 'text' && last.italic === r.italic) {
+        last.text += r.text;
+      } else {
+        merged.push(r);
+      }
+    }
+    return merged.filter(r => r.kind === 'frac' || r.text.length > 0);
+  }
+
+  function textToTokens(text) {
+    const runs = parseRuns(text);
+    const tokens = [];
+    let pendingSpace = false;
+    for (const r of runs) {
+      if (r.kind === 'frac') {
+        tokens.push({ kind:'frac', num: r.num, den: r.den, space: pendingSpace });
+        pendingSpace = false;
+        continue;
+      }
+      const parts = r.text.split(/(\s+)/);
+      for (const p of parts) {
+        if (p === '') continue;
+        if (/^\s+$/.test(p)) { pendingSpace = true; continue; }
+        tokens.push({ kind:'word', word: p, italic: r.italic, space: pendingSpace });
+        pendingSpace = false;
+      }
+    }
+    return tokens;
+  }
+
+  function tokenWidth(tok, size, bold) {
+    if (tok.kind === 'frac') {
+      const sub = size * 0.7;
+      const nw = textWidth(tok.num, sub, bold);
+      const dw = textWidth(tok.den, sub, bold);
+      return Math.max(nw, dw) + 0.20 * size;
+    }
+    return textWidth(tok.word, size, bold);
+  }
+
+  function wrapTokens(tokens, size, bold, maxW) {
+    const lines = [];
+    let cur = [];
+    let curW = 0;
+    for (const tok of tokens) {
+      const spaceW = (tok.space && cur.length) ? textWidth(' ', size, bold) : 0;
+      const w = spaceW + tokenWidth(tok, size, bold);
+      if (cur.length && curW + w > maxW) {
+        lines.push(cur);
+        cur = [{ kind: tok.kind, num: tok.num, den: tok.den,
+                 word: tok.word, italic: tok.italic, space: false }];
+        curW = tokenWidth(tok, size, bold);
+      } else {
+        cur.push(tok);
+        curW += w;
+      }
+    }
+    if (cur.length) lines.push(cur);
+    return lines;
+  }
+
+  function lineToRuns(lineTokens) {
+    const runs = [];
+    for (let i = 0; i < lineTokens.length; i++) {
+      const tok = lineTokens[i];
+      const prefix = (i === 0) ? '' : (tok.space ? ' ' : '');
+      if (tok.kind === 'frac') {
+        runs.push({ kind:'frac', num: tok.num, den: tok.den, prefix });
+      } else {
+        const last = runs[runs.length - 1];
+        if (last && last.kind === 'text' && last.italic === tok.italic) {
+          last.text += prefix + tok.word;
+        } else {
+          runs.push({ kind:'text', text: prefix + tok.word, italic: tok.italic });
+        }
+      }
+    }
+    return runs;
+  }
+
+  function emitRuns(runs, x0, y, size, items, variant) {
+    const textType = (variant === 'answer') ? 'answer'      : 'run';
+    const barType  = (variant === 'answer') ? 'answer-line' : 'line';
+    let rx = x0;
+    for (const run of runs) {
+      if (run.kind === 'frac') {
+        if (run.prefix) rx += textWidth(' ', size, false);
+        const sub    = size * 0.7;
+        const nw     = textWidth(run.num, sub, false);
+        const dw     = textWidth(run.den, sub, false);
+        const innerW = Math.max(nw, dw);
+        const totalW = innerW + 0.20 * size;
+        const barW   = innerW + 0.08 * size;
+        items.push({ t: textType, x: rx + (totalW - nw)/2,
+                     y: y - 0.18 * size, size: sub,
+                     bold: false, italic: false, s: run.num });
+        items.push({ t: barType,
+                     x1: rx + (totalW - barW)/2, y1: y - 0.12 * size,
+                     x2: rx + (totalW + barW)/2, y2: y - 0.12 * size,
+                     w: 0.5 });
+        items.push({ t: textType, x: rx + (totalW - dw)/2,
+                     y: y + 0.44 * size, size: sub,
+                     bold: false, italic: false, s: run.den });
+        rx += totalW;
+      } else {
+        items.push({ t: textType, x: rx, y: y, size: size,
+                     bold: false, italic: run.italic, s: run.text });
+        rx += textWidth(run.text, size, false);
+      }
+    }
+    return rx;
+  }
+
+  /* ============================================================
+     QUESTION GENERATION
+     ============================================================ */
+  const ital = s => '`' + s + '`';
+
+  const FRAC_KS = [
+    { n:1, d:2 }, { n:1, d:3 }, { n:2, d:3 }, { n:1, d:4 },
+    { n:3, d:4 }, { n:1, d:5 }, { n:3, d:5 }, { n:4, d:5 },
+    { n:1, d:6 }, { n:5, d:6 }, { n:3, d:2 }, { n:5, d:4 },
+    { n:4, d:3 }
+  ];
+  const FRAC_KS_PROPER = FRAC_KS.filter(f => f.n < f.d);
+
+  function coreInt(ranges) {
+    const k = ri(ranges.kMin, ranges.kMax);
+    const B0 = ri(ranges.B0Min, ranges.B0Max);
+    const A0 = k * B0;
+    let B1; do { B1 = ri(ranges.B1Min, ranges.B1Max); } while (B1 === B0);
+    const A1 = k * B1;
+    let B2; do { B2 = ri(ranges.B2Min, ranges.B2Max); } while (B2 === B0 || B2 === B1);
+    const A2 = k * B2;
+    return { isFrac:false, k, B0, B1, B2, A0, A1, A2 };
+  }
+
+  function coreFrac() {
+    const { n, d } = pick(FRAC_KS);
+    const pool = [];
+    for (let m = 1; m * d <= 12; m++) pool.push(m * d);
+    if (pool.length < 3) return null;
+    const chosen = [];
+    for (let i = 0; i < 3; i++) {
+      const idx = Math.floor(rng() * pool.length);
+      chosen.push(pool.splice(idx, 1)[0]);
+    }
+    const [B0, B1, B2] = chosen;
+    return { isFrac:true, n, d, B0, B1, B2,
+             A0: B0 * n / d, A1: B1 * n / d, A2: B2 * n / d };
+  }
+
+  function coreFracInRange(ranges) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const f = pick(FRAC_KS_PROPER);
+      const { n, d } = f;
+      const B0 = randMultipleInRange(d, ranges.B0Min, ranges.B0Max);
+      const B1 = randMultipleInRange(d, ranges.B1Min, ranges.B1Max);
+      const B2 = randMultipleInRange(d, ranges.B2Min, ranges.B2Max);
+      if (B0 === null || B1 === null || B2 === null) continue;
+      if (B0 === B1 || B1 === B2 || B0 === B2) continue;
+      return { isFrac:true, n, d, B0, B1, B2,
+               A0: B0 * n / d, A1: B1 * n / d, A2: B2 * n / d };
+    }
+    return null;
+  }
+
+  function randMultipleInRange(d, lo, hi) {
+    const first = Math.ceil(lo / d) * d;
+    const last  = Math.floor(hi / d) * d;
+    if (first > last) return null;
+    const count = Math.floor((last - first) / d) + 1;
+    return first + d * Math.floor(rng() * count);
+  }
+
+  function genBare() {
+    const data = (rng() < 0.25 ? coreFrac() : null) ||
+                 coreInt({ kMin:2, kMax:12, B0Min:2, B0Max:9,
+                           B1Min:2, B1Max:12, B2Min:2, B2Max:12 });
+    const formula = data.isFrac
+      ? '`A` = \\frac{' + data.n + '}{' + data.d + '}`B`'
+      : '`A` = ' + data.k + '`B`';
+    return {
+      key: 'bare|' + (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      blocks: [
+        { type:'text', text:'`A` is directly proportional to `B`.' },
+        { type:'text', text:'When `A` = ' + data.A0 + ', `B` = ' + data.B0 + '.' },
+        { type:'text', text:'(a)  Find a formula for `A` in terms of `B`.' },
+        { type:'text', text:'(b)  Find the value of `A` when `B` = ' + data.B1 + '.' },
+        { type:'text', text:'(c)  Find the value of `B` when `A` = ' + data.A2 + '.' }
+      ],
+      answers: [
+        { blockIndex:2, text: formula },
+        { blockIndex:3, text: '`A` = ' + data.A1 },
+        { blockIndex:4, text: '`B` = ' + data.B2 }
+      ]
+    };
+  }
+
+  function genContext() {
+    if (!CONTEXTS.length) return genBare();
+    const ctx = pick(CONTEXTS);
+    let data = null;
+    if (ctx.fracAllowed && rng() < 0.20) {
+      data = coreFracInRange({
+        B0Min: ctx.B0[0], B0Max: ctx.B0[1],
+        B1Min: ctx.B1[0], B1Max: ctx.B1[1],
+        B2Min: ctx.B2[0], B2Max: ctx.B2[1]
+      });
+    }
+    if (!data) {
+      data = coreInt({
+        kMin:  ctx.k[0],  kMax:  ctx.k[1],
+        B0Min: ctx.B0[0], B0Max: ctx.B0[1],
+        B1Min: ctx.B1[0], B1Max: ctx.B1[1],
+        B2Min: ctx.B2[0], B2Max: ctx.B2[1]
+      });
+    }
+    const As = ital(ctx.Asym), Bs = ital(ctx.Bsym);
+    const formula = data.isFrac
+      ? As + ' = \\frac{' + data.n + '}{' + data.d + '}' + Bs
+      : As + ' = ' + data.k + Bs;
+    return {
+      key: 'ctx|' + ctx.id + '|' +
+           (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      blocks: [
+        { type:'text', text: ctx.stem },
+        { type:'text', text: 'When ' + As + ' = ' + data.A0 + ', ' + Bs + ' = ' + data.B0 + '.' },
+        { type:'text', text: '(a)  Find a formula for ' + As + ' in terms of ' + Bs + '.' },
+        { type:'text', text: '(b)  Find the value of ' + As + ' when ' + Bs + ' = ' + data.B1 + '.' },
+        { type:'text', text: '(c)  Find the value of ' + Bs + ' when ' + As + ' = ' + data.A2 + '.' }
+      ],
+      answers: [
+        { blockIndex:2, text: formula },
+        { blockIndex:3, text: As + ' = ' + data.A1 },
+        { blockIndex:4, text: Bs + ' = ' + data.B2 }
+      ]
+    };
+  }
+
+  function genTable() {
+    const k = pick([2,3,4,5,6,7,8,9,10]);
+    const pool = [2,3,4,5,6,7,8,9,10,11,12];
+    const xs = [];
+    while (xs.length < 3) {
+      const v = pick(pool);
+      if (!xs.includes(v)) xs.push(v);
+    }
+    const ys = xs.map(x => k * x);
+    const shownIdx = ri(0, 2);
+    const yRow = ['`y`'];
+    for (let i = 0; i < 3; i++) {
+      yRow.push(i === shownIdx ? String(ys[i]) : '');
+    }
+    return {
+      key: 'tbl|' + k + '|' + xs.join(','),
+      blocks: [
+        { type:'text', text:'`y` is directly proportional to `x`.' },
+        { type:'text', text:'Complete the table.' },
+        { type:'table', cols:4, rows: [
+          ['`x`', String(xs[0]), String(xs[1]), String(xs[2])],
+          yRow
+        ]}
+      ],
+      answers: [
+        { blockIndex:2, text: '`y` = ' + ys.join(', ') }
+      ]
+    };
+  }
+
+  function penceToPounds(p) {
+    const pounds = Math.floor(p / 100);
+    const pence  = p % 100;
+    return pounds + '.' + String(pence).padStart(2, '0');
+  }
+  function genRate() {
+    if (!RATES.length) return genBare();
+    const rate = pick(RATES);
+    const qA = 50 * ri(4, 16);
+    let qB; do { qB = 50 * ri(4, 16); } while (qB === qA);
+    const pPer50 = pick([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 75]);
+    const costA = (qA / 50) * pPer50;
+    const costB = (qB / 50) * pPer50;
+    const cur = currencySymbol();
+    return {
+      key: 'rate|' + rate.noun + '|' + qA + '|' + qB + '|' + pPer50,
+      blocks: [
+        { type:'text', text: qA + ' ' + rate.unit + ' of ' + rate.noun + ' costs ' + cur + penceToPounds(costA) + '.' },
+        { type:'text', text: 'Calculate the cost of ' + qB + ' ' + rate.unit + ' of the same ' + rate.noun + '.' }
+      ],
+      answers: [
+        { blockIndex:1, text: cur + penceToPounds(costB) }
+      ]
+    };
+  }
+
+  /* ---- Best-value comparison ---------------------------------------
+     Two pack sizes of the same product, with prices that imply
+     different unit prices.  Approximately 70% of the time the
+     larger pack is better value; the rest of the time the smaller
+     pack wins, so the question can't be answered by assumption.
+     Appears only in the tail of the sheet, and only with a low
+     weight in the stage plan.
+     ------------------------------------------------------------------- */
+  function genBestValue() {
+    if (!RATES.length) return genBare();
+    const cur = currencySymbol();
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const rate = pick(RATES);
+
+      /* pack amounts, in the rate's own unit */
+      const X1 = 100 * ri(2, 5);       // 200, 300, 400, 500
+      let X2; do { X2 = 100 * ri(6, 12); } while (X2 === X1);  // 600–1200
+
+      /* base rate in pence per unit — 1..5p keeps totals realistic */
+      const r = 1 + ri(0, 4);
+
+      /* which pack is the better deal, and by how much */
+      const largeBetter = rng() < 0.70;
+      const spread = 0.10 + rng() * 0.15;   // 10–25%
+
+      /* prices, rounded to 5p */
+      const P1 = Math.round(X1 * r / 5) * 5;
+      const P2 = Math.round(X2 * r * (largeBetter ? 1 - spread : 1 + spread) / 5) * 5;
+
+      /* reject silly totals */
+      if (P1 < 100 || P2 < 200) continue;
+      if (P1 > 3000 || P2 > 6000) continue;
+
+      /* unit prices in pence per unit */
+      const u1 = P1 / X1;
+      const u2 = P2 / X2;
+
+      /* confirm the intended winner actually wins after rounding */
+      if (largeBetter && u2 >= u1 - 0.02) continue;
+      if (!largeBetter && u1 >= u2 - 0.02) continue;
+
+      /* per-100-unit prices for the answer */
+      const per100a = 100 * P1 / X1;
+      const per100b = 100 * P2 / X2;
+      const fmtPer100 = p => {
+        const pounds = Math.floor(p / 100);
+        const pence  = Math.round(p % 100);
+        return cur + pounds + '.' + String(pence).padStart(2, '0');
+      };
+
+      const p1 = cur + (P1 / 100).toFixed(2);
+      const p2 = cur + (P2 / 100).toFixed(2);
+
+      const winnerLabel = largeBetter ? 'Super' : 'Regular';
+      const loserLabel  = largeBetter ? 'Regular' : 'Super';
+      const winnerPrice = largeBetter ? per100b : per100a;
+      const loserPrice  = largeBetter ? per100a : per100b;
+
+      return {
+        key: 'bv|' + rate.noun + '|' + X1 + '|' + X2 + '|' + P1 + '|' + P2,
+        blocks: [
+          { type:'text', text:'A shop sells the same kind of ' + rate.noun + ' in two sizes.' },
+          { type:'table', cols:2,
+            boldFirstCol: false, boldRows: [0],
+            rows: [
+              ['Regular', 'Super'],
+              [X1 + ' ' + rate.unit, X2 + ' ' + rate.unit],
+              [p1, p2]
+            ]
+          },
+          { type:'text', text:'Which size gives the better value for money?' },
+          { type:'text', text:'You must show all your working.' }
+        ],
+        answers: [
+          { blockIndex:2, text: winnerLabel + ' — ' + fmtPer100(winnerPrice) + ' per 100 ' + rate.unit },
+          { blockIndex:3, text: loserLabel  + ' — ' + fmtPer100(loserPrice)  + ' per 100 ' + rate.unit }
+        ]
+      };
+    }
+    return genBare();
+  }
+
+  const GENS = { bare: genBare, context: genContext, table: genTable,
+                 rate: genRate, bestvalue: genBestValue };
+
+  /* ---- Stage plan ----------------------------------------------------
+     Position-based, unbounded.  Q1 is always a bare `A ∝ B`.  The
+     remaining questions follow a nominal 16-question difficulty
+     curve: earlier slots favour short/easy stages, later slots
+     favour longer contextual and rate questions.  Best-value
+     comparison appears only in the tail, and with a low weight, so
+     it shows up on roughly half of sheets. */
+  function pickStage(index) {
+    const NOMINAL = 16;
+    if (index === 0) return 'bare';
+    const t = (index - 1) / (NOMINAL - 1);
+    if (t < 0.34) return weightedPick([['bare',1],['context',3],['table',2]]);
+    if (t < 0.70) return weightedPick([['context',3],['table',2],['rate',2]]);
+    return weightedPick([['context',2],['rate',3],['table',1],['bestvalue',1]]);
+  }
+
+  /* ----------------------------------------------------------------
+     Fill two pages at a fixed font size.
+     ---------------------------------------------------------------- */
+  function generateSetToFillTwoPages(fs) {
+    const out  = [];
+    const seen = new Set();
+    let page = 1;
+    let y = MG + HEADER_H;
+    const BOTTOM    = PH - MG;
+    const PAGE2_TOP = MG + CONT_HEADER_H;
+
+    for (let slot = 0; slot < 60; slot++) {
+      const stage = pickStage(out.length);
+      let q = null;
+      for (let tries = 0; tries < 400; tries++) {
+        const cand = GENS[stage]();
+        if (!seen.has(cand.key)) { seen.add(cand.key); q = cand; break; }
+      }
+      if (!q) q = GENS[stage]();
+
+      const h = measureQuestion(q, fs);
+
+      if (page === 1 && y + h > BOTTOM) {
+        page = 2;
+        y = PAGE2_TOP;
+      }
+
+      if (y + h <= BOTTOM) {
+        out.push(q);
+        y += h + QUESTION_GAP;
+      } else {
+        break;
+      }
+    }
+    return out;
+  }
+
+  /* ============================================================
+     LAYOUT ENGINE
+     ============================================================ */
+  const PW = 595.276;
+  const PH = 841.890;
+  const MG = 42.52;
+  const FIXED_FS = 11;
+
+  const HEADER_H      = 19 * 0.78 + 19 * 0.32 + 6 + 17 + 10.5 * 0.78 + 26;
+  const CONT_HEADER_H = 9 * 1.4 + 8 + 14;
+  const QUESTION_GAP  = 14;
+
+  function columnRuleX() { return MG + (PW - 2 * MG) * 0.60; }
+  function promptWidth(fs) {
+    const numColW = fs * 1.6;
+    return columnRuleX() - (MG + numColW);
+  }
+
+  function layoutTable(x, y, block, fs, maxW) {
+    const cols = block.cols;
+    const rows = block.rows;
+    const colW = Math.min(fs * 4.5, maxW / cols);
+    const cellH = fs * 1.8;
+    const totalW = colW * cols;
+    const totalH = cellH * rows.length;
+
+    /* bold policy: first column by default; override for header rows */
+    const boldFirstCol = block.boldFirstCol !== false;
+    const boldRowSet = new Set(block.boldRows || []);
+
+    const items = [];
+    for (let r = 0; r <= rows.length; r++) {
+      items.push({ t:'line', x1:x, y1:y + r*cellH, x2:x + totalW, y2:y + r*cellH, w:0.5 });
+    }
+    for (let c = 0; c <= cols; c++) {
+      items.push({ t:'line', x1:x + c*colW, y1:y, x2:x + c*colW, y2:y + totalH, w:0.5 });
+    }
+    for (let r = 0; r < rows.length; r++) {
+      for (let c = 0; c < cols; c++) {
+        const raw = rows[r][c];
+        if (!raw) continue;
+        const runs = parseRuns(raw);
+        const cellBold = (boldFirstCol && c === 0) || boldRowSet.has(r);
+
+        let cellW = 0;
+        for (const run of runs) {
+          if (run.kind === 'frac') {
+            const sub = fs * 0.7;
+            cellW += Math.max(textWidth(run.num, sub, cellBold),
+                              textWidth(run.den, sub, cellBold)) + 0.20 * fs;
+          } else {
+            cellW += textWidth(run.text, fs, cellBold);
+          }
+        }
+        let cx = x + c*colW + (colW - cellW) / 2;
+        const cy = y + r*cellH + cellH * 0.5 + fs * 0.35;
+        for (const run of runs) {
+          if (run.kind === 'frac') {
+            const sub = fs * 0.7;
+            const nw = textWidth(run.num, sub, cellBold);
+            const dw = textWidth(run.den, sub, cellBold);
+            const innerW = Math.max(nw, dw);
+            const totalW2 = innerW + 0.20 * fs;
+            const barW = innerW + 0.08 * fs;
+            items.push({ t:'text', x: cx + (totalW2 - nw)/2,
+                         y: cy - 0.18 * fs, size: sub, bold: cellBold,
+                         italic: false, s: run.num });
+            items.push({ t:'line',
+                         x1: cx + (totalW2 - barW)/2, y1: cy - 0.12 * fs,
+                         x2: cx + (totalW2 + barW)/2, y2: cy - 0.12 * fs,
+                         w: 0.5 });
+            items.push({ t:'text', x: cx + (totalW2 - dw)/2,
+                         y: cy + 0.44 * fs, size: sub, bold: cellBold,
+                         italic: false, s: run.den });
+            cx += totalW2;
+          } else {
+            items.push({ t:'run', x: cx, y: cy, size: fs, bold: cellBold,
+                         italic: run.italic, s: run.text });
+            cx += textWidth(run.text, fs, cellBold);
+          }
+        }
+      }
+    }
+    return { items, height: totalH };
+  }
+
+  function measureQuestion(q, fs) {
+    const lineH = fs * 1.42;
+    const maxW  = promptWidth(fs);
+    let h = 0;
+    for (const b of q.blocks) {
+      if (b.type === 'text') {
+        const tokens = textToTokens(b.text);
+        const lines = wrapTokens(tokens, fs, false, maxW);
+        h += lines.length * lineH;
+      } else if (b.type === 'table') {
+        h += b.rows.length * fs * 1.8 + fs * 0.6;
+      }
+    }
+    return h;
+  }
+
+  function drawHeader(items, title) {
+    const innerW = PW - 2 * MG;
+    const ts = 19;
+    const tw = textWidth(title, ts, true);
+    let bl = MG + ts * 0.78;
+    items.push({ t:'text', x: MG + Math.max(0, (innerW - tw)/2), y: bl,
+                 size: ts, bold: true, s: title });
+    let top = bl + ts * 0.32 + 6;
+    items.push({ t:'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 17;
+    const ns = 10.5;
+    bl = top + ns * 0.78;
+    items.push({ t:'text', x: MG, y: bl, size: ns, bold: false, s: 'Name:' });
+    const nlw = textWidth('Name:', ns, false);
+    items.push({ t:'line', x1: MG + nlw + 6, y1: bl + 2.2,
+                 x2: MG + innerW * 0.46, y2: bl + 2.2, w: 0.6 });
+    items.push({ t:'text', x: MG + innerW * 0.60, y: bl, size: ns, bold: false, s: 'Date:' });
+    const dlw = textWidth('Date:', ns, false);
+    items.push({ t:'line', x1: MG + innerW * 0.60 + dlw + 6, y1: bl + 2.2,
+                 x2: PW - MG, y2: bl + 2.2, w: 0.6 });
+  }
+
+  function drawContinuationHeader(items, title) {
+    items.push({ t:'text', x: MG, y: MG + 9 * 0.78, size: 9, bold: false,
+                 s: title + ' (continued)' });
+    const ruleY = MG + 9 * 1.4 + 8;
+    items.push({ t:'line', x1: MG, y1: ruleY, x2: PW - MG, y2: ruleY,
+                 w: 0.4, grey: true });
+  }
+
+  function drawQuestion(q, index, fs, qTop, items) {
+    const lineH = fs * 1.42;
+    const numColW = fs * 1.6;
+    const textX = MG + numColW;
+    const ruleX = columnRuleX();
+    const rightX = ruleX + 8;
+    const maxW = ruleX - textX;
+
+    items.push({ t:'text', x: MG, y: qTop + fs * 0.78,
+                 size: fs + 1, bold: true, s: (index + 1) + '.' });
+
+    const baselines = [];
+    let cursor = qTop + fs * 0.78;
+
+    for (const block of q.blocks) {
+      if (block.type === 'text') {
+        const tokens = textToTokens(block.text);
+        const lines = wrapTokens(tokens, fs, false, maxW);
+        baselines.push(cursor);
+        for (let j = 0; j < lines.length; j++) {
+          const runs = lineToRuns(lines[j]);
+          emitRuns(runs, textX, cursor + j * lineH, fs, items, 'normal');
+        }
+        cursor += lines.length * lineH;
+      } else if (block.type === 'table') {
+        baselines.push(cursor);
+        const tableTop = cursor - fs * 0.4;
+        const tl = layoutTable(textX, tableTop, block, fs, maxW);
+        for (const it of tl.items) items.push(it);
+        cursor = tableTop + tl.height + fs * 1.0;
+      }
+    }
+
+    if (q.answers) {
+      for (const a of q.answers) {
+        const ay = baselines[a.blockIndex] !== undefined
+                   ? baselines[a.blockIndex]
+                   : baselines[baselines.length - 1];
+        const runs = parseRuns(a.text);
+        emitRuns(runs, rightX, ay, fs, items, 'answer');
+      }
+    }
+
+    const qBottom = cursor - lineH * 0.5;
+    items.push({ t:'line', x1: ruleX, y1: qTop + 2, x2: ruleX, y2: qBottom,
+                 w: 0.5, grey: true });
+
+    return qBottom;
+  }
+
+  function layoutSheet(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const fs = FIXED_FS;
+
+    const pages = [];
+    let items = [];
+    let y = MG;
+
+    drawHeader(items, title);
+    y = MG + HEADER_H;
+
+    let placedOnPage = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const qH = measureQuestion(q, fs);
+
+      if (placedOnPage > 0 && y + qH > PH - MG) {
+        pages.push(items);
+        items = [];
+        y = MG + CONT_HEADER_H;
+        drawContinuationHeader(items, title);
+        placedOnPage = 0;
+      }
+
+      if (placedOnPage > 0) {
+        items.push({ t:'line', x1: MG, y1: y - 7, x2: PW - MG, y2: y - 7,
+                     w: 0.4, grey: true });
+      }
+
+      drawQuestion(q, i, fs, y, items);
+      y += qH + QUESTION_GAP;
+      placedOnPage++;
+    }
+    if (items.length) pages.push(items);
+
+    if (pages.length > 1) {
+      for (let i = 0; i < pages.length; i++) {
+        const s = 'Page ' + (i + 1) + ' of ' + pages.length;
+        const w = textWidth(s, 8, false);
+        pages[i].push({ t:'text', x: PW - MG - w, y: PH - MG + 12,
+                        size: 8, bold: false, s: s });
+      }
+    }
+
+    return pages;
+  }
+
+  /* ---------- answer key ---------- */
+  function layoutAnswerKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
+
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' — Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t:'text', x: MG + Math.max(0, (innerW - tw)/2), y: bl,
+                 size: ts, bold: true, s: heading });
+    top = bl + ts * 0.32 + 6;
+    items.push({ t:'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 24;
+
+    const fs = 11;
+    const lineH = fs * 2.2;
+    const colW = innerW / 2;
+    const perCol = Math.ceil(questions.length / 2);
+
+    for (let i = 0; i < questions.length; i++) {
+      const col = Math.floor(i / perCol);
+      const row = i % perCol;
+      const x0 = MG + col * colW;
+      const yy = top + row * lineH + fs * 0.78;
+
+      items.push({ t:'text', x: x0, y: yy, size: fs, bold: true, s: (i + 1) + '.' });
+      const numW = textWidth((i + 1) + '.', fs, true) + 5;
+
+      const ansJoined = (questions[i].answers || []).map(a => a.text).join('   ');
+      const runs = parseRuns(ansJoined);
+      emitRuns(runs, x0 + numW, yy, fs, items, 'normal');
+    }
+
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    items.push({ t:'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false, s: note });
+
+    return [items];
+  }
+
+  /* ============================================================
+     HTML RENDERER
+     ============================================================ */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+    });
+  }
+
+  function drawHTML(pagesItems) {
+    const pagesEl = document.getElementById('pages');
+    pagesEl.innerHTML = '';
+    for (const items of pagesItems) {
+      const wrap = document.createElement('div');
+      wrap.className = 'page-wrap';
+      const pg = document.createElement('div');
+      pg.className = 'page';
+      const parts = [];
+      for (let i = 0; i < items.length; i++) {
+        const it = items[i];
+        if (it.t === 'text' || it.t === 'run' || it.t === 'answer') {
+          const t = it.y - it.size * 0.755;
+          const cls = it.t === 'answer' ? 'tx ans' : 'tx';
+          parts.push('<span class="' + cls + '" style="left:' + it.x.toFixed(2) +
+            'pt;top:' + t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+            (it.bold ? 'font-weight:700;' : '') +
+            (it.italic ? 'font-style:italic;' : '') + '">' + esc(it.s) + '</span>');
+        } else if (it.t === 'line' || it.t === 'answer-line') {
+          const color = it.grey ? '#94a3b8' : '#000';
+          const cls = it.t === 'answer-line' ? 'ln ans' : 'ln';
+          parts.push('<span class="' + cls + '" style="left:' + it.x1.toFixed(2) +
+            'pt;top:' + it.y1.toFixed(2) + 'pt;width:' + (it.x2 - it.x1).toFixed(2) +
+            'pt;border-top-width:' + it.w.toFixed(2) + 'pt;border-color:' + color + ';"></span>');
+        }
+      }
+      pg.innerHTML = parts.join('');
+      wrap.appendChild(pg);
+      pagesEl.appendChild(wrap);
+    }
+  }
+
+  /* ============================================================
+     PDF WRITER
+     ============================================================ */
+  const WINANSI = {
+    0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84,
+    0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88,
+    0x2030:0x89, 0x0160:0x8A, 0x2039:0x8B, 0x0152:0x8C,
+    0x017D:0x8E, 0x2018:0x91, 0x2019:0x92, 0x201C:0x93,
+    0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97,
+    0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B,
+    0x0153:0x9C, 0x017E:0x9E, 0x0178:0x9F
+  };
+  function pdfEsc(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const code = ch.charCodeAt(0);
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '(') out += '\\(';
+      else if (ch === ')') out += '\\)';
+      else if (code >= 32 && code <= 126) out += ch;
+      else if (code >= 0xA0 && code <= 0xFF) out += '\\' + code.toString(8).padStart(3, '0');
+      else if (WINANSI[code] !== undefined) out += '\\' + WINANSI[code].toString(8).padStart(3, '0');
+      else out += '?';
+    }
+    return out;
+  }
+
+  function contentStream(items) {
+    const ops = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'answer' || it.t === 'answer-line') continue;
+      if (it.t === 'text' || it.t === 'run') {
+        let font = 'F1';
+        if (it.bold && it.italic) font = 'F4';
+        else if (it.bold)         font = 'F2';
+        else if (it.italic)       font = 'F3';
+        ops.push('BT /' + font + ' ' + it.size.toFixed(2) +
+          ' Tf ' + it.x.toFixed(2) + ' ' + (PH - it.y).toFixed(2) +
+          ' Td (' + pdfEsc(it.s) + ') Tj ET');
+      } else if (it.t === 'line') {
+        const g = it.grey ? '0.58 G' : '0 G';
+        ops.push(g + ' ' + it.w.toFixed(2) + ' w ' + it.x1.toFixed(2) + ' ' +
+          (PH - it.y1).toFixed(2) + ' m ' + it.x2.toFixed(2) + ' ' +
+          (PH - it.y2).toFixed(2) + ' l S');
+      }
+    }
+    return ops.join('\n');
+  }
+
+  function assemblePDF(pagesItems) {
+    const N = pagesItems.length;
+    const maxObj = 6 + 2 * N;
+    const objects = [];
+
+    const kidRefs = [];
+    for (let i = 0; i < N; i++) kidRefs.push((8 + 2 * i) + ' 0 R');
+
+    objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objects[2] = '<< /Type /Pages /Kids [' + kidRefs.join(' ') +
+                 '] /Count ' + N + ' >>';
+    objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
+    objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
+
+    for (let i = 0; i < N; i++) {
+      const stream = contentStream(pagesItems[i]);
+      const streamObj = 7 + 2 * i;
+      const pageObj   = 8 + 2 * i;
+      objects[streamObj] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+      objects[pageObj]   = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+                           '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+                           '/Contents ' + streamObj + ' 0 R >>';
+    }
+
+    let out = '%PDF-1.4\n';
+    const offsets = [];
+    for (let i = 1; i <= maxObj; i++) {
+      offsets[i] = out.length;
+      out += i + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xrefPos = out.length;
+    out += 'xref\n0 ' + (maxObj + 1) + '\n';
+    out += '0000000000 65535 f \n';
+    for (let i = 1; i <= maxObj; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += 'trailer\n<< /Size ' + (maxObj + 1) + ' /Root 1 0 R >>\n';
+    out += 'startxref\n' + xrefPos + '\n%%EOF\n';
+    return out;
+  }
+
+  function downloadPDF(pagesItems, filename) {
+    const pdfStr = assemblePDF(pagesItems);
+    const bytes = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+    const blob = new Blob([bytes], { type:'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  }
+
+  /* ============================================================
+     STATE + RENDER
+     ============================================================ */
+  const titleInput = document.getElementById('titleInput');
+  const seedInput  = document.getElementById('seedInput');
+  const curSel     = document.getElementById('curSel');
+  const revealBtn  = document.getElementById('revealBtn');
+  const pagesEl    = document.getElementById('pages');
+
+  let currentQuestions = [];
+  let lastSheetPages = [];
+  let lastAnswerPages = [];
+
+  function sheetTitle() {
+    const t = titleInput.value.trim();
+    return t || 'Direct Proportion';
+  }
+  function currencySymbol() { return curSel.value || '£'; }
+
+  function renderSheet() {
+    lastSheetPages = layoutSheet({ title: sheetTitle(), questions: currentQuestions });
+    drawHTML(lastSheetPages);
+    lastAnswerPages = layoutAnswerKey({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+    fitPage();
+  }
+
+  function regenerate() {
+    currentQuestions = generateSetToFillTwoPages(FIXED_FS);
+    renderSheet();
+  }
+
+  function fitPage() {
+    const vp = document.getElementById('viewport');
+    const pw = 210 * 96 / 25.4;
+    const ph = 297 * 96 / 25.4;
+    const avail = vp.clientWidth - 40;
+    const z = Math.max(0.22, Math.min(1, avail / pw));
+
+    document.querySelectorAll('.page-wrap').forEach(function (w) {
+      w.style.width  = (pw * z) + 'px';
+      w.style.height = (ph * z) + 'px';
+    });
+    document.querySelectorAll('.page').forEach(function (p) {
+      p.style.transform = 'scale(' + z + ')';
+    });
+  }
+
+  function setRevealed(on) {
+    pagesEl.classList.toggle('revealed', !!on);
+    revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!pagesEl.classList.contains('revealed'));
+  });
+
+  /* ---------- seed / URL ---------- */
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+  function getSeedFromURL() {
+    const p = new URLSearchParams(window.location.search).get('seed');
+    if (p === null) return null;
+    const n = parseInt(p, 10);
+    return isNaN(n) ? null : n;
+  }
+  function getAnswersFromURL() {
+    const p = new URLSearchParams(window.location.search).get('answers');
+    return p === '1' || p === 'true';
+  }
+  function setSeedInURL(seed) {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('seed', seed);
+      window.history.replaceState({}, '', url);
+    } catch (e) { /* ignore on file:// */ }
+  }
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+  function safeFilename(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  /* ---------- events ---------- */
+  document.getElementById('regenBtn').addEventListener('click', function () {
+    seedInput.value = dateSeed();
+    applySeed(); regenerate(); setSeedInURL(seedInput.value);
+  });
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    if (!lastSheetPages.length) return;
+    downloadPDF(lastSheetPages, 'proportion-' + safeFilename(sheetTitle()) +
+                 '-' + seedInput.value + '.pdf');
+  });
+  document.getElementById('dlAnsBtn').addEventListener('click', function () {
+    if (!lastAnswerPages.length) return;
+    downloadPDF(lastAnswerPages, 'proportion-' + safeFilename(sheetTitle()) +
+                 '-ANSWERS-' + seedInput.value + '.pdf');
+  });
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+  seedInput.addEventListener('change', function () { applySeed(); regenerate(); setSeedInURL(seedInput.value); });
+  curSel.addEventListener('change', function () { applySeed(); regenerate(); });
+  titleInput.addEventListener('input', renderSheet);
+  window.addEventListener('resize', fitPage);
+
+  /* ---------- boot ---------- */
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    applySeed();
+    regenerate();
+    setSeedInURL(seedInput.value);
+    fitPage();
+    if (getAnswersFromURL()) setRevealed(true);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
