@@ -349,7 +349,7 @@ function Q(key, blocks, answers, solution, opts) {
    returning null from it falls through to the built-in rules below. */
 const COMPARATIVE_MAP = {
   mass: 'heavier',  weight: 'heavier',
-  length: 'longer', distance: 'longer', diameter: 'longer',
+  length: 'longer', distance: 'longer', diameter: 'greater',
   height: 'taller',
   depth: 'deeper',
   width: 'wider',
@@ -364,7 +364,8 @@ function comparativeFor(noun) {
   const n = String(noun || '').toLowerCase();
   if (COMPARATIVE_MAP[n]) return COMPARATIVE_MAP[n];
   if (/\b(mass|weight)\b/.test(n))              return 'heavier';
-  if (/\b(length|distance|diameter)\b/.test(n)) return 'longer';
+   if (/\b(length|distance)\b/.test(n)) return 'longer';
+  if (/\bdiameter\b/.test(n))              return 'greater';
   if (/\b(height|tall)\b/.test(n))              return 'taller';
   if (/\b(depth|deep)\b/.test(n))               return 'deeper';
   if (/\b(width|wide)\b/.test(n))               return 'wider';
@@ -1098,7 +1099,8 @@ function comparativeFor(noun) {
       const qs = [
         T('The ' + noun + ' of ' + big.name + ' is ' + fmtSF(rBig) + unitSuffix + '.'),
         T('The ' + noun + ' of ' + small.name + ' is ' + fmtSF(rSmall) + unitSuffix + '.'),
-        T('How many times ' + comparative + ' is ' + big.name + ' than ' + small.name + '?'),
+        T('How many times ' + comparative + ' is the ' + noun + ' of ' + big.name +
+          ' than the ' + noun + ' of ' + small.name + '?'),
         T(roundText)
       ];
 
@@ -1132,28 +1134,74 @@ function comparativeFor(noun) {
          Calculator versions use awkward percentages and a wider
          range of originals.  In both cases the final value is exact
          to at most two decimal places, so nothing gets rounded away. */
-      const useCalc = rng() < 0.5;
-      const kind = pick(['increase', 'decrease']);
+            const useCalc = rng() < 0.5;
 
-      let pct;
-      if (useCalc) {
-        pct = pick([3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19,
-                    21, 22, 23, 24, 26, 27, 28, 29,
-                    7.5, 12.5, 17.5, 22.5]);
-      } else {
-        pct = kind === 'increase'
-          ? pick([5, 10, 20, 25, 50, 100])
-          : pick([5, 10, 20, 25, 50, 75]);
-      }
+      let kind, pct, original;
 
-      let original;
       if (useCalc) {
+        /* Calculator variant: any percentage, any original. */
+        kind = pick(['increase', 'decrease']);
+        pct  = pick([3, 4, 6, 7, 8, 9, 11, 12, 13, 14, 16, 17, 18, 19,
+                     21, 22, 23, 24, 26, 27, 28, 29,
+                     7.5, 12.5, 17.5, 22.5]);
         original = pick([60, 80, 100, 120, 140, 160, 180, 200, 220, 240,
                          260, 280, 300, 320, 340, 360, 380, 400, 450, 500,
                          550, 600, 650, 700, 750, 800]);
       } else {
-        original = pick([20, 40, 60, 80, 100, 120, 140, 160, 180, 200,
-                         240, 260, 280, 300, 320, 360, 400]);
+        /* Non-calculator variant: a curated pool of (kind, pct, original)
+           triples chosen so the reverse division is a clean
+           multiply-by-a-fraction.  E.g. £36 after a 20% increase is
+           36 × 5/6 = £30, and £27 after a 10% discount is
+           27 × 10/9 = £30. */
+        const pool = [
+          /* 20% increase: ÷1.2 = ×5/6  → final is a multiple of 6 */
+          { kind: 'increase', pct: 20, orig:  30 },   // £36
+          { kind: 'increase', pct: 20, orig:  60 },   // £72
+          { kind: 'increase', pct: 20, orig:  90 },   // £108
+          { kind: 'increase', pct: 20, orig: 150 },   // £180
+          { kind: 'increase', pct: 20, orig: 300 },   // £360
+          /* 25% increase: ÷1.25 = ×4/5 → final is a multiple of 5 */
+          { kind: 'increase', pct: 25, orig:  40 },   // £50
+          { kind: 'increase', pct: 25, orig:  80 },   // £100
+          { kind: 'increase', pct: 25, orig: 120 },   // £150
+          { kind: 'increase', pct: 25, orig: 200 },   // £250
+          { kind: 'increase', pct: 25, orig: 400 },   // £500
+          /* 50% increase: ÷1.5 = ×2/3  → final is a multiple of 3 */
+          { kind: 'increase', pct: 50, orig:  40 },   // £60
+          { kind: 'increase', pct: 50, orig:  60 },   // £90
+          { kind: 'increase', pct: 50, orig: 100 },   // £150
+          { kind: 'increase', pct: 50, orig: 200 },   // £300
+          /* 100% increase: ÷2                                   */
+          { kind: 'increase', pct: 100, orig:  30 },  // £60
+          { kind: 'increase', pct: 100, orig:  50 },  // £100
+          { kind: 'increase', pct: 100, orig:  80 },  // £160
+          /* 10% decrease: ÷0.9 = ×10/9 → final is a multiple of 9 */
+          { kind: 'decrease', pct: 10, orig:  90 },   // £81
+          { kind: 'decrease', pct: 10, orig: 180 },   // £162
+          { kind: 'decrease', pct: 10, orig: 270 },   // £243
+          /* 20% decrease: ÷0.8 = ×5/4  → final is a multiple of 4 */
+          { kind: 'decrease', pct: 20, orig:  30 },   // £24
+          { kind: 'decrease', pct: 20, orig:  60 },   // £48
+          { kind: 'decrease', pct: 20, orig: 100 },   // £80
+          { kind: 'decrease', pct: 20, orig: 150 },   // £120
+          { kind: 'decrease', pct: 20, orig: 250 },   // £200
+          /* 25% decrease: ÷0.75 = ×4/3 → final is a multiple of 3 */
+          { kind: 'decrease', pct: 25, orig:  40 },   // £30
+          { kind: 'decrease', pct: 25, orig:  80 },   // £60
+          { kind: 'decrease', pct: 25, orig: 120 },   // £90
+          { kind: 'decrease', pct: 25, orig: 200 },   // £150
+          /* 50% decrease: ÷0.5 = ×2                              */
+          { kind: 'decrease', pct: 50, orig:  60 },   // £30
+          { kind: 'decrease', pct: 50, orig: 100 },   // £50
+          { kind: 'decrease', pct: 50, orig: 150 },   // £75
+          { kind: 'decrease', pct: 50, orig: 200 },   // £100
+          /* 75% decrease: ÷0.25 = ×4                             */
+          { kind: 'decrease', pct: 75, orig:  40 },   // £10
+          { kind: 'decrease', pct: 75, orig:  80 },   // £20
+          { kind: 'decrease', pct: 75, orig: 120 }    // £30
+        ];
+        const p1 = pool[Math.floor(rng() * pool.length)];
+        kind = p1.kind; pct = p1.pct; original = p1.orig;
       }
 
       const multiplier = kind === 'increase'
