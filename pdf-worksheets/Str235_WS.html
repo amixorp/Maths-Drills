@@ -1439,6 +1439,120 @@ function comparativeFor(noun) {
     }
   },
 
+    {
+    id: 'pct-iteration', strand: 'N', diff: 3,
+    gen() {
+      const G = (window.BANKS && window.BANKS.growthIteration) || null;
+      if (!G || !G.growth || !G.growth.length || !G.decay || !G.decay.length) {
+        return Q('pctit-fail', [T('Percentage iteration data unavailable.')],
+                 [{ blockIndex: 0, text: '' }]);
+      }
+
+      /* Find a target T such that, for growth,
+             value(n-1) < T ≤ value(n),
+         and for decay,
+             value(n) < T ≤ value(n-1).
+         This ensures n is the smallest year count that satisfies the
+         question's criterion, and T is the coarsest "nice" number
+         that stays inside the interval. */
+      function findTarget(vPrev, vNow) {
+        const lo = Math.min(vPrev, vNow);
+        const hi = Math.max(vPrev, vNow);
+        const gm = Math.sqrt(vPrev * vNow);
+        const steps = [10000, 5000, 2500, 1000, 500, 250, 100, 50, 25,
+                       10, 5, 2, 1, 0.5, 0.25, 0.1, 0.05, 0.01];
+        for (let si = 0; si < steps.length; si++) {
+          const s = steps[si];
+          if (s > hi) continue;
+          const t = Math.round(gm / s) * s;
+          const tr = Math.round(t * 1e9) / 1e9;
+          if (tr > lo && tr <= hi) return tr;
+        }
+        const tr = Math.round(gm * 1e6) / 1e6;
+        if (tr > lo && tr <= hi) return tr;
+        return null;
+      }
+
+      function fmtVal(x) {
+        if (!isFinite(x)) return String(x);
+        const r = Math.round(x * 100) / 100;
+        if (Number.isInteger(r)) return String(r);
+        return r.toFixed(2).replace(/\.?0+$/, '');
+      }
+
+      let chosen = null;
+      for (let attempt = 0; attempt < 80; attempt++) {
+        const isGrowth = rng() < 0.55;
+        const pool = isGrowth ? G.growth : G.decay;
+        const ctx   = pick(pool);
+        const start = pick(ctx.startPool);
+        const rate  = pick(ctx.ratePool);
+        const f     = isGrowth ? (1 + rate / 100) : (1 - rate / 100);
+        const n     = ri(3, 8);
+        const vPrev = start * Math.pow(f, n - 1);
+        const vNow  = start * Math.pow(f, n);
+        const target = findTarget(vPrev, vNow);
+        if (target === null) continue;
+        /* Reject targets too close to a boundary — otherwise the
+           answer would be ambiguous once the pupil rounds. */
+        const lo = Math.min(vPrev, vNow);
+        const hi = Math.max(vPrev, vNow);
+        const range = hi - lo;
+        if (target - lo < range * 0.15) continue;
+        if (hi - target < range * 0.15) continue;
+        chosen = { isGrowth: isGrowth, ctx: ctx, start: start,
+                   rate: rate, f: f, n: n, target: target,
+                   vPrev: vPrev, vNow: vNow };
+        break;
+      }
+
+      if (!chosen) {
+        return Q('pctit-fail',
+                 [T('Please regenerate to obtain a percentage-change question.')],
+                 [{ blockIndex: 0, text: '' }]);
+      }
+
+      const isGrowth = chosen.isGrowth;
+      const ctx      = chosen.ctx;
+      const start    = chosen.start;
+      const rate     = chosen.rate;
+      const f        = chosen.f;
+      const n        = chosen.n;
+      const target   = chosen.target;
+      const vPrev    = chosen.vPrev;
+      const vNow     = chosen.vNow;
+
+      const name = randomName();
+      const stem = ctx.template
+        .replace(/\{Name\}/g, name)
+        .replace(/\{start\}/g, String(start))
+        .replace(/\{rate\}/g, String(rate))
+        .replace(/\{target\}/g, String(target));
+
+      const multStr = String(Number(f.toFixed(4)));
+      const yl = function (y) { return y + ' year' + (y !== 1 ? 's' : ''); };
+
+      const solution = [
+        T('Multiplier per period = ' +
+          (isGrowth ? '1 + ' + rate + '/100 = ' : '1 ' + MINUS + ' ' + rate + '/100 = ') +
+          multStr),
+        T('After ' + yl(n - 1) + ':  ' + start + ' × ' + multStr + '^' + (n - 1) +
+          ' = ' + fmtVal(vPrev) + '   ' +
+          (isGrowth ? '(not yet reached)' : '(not yet below target)')),
+        T('After ' + yl(n) + ':  ' + start + ' × ' + multStr + '^' + n +
+          ' = ' + fmtVal(vNow) + '   ' +
+          (isGrowth ? '(target reached)' : '(now below target)')),
+        T('Answer: ' + yl(n))
+      ];
+
+      return Q('pctit|' + ctx.id + '|' + start + '|' + rate + '|' + target,
+               [T(stem)],
+               [{ blockIndex: 0, text: yl(n) }],
+               solution,
+               { badge: 'CALCULATOR' });
+    }
+  },
+
   /* ---------------- ALGEBRA ---------------- */
   {
     id: 'solve-linear', strand: 'A', diff: 1,

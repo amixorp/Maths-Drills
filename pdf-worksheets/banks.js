@@ -1218,3 +1218,135 @@ window.BANKS.repeatedPercent = {
     'washing machine', 'dishwasher', 'sofa', 'bicycle'
   ]
 };
+
+/* ============================================================
+   ITERATIVE PERCENTAGE CHANGE — content bank
+   ------------------------------------------------------------
+   Used by the 'pct-iteration' topic.  Generates questions of
+   the form:
+
+     "Clio plants a tree that is 2 m in height.  The height
+      increases by 10% each year.  How many years will it take
+      for the tree to reach a height of 4 m?"
+
+   The pupil is expected to iterate on a calculator: apply the
+   percentage multiplier repeatedly until the target is crossed.
+
+   Each context provides:
+     id         — stable identifier used in the topic key.
+     startPool  — possible starting values.
+     ratePool   — possible percentages (per period).
+     template   — sentence with placeholders:
+                    {Name}   a random pupil name
+                    {start}  starting value (no units — write the
+                             unit directly into the template)
+                    {rate}   the percentage change (a number)
+                    {target} the threshold to cross
+
+   Templates should read naturally for any (start, rate, target)
+   triple the generator can produce from the matching pools.
+   ============================================================ */
+window.BANKS = window.BANKS || {};
+window.BANKS.growthIteration = {
+  growth: [
+    {
+      id: 'tree',
+      startPool: [1.5, 2, 2.5, 3],
+      ratePool: [8, 10, 12, 15, 20],
+      template: '{Name} plants a tree that is {start} m in height. ' +
+                'The height of the tree increases by {rate}% each year. ' +
+                'How many years will it take for the tree to reach a height of {target} m?'
+    },
+    {
+      id: 'savings',
+      startPool: [400, 500, 600, 800, 1000, 1200],
+      ratePool: [3, 4, 5, 6, 7, 8],
+      template: '{Name} invests £{start} in a savings account. ' +
+                'The value of the investment increases by {rate}% each year. ' +
+                'After how many years is the investment worth more than £{target}?'
+    },
+    {
+      id: 'population',
+      startPool: [8000, 10000, 12000, 15000, 20000],
+      ratePool: [4, 5, 6, 8, 10],
+      template: 'The population of a village is {start}. ' +
+                'The population increases by {rate}% each year. ' +
+                'After how many years does the population first exceed {target}?'
+    },
+    {
+      id: 'bacteria',
+      startPool: [200, 500, 800, 1000, 1500],
+      ratePool: [15, 20, 25, 30, 40],
+      template: 'A scientist starts with {start} bacteria in a culture. ' +
+                'The number of bacteria increases by {rate}% each hour. ' +
+                'After how many hours are there more than {target} bacteria?'
+    },
+    {
+      id: 'shrub',
+      startPool: [40, 50, 60, 80, 100],
+      ratePool: [10, 15, 20, 25],
+      template: '{Name} plants a shrub that is {start} cm tall. ' +
+                'The shrub grows by {rate}% each year. ' +
+                'After how many years is the shrub taller than {target} cm?'
+    },
+    {
+      id: 'followers',
+      startPool: [200, 400, 500, 800, 1000],
+      ratePool: [10, 15, 20, 25, 30],
+      template: 'A social media account has {start} followers. ' +
+                'The number of followers increases by {rate}% each week. ' +
+                'After how many weeks does the account first have more than {target} followers?'
+    }
+  ],
+
+  decay: [
+    {
+      id: 'car',
+      startPool: [8000, 10000, 12000, 15000, 18000, 20000],
+      ratePool: [10, 12, 15, 18, 20, 25],
+      template: '{Name} buys a new car for £{start}. ' +
+                'The value of the car depreciates by {rate}% each year. ' +
+                'After how many years is the car worth less than £{target}?'
+    },
+    {
+      id: 'laptop',
+      startPool: [600, 800, 1000, 1200, 1500],
+      ratePool: [15, 20, 25, 30],
+      template: '{Name} buys a laptop for £{start}. ' +
+                'The value of the laptop depreciates by {rate}% each year. ' +
+                'After how many years is the laptop worth less than £{target}?'
+    },
+    {
+      id: 'medicine',
+      startPool: [200, 300, 400, 500, 600],
+      ratePool: [20, 25, 30, 40, 50],
+      template: 'A patient is given a dose of {start} mg of medicine. ' +
+                'The amount of medicine in the bloodstream decreases by {rate}% each hour. ' +
+                'After how many hours is the amount less than {target} mg?'
+    },
+    {
+      id: 'forest',
+      startPool: [2000, 3000, 4000, 5000, 8000],
+      ratePool: [5, 8, 10, 12, 15],
+      template: 'A forest covers an area of {start} km². ' +
+                'The area decreases by {rate}% each year. ' +
+                'After how many years is the area less than {target} km²?'
+    },
+    {
+      id: 'radioactive',
+      startPool: [400, 500, 600, 800, 1000],
+      ratePool: [10, 15, 20, 25, 30],
+      template: 'A radioactive sample has a mass of {start} g. ' +
+                'The mass decreases by {rate}% each year. ' +
+                'After how many years is the mass less than {target} g?'
+    },
+    {
+      id: 'fish',
+      startPool: [10000, 15000, 20000, 25000, 30000],
+      ratePool: [8, 10, 12, 15, 20],
+      template: 'A lake contains {start} fish. ' +
+                'The number of fish decreases by {rate}% each year due to pollution. ' +
+                'After how many years does the number of fish first fall below {target}?'
+    }
+  ]
+};
