@@ -652,7 +652,7 @@ function comparativeFor(noun) {
 
       const parts = [];
       const seen  = new Set();
-      const bigCount = 3, smallCount = 3;
+      const bigCount = 2, smallCount = 2;
       const total    = bigCount + smallCount;
 
       let guard = 0;
@@ -712,7 +712,7 @@ function comparativeFor(noun) {
 
       const parts = [];
       const seen  = new Set();
-      const posCount = 3, negCount = 3;
+      const posCount = 2, negCount = 2;
       const total    = posCount + negCount;
 
       let guard = 0;
@@ -771,64 +771,54 @@ function comparativeFor(noun) {
         return c + ' × 10' + '\uE002' + es + '\uE002';
       }
 
-      const parts = [];
-
-      /* (a) decimal coefficient greater than 10 */
-      {
+            /* Six possible question types.  On each call we pick four of the
+         six at random, so successive questions vary in which forms
+         they present. */
+      function mkDecGreaterThan10() {
         const whole = ri(11, 99);
         const dec = ri(1, 9);
         const m = whole + dec / 10;
         const e = ri(2, 5);
-        parts.push({
+        return {
           q: whole + '.' + dec + ' × 10' + '\uE002' + e + '\uE002',
           a: toSF(m, e)
-        });
+        };
       }
-
-      /* (b) coefficient smaller than 1, e.g. 0.06 */
-      {
+      function mkLessThanOne() {
         const d = ri(1, 9);
         const e = ri(3, 7);
-        parts.push({
+        return {
           q: '0.0' + d + ' × 10' + '\uE002' + e + '\uE002',
           a: toSF(d / 100, e)
-        });
+        };
       }
-
-      /* (c) a × b × 10^e */
-      {
+      function mkTimesTimes() {
         const a = ri(2, 9), b = ri(2, 9);
         const e = ri(2, 6);
-        parts.push({
+        return {
           q: a + ' × ' + b + ' × 10' + '\uE002' + e + '\uE002',
           a: toSF(a * b, e)
-        });
+        };
       }
-
-      /* (d) three-digit integer × 10^e */
-      {
+      function mkThreeDigitInteger() {
         const n = ri(101, 999);
         const e = ri(2, 5);
-        parts.push({
+        return {
           q: n + ' × 10' + '\uE002' + e + '\uE002',
           a: toSF(n, e)
-        });
+        };
       }
-
-      /* (e) two-factor product with two different exponents */
-      {
+      function mkTwoFactorProduct() {
         const a = ri(11, 99), b = ri(2, 9);
         const e1 = ri(2, 5);
         const e2 = -ri(1, 3);
-        parts.push({
+        return {
           q: a + ' × 10' + '\uE002' + e1 + '\uE002' +
              ' × ' + b + ' × 10' + '\uE002' + (MINUS + Math.abs(e2)) + '\uE002',
           a: toSF(a * b, e1 + e2)
-        });
+        };
       }
-
-      /* (f) word form */
-      {
+      function mkWordForm() {
         const forms = [
           { w: 'million',  e: 6 },
           { w: 'thousand', e: 3 },
@@ -836,13 +826,25 @@ function comparativeFor(noun) {
         ];
         const f = pick(forms);
         const n = ri(2, 99);
-        parts.push({
+        return {
           q: n + ' ' + f.w,
           a: toSF(n, f.e)
-        });
+        };
       }
 
-      const labels = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)'];
+      const generators = [
+        mkDecGreaterThan10,
+        mkLessThanOne,
+        mkTimesTimes,
+        mkThreeDigitInteger,
+        mkTwoFactorProduct,
+        mkWordForm
+      ];
+      const chosen = shuffle(generators.slice()).slice(0, 4);
+      const parts = chosen.map(function (fn) { return fn(); });
+
+      const labels = ['(a)', '(b)', '(c)', '(d)'];
+
       const qs = [T('The following numbers are not in standard form. ' +
                     'Convert each one to standard form.')];
       const ans = [];
@@ -924,13 +926,11 @@ function comparativeFor(noun) {
         };
       }
 
-      const gens = [mkSameExp, mkSameExp,
+            const gens = [mkSameExp, mkSameExp,
                     function () { return mkDiffExp(1); },
-                    function () { return mkDiffExp(1); },
-                    function () { return mkDiffExp(2); },
                     mkDecCoeff];
       const parts = [];
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 4; i++) {
         let p = null;
         for (let t = 0; t < 50; t++) { p = gens[i](); if (p) break; }
         if (!p) p = { q: sfStr(2, 3) + ' + ' + sfStr(3, 3), a: sfStr(5, 3) };
@@ -945,7 +945,8 @@ function comparativeFor(noun) {
         qs.push(T('        ' + labels[i] + '  ' + parts[i].q));
         ans.push({ blockIndex: i + 1, text: parts[i].a });
       }
-      return Q('sfa|' + parts.map(function (p) { return p.q; }).join('|'), qs, ans);
+            return Q('sfa|' + parts.map(function (p) { return p.q; }).join('|'), qs, ans,
+               null, { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -975,14 +976,37 @@ function comparativeFor(noun) {
         [3, 2], [4, 5], [6, 9], [7, 7], [5, 1.3], [8, 2.4],
         [2, 7], [5, 6], [3, 8], [1.5, 4], [2.5, 6], [3.5, 2]
       ];
+            /* Coefficient pairs chosen so that:
+           • both coefficients are already in standard form (1 ≤ c < 10);
+           • the quotient c1 ÷ c2 is a simple decimal that a pupil can
+             evaluate mentally without a calculator — 0.2, 0.25, 0.3, 0.4,
+             0.5, 0.6, 0.75, or a whole number from 1 to 9.
+         This guarantees a clean, calculable answer and keeps both
+         coefficients in proper standard form. */
       const divSpecs = [
-        [8, 2], [1.2, 4], [1.8, 6], [7.5, 1.5], [2.8, 0.4], [42, 0.6],
-        [6, 2], [9, 3], [2.4, 0.6], [1.5, 0.5], [3.6, 1.2], [2.5, 0.5]
+        /* whole-number quotients */
+        [4, 2], [6, 2], [8, 2], [9, 3], [6, 3], [8, 4],
+        /* 0.5 */
+        [1, 2], [2, 4], [3, 6], [4, 8],
+        /* 0.25 */
+        [1, 4], [2, 8],
+        /* 0.2 */
+        [1.2, 6], [1.6, 8],
+        /* 0.3 */
+        [1.2, 4], [1.5, 5], [1.8, 6],
+        /* 0.4 */
+        [1.2, 3], [1.6, 4], [2.4, 6],
+        /* 0.6 */
+        [1.5, 2.5], [2.4, 4], [3.6, 6],
+        /* 0.75 */
+        [1.5, 2], [3, 4],
+        /* other clean quotients */
+        [7.5, 1.5], [3.6, 1.2], [4.5, 1.5], [4.8, 1.6], [9.6, 1.2]
       ];
 
       const parts = [];
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         const spec = pick(multSpecs);
         const c1 = spec[0], c2 = spec[1];
         const e1 = ri(2, 7);
@@ -1015,7 +1039,8 @@ function comparativeFor(noun) {
         qs.push(T('        ' + labels[i] + '  ' + parts[i].q));
         ans.push({ blockIndex: i + 1, text: parts[i].a });
       }
-      return Q('sfmd|' + parts.map(function (p) { return p.q; }).join('|'), qs, ans);
+      return Q('sfmd|' + parts.map(function (p) { return p.q; }).join('|'), qs, ans,
+        null, { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -1102,8 +1127,8 @@ function comparativeFor(noun) {
       const qs = [
         T('The ' + noun + ' of ' + big.name + ' is ' + fmtSF(rBig) + unitSuffix + '.'),
         T('The ' + noun + ' of ' + small.name + ' is ' + fmtSF(rSmall) + unitSuffix + '.'),
-        T('How many times ' + comparative + ' is the ' + noun + ' of ' + big.name +
-          ' than the ' + noun + ' of ' + small.name + '?'),
+        T('How many times ' + comparative + ' is ' + big.name +
+          ' than ' + small.name + '?'),
         T(roundText)
       ];
 
@@ -4205,7 +4230,218 @@ function comparativeFor(noun) {
     }
   },
 
+    /* ============================================================
+       ERROR INTERVALS FOR A TOTAL (multiple items)
+       ------------------------------------------------------------
+       Each question gives a rounded individual value (e.g. "2.5 m to
+       the nearest 10 cm") and asks for the error interval of the
+       total across N identical items.  The three sub-skills this
+       deliberately exercises are:
+         • unit conversion (metres vs cm; litres vs ml; kg vs g)
+         • halving an odd rounding increment (nearest 5 → ±2.5)
+         • large-number multiplication (e.g. 50 tiles × ~400 cm²)
+       All answers resolve to clean decimals, verified by the local
+       `fmtNum` helper which strips any IEEE-754 noise.
+       ============================================================ */
+    {
+    id: 'error-interval-multi', strand: 'N', diff: 2,
+    gen() {
+      function fmtNum(x) {
+        const r = Math.round(x * 1e9) / 1e9;
+        return String(r);
+      }
+
+      const scenarios = [
+        {
+          id: 'wooden plank',
+          prompt: function(v, n, who) {
+            return who + ' has ' + n + ' identical wooden planks. ' +
+                   'Each plank is ' + v + ' metres long, to the nearest 10 cm. ' +
+                   'Write down the error interval for the total length, ' +
+                   'L metres, of the ' + n + ' planks laid end to end.';
+          },
+          valuePool: [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0],
+          roundingUnit: 0.1,
+          countPool: [4, 5, 6, 8, 10, 12, 15, 20],
+          symbol: 'L', unitOut: 'm'
+        },
+        {
+          id: 'tank of water',
+          prompt: function(v, n, who) {
+            return who + ' fills ' + n + ' identical tanks with water. ' +
+                   'The volume of water in each tank is ' + v +
+                   ' litres, to the nearest 5 litres. ' +
+                   'Write down the error interval for the total volume, ' +
+                   'V litres, of water in the ' + n + ' tanks.';
+          },
+          valuePool: [200, 250, 300, 350, 400, 450, 500, 550, 600],
+          roundingUnit: 5,
+          countPool: [5, 6, 8, 10, 12, 15, 20],
+          symbol: 'V', unitOut: 'litres'
+        },
+        {
+          id: 'square floor tile',
+          prompt: function(v, n, who) {
+            return who + ' lays a floor using ' + n +
+                   ' identical square tiles. The area of each tile is ' + v +
+                   ' cm², to the nearest 10 cm². Write down the error interval ' +
+                   'for the total area, A cm², covered by the floor.';
+          },
+          valuePool: [200, 300, 400, 500, 600, 800, 900],
+          roundingUnit: 10,
+          countPool: [20, 30, 40, 50, 60, 100],
+          symbol: 'A', unitOut: 'cm²'
+        },
+        {
+          id: 'bag of flour',
+          prompt: function(v, n, who) {
+            return who + ' buys ' + n + ' identical bags of flour. ' +
+                   'The mass of each bag is ' + v +
+                   ' kg, to the nearest 0.1 kg. ' +
+                   'Write down the error interval for the total mass, ' +
+                   'M kg, of the ' + n + ' bags.';
+          },
+          valuePool: [1.2, 1.5, 2.0, 2.5, 3.0, 3.5],
+          roundingUnit: 0.1,
+          countPool: [5, 6, 8, 10, 12, 15, 20],
+          symbol: 'M', unitOut: 'kg'
+        },
+        {
+          id: 'pencil',
+          prompt: function(v, n, who) {
+            return who + ' has ' + n + ' identical pencils. Each pencil is ' +
+                   v + ' cm long, to the nearest cm. Write down the error ' +
+                   'interval for the total length, L cm, of the ' + n +
+                   ' pencils laid end to end.';
+          },
+          valuePool: [8, 10, 12, 15, 18, 20, 25],
+          roundingUnit: 1,
+          countPool: [4, 5, 6, 8, 10, 12],
+          symbol: 'L', unitOut: 'cm'
+        },
+        {
+          id: 'lap of a circuit',
+          prompt: function(v, n, who) {
+            return who + ' runs ' + n + ' laps of a circuit. Each lap is ' +
+                   v + ' km, to the nearest 0.5 km. Write down the error ' +
+                   'interval for the total distance, D km, that ' + who +
+                   ' runs.';
+          },
+          valuePool: [1.5, 2.0, 2.5, 3.0, 3.5, 4.0],
+          roundingUnit: 0.5,
+          countPool: [3, 4, 5, 6, 8, 10, 12],
+          symbol: 'D', unitOut: 'km'
+        },
+        {
+          id: 'bottle of juice',
+          prompt: function(v, n, who) {
+            return who + ' fills ' + n + ' identical bottles with juice. ' +
+                   'The volume of juice in each bottle is ' + v +
+                   ' ml, to the nearest 10 ml. Write down the error interval ' +
+                   'for the total volume, V ml, of juice in the ' + n +
+                   ' bottles.';
+          },
+          valuePool: [150, 200, 250, 300, 350, 400, 500],
+          roundingUnit: 10,
+          countPool: [6, 8, 10, 12, 15, 20, 24],
+          symbol: 'V', unitOut: 'ml'
+        },
+        {
+          id: 'rectangular field',
+          prompt: function(v, n, who) {
+            return who + ' owns ' + n + ' identical rectangular fields. ' +
+                   'The area of each field is ' + v +
+                   ' m², to the nearest m². Write down the error interval ' +
+                   'for the total area, A m², of the ' + n + ' fields.';
+          },
+          valuePool: [200, 250, 300, 400, 500, 600, 800],
+          roundingUnit: 1,
+          countPool: [3, 4, 5, 6, 8, 10],
+          symbol: 'A', unitOut: 'm²'
+        },
+        {
+          id: 'chocolate bar',
+          prompt: function(v, n, who) {
+            return who + ' has ' + n + ' identical chocolate bars. ' +
+                   'The mass of each bar is ' + v +
+                   ' g, to the nearest 20 g. Write down the error interval ' +
+                   'for the total mass, M g, of the ' + n + ' bars.';
+          },
+          valuePool: [80, 100, 120, 140, 160, 200, 240],
+          roundingUnit: 20,
+          countPool: [5, 6, 8, 10, 12, 15],
+          symbol: 'M', unitOut: 'g'
+        },
+        {
+          id: 'stopwatch reading',
+          prompt: function(v, n, who) {
+            return who + ' takes ' + n + ' readings using a stopwatch. ' +
+                   'Each reading is ' + v +
+                   ' seconds, to the nearest 0.2 seconds. Write down the ' +
+                   'error interval for the total time, T seconds, of all ' +
+                   n + ' readings.';
+          },
+          valuePool: [1.4, 1.6, 1.8, 2.0, 2.2, 2.4],
+          roundingUnit: 0.2,
+          countPool: [5, 8, 10, 12, 15, 20],
+          symbol: 'T', unitOut: 'seconds'
+        },
+        {
+          id: 'brick',
+          prompt: function(v, n, who) {
+            return who + ' stacks ' + n + ' identical bricks. The height of ' +
+                   'each brick is ' + v + ' cm, to the nearest 5 mm. ' +
+                   'Write down the error interval for the total height, ' +
+                   'H cm, of the stack.';
+          },
+          valuePool: [6.0, 6.5, 7.0, 7.5, 8.0, 9.0, 10.0],
+          roundingUnit: 0.5,
+          countPool: [4, 5, 6, 8, 10, 12, 15],
+          symbol: 'H', unitOut: 'cm'
+        }
+      ];
+
+      const s    = pick(scenarios);
+      const v    = pick(s.valuePool);
+      const n    = pick(s.countPool);
+      const who  = randomName();
+
+      /* Half-increment.  When the rounding unit is odd (e.g. 5),
+         the half is a non-integer (2.5) — exactly the case the user
+         wants exercised. */
+      const half  = s.roundingUnit / 2;
+      const lbInd = v - half;
+      const ubInd = v + half;
+      const lbTot = n * lbInd;
+      const ubTot = n * ubInd;
+
+      const stem = s.prompt(v, n, who);
+
+      const answerText = fmtNum(lbTot) + ' \u2264 ' + s.symbol +
+                         ' < ' + fmtNum(ubTot);
+
+      const sol = [
+        T('Each ' + s.id + ' is between ' + fmtNum(lbInd) + ' and ' +
+          fmtNum(ubInd) + ' ' + s.unitOut + '.'),
+        T('Lower bound of the total: ' + n + ' × ' + fmtNum(lbInd) + ' = ' +
+          fmtNum(lbTot) + ' ' + s.unitOut),
+        T('Upper bound of the total: ' + n + ' × ' + fmtNum(ubInd) + ' = ' +
+          fmtNum(ubTot) + ' ' + s.unitOut),
+        T('Error interval: ' + fmtNum(lbTot) + ' \u2264 ' + s.symbol +
+          ' < ' + fmtNum(ubTot))
+      ];
+
+      return Q('eim|' + s.id + '|' + v + '|' + n,
+               [T(stem)],
+               [{ blockIndex: 0, text: answerText }],
+               sol,
+               { badge: 'NON-CALCULATOR' });
+    }
+  },
+
   ];
+
+
 
   /* ============================================================
      TEXT MEASUREMENT / RUN PARSING
@@ -4237,6 +4473,7 @@ function comparativeFor(noun) {
       if (c === 0xE000) { w += t[0] * THIN_SPACE_FACTOR; continue; }
       if (c === 0xE001) { w += 1000; continue; }
       if (c === 0xE002) continue;              /* superscript toggle — no width */
+      if (c === 0x2264 || c === 0x2265) { w += t[28]; continue; }  /* ≤ or ≥ */
       w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
     }
     return w * size / 1000;
@@ -5794,7 +6031,7 @@ function layoutWorkedAnswers(opts) {
     const DISABLED = [
     /* NUMBER */
     'bidmas','round-dp','round-sf','frac-add','frac-of','pct-of','pct-change',
-    'hcf-lcm','std-form-non-standard','std-form-add-subtract','std-form-mult-div',
+    'hcf-lcm',
     'compare-round-frac-dec','prime-factors','std-form','compare-round-frac-dec',
     'classify-numbers','frac-of-amount-remaining','dec-to-frac','simplify-fraction',
     'pct-to-frac','add-brackets','mult-div-powers-of-ten','bidmas-four',
@@ -6007,6 +6244,8 @@ function layoutWorkedAnswers(opts) {
       else if (ch === '(') out += '\\(';
       else if (ch === ')') out += '\\)';
       else if (code === 0x2212) out += '\\226';  // U+2212 minus → WinAnsi 0x96 en-dash
+      else if (code === 0x2264) out += '<';      // ≤ — no WinAnsi glyph, use <
+      else if (code === 0x2265) out += '>';      // ≥ — no WinAnsi glyph, use >
       else if (code >= 32 && code <= 126) out += ch;
       else if (code >= 0xA0 && code <= 0xFF) out += '\\' + code.toString(8).padStart(3, '0');
       else if (WINANSI[code] !== undefined) out += '\\' + WINANSI[code].toString(8).padStart(3, '0');
