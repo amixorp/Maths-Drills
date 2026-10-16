@@ -194,6 +194,7 @@
   </label>
 
   <button id="revealBtn">👁 Reveal answers</button>
+  <button id="revealSolutionsBtn">📖 Reveal solutions</button>
   <button id="topicsBtn">📋 Topics</button>
   <button id="regenBtn" class="primary">🎲 Generate New</button>
   <button id="dlBtn">⬇️ Worksheet PDF</button>
@@ -223,7 +224,8 @@
 </div>
 
 <p class="hint no-print">
-  <b>Reveal answers</b> shows them inline on screen — nothing downloads, and they're never printed.<br>
+  <b>Reveal answers</b> shows the short answers in blue on the right of the sheet.<br>
+  <b>Reveal solutions</b> switches to a worked-solutions view; clicking it again returns to the sheet without regenerating questions.<br>
   <b>Worksheet PDF</b> saves the questions only. <b>Answers PDF</b> saves a separate key.<br>
   Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd> to open with answers shown.
 </p>
@@ -293,8 +295,12 @@
   function T(text) {
     return { type: 'text', text: text.replace(/ - /g, ' ' + MINUS + ' ') };
   }
-  function Q(key, blocks, answers, solution) {
-    return { key: key, blocks: blocks, answers: answers, solution: solution || null };
+  function Q(key, blocks, answers, solution, opts) {
+    const q = { key: key, blocks: blocks, answers: answers, solution: solution || null };
+    if (opts) {
+      for (const k in opts) if (Object.prototype.hasOwnProperty.call(opts, k)) q[k] = opts[k];
+    }
+    return q;
   }
   
   function nStr(x) {
@@ -307,6 +313,55 @@
     return pick(['Alex', 'Sam', 'Jamie', 'Chris', 'Jordan',
                  'Morgan', 'Taylor', 'Casey', 'Riley', 'Avery']);
   }
+
+  /* Gendered name pool.  Prefers window.BANKS.people when present;
+   falls back to a built-in set so the sheet still renders if
+   banks.js hasn't been updated yet.  Returns
+     { name, gender, pronoun, possessive, object }
+   where gender is 'f' | 'm' and the pronouns are already lowercase. */
+const FALLBACK_FEMALE = [
+  'Sofia', 'Amelia', 'Isla', 'Grace', 'Maya', 'Priya', 'Aisha',
+  'Hannah', 'Leila', 'Nadia', 'Chloe', 'Daisy', 'Fatima', 'Megan',
+  'Bella', 'Abena', 'Natalie', 'Jasmine', 'Ella', 'Emily'
+];
+const FALLBACK_MALE = [
+  'Marcus', 'Oliver', 'Yusuf', 'Callum', 'Dev', 'Freddie', 'Ben',
+  'Andrew', 'Chris', 'Daniel', 'Ellis', 'Finn', 'Hassan', 'Isaac',
+  'Jordan', 'Leo', 'Mohammed', 'Noah', 'Owen', 'Raj'
+];
+
+function makePerson(name, gender) {
+  const f = (gender === 'f');
+  return {
+    name: name,
+    gender: f ? 'f' : 'm',
+    pronoun:    f ? 'she' : 'he',
+    possessive: f ? 'her' : 'his',
+    object:     f ? 'her' : 'him'
+  };
+}
+
+function randomPerson() {
+  const b = window.BANKS && window.BANKS.people;
+
+  /* Form 1: array of { name, gender } objects */
+  if (Array.isArray(b) && b.length) {
+    const e = pick(b);
+    return makePerson(e.name, e.gender === 'f' ? 'f' : 'm');
+  }
+
+  /* Form 2: { female: [...], male: [...] } */
+  const fList = (b && Array.isArray(b.female) && b.female.length)
+    ? b.female : FALLBACK_FEMALE;
+  const mList = (b && Array.isArray(b.male) && b.male.length)
+    ? b.male : FALLBACK_MALE;
+
+  const gender = rng() < 0.5 ? 'f' : 'm';
+  return makePerson(pick(gender === 'f' ? fList : mList), gender);
+}
+
+/* Convenience: capitalise a pronoun when it starts a sentence. */
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
     function opName(op) {
     if (op === '+') return 'sum';
@@ -423,7 +478,55 @@
   const TOPICS = [
 
   /* ---------------- NUMBER ---------------- */
-  {
+{
+    id: 'multiply-decimals', strand: 'N', diff: 1,
+    gen() {
+      /* Each factor is d × 10^k with d ∈ {2,…,9} and k ∈ {-2,-1,0,1,2},
+         so every factor has exactly one significant figure.  At least
+         one factor is a decimal, so the topic is genuinely about
+         multiplying decimals.  Products are exact (to well within
+         floating-point noise) and are written as ordinary decimals. */
+      const kPool = [-2, -1, 0, 1, 2];
+
+      function pickOneSf() {
+        const d = ri(2, 9);
+        const k = pick(kPool);
+        return { d: d, k: k, value: d * Math.pow(10, k) };
+      }
+      function fmtFactor(d, k) {
+        if (k >= 0) return String(d) + '0'.repeat(k);
+        const dp = -k;
+        let s = String(d);
+        while (s.length <= dp) s = '0' + s;
+        const cut = s.length - dp;
+        return s.slice(0, cut) + '.' + s.slice(cut);
+      }
+
+      let a, b, guard = 0;
+      do {
+        a = pickOneSf();
+        b = pickOneSf();
+        guard++;
+      } while (guard < 50 && (
+        (a.k >= 0 && b.k >= 0) ||          /* at least one decimal       */
+        (a.d === b.d && a.k === b.k)       /* not the same factor twice  */
+      ));
+
+      const aStr = fmtFactor(a.d, a.k);
+      const bStr = fmtFactor(b.d, b.k);
+      const prod = a.value * b.value;
+      const rounded = Math.round(prod * 1e10) / 1e10;
+      const prodStr = String(rounded);
+
+      return Q('md|' + aStr + '|' + bStr,
+        [T('Work out  ' + aStr + ' × ' + bStr)],
+        [{ blockIndex: 0, text: prodStr }],
+        null,
+        { badge: 'NON-CALCULATOR' });
+    }
+  },  
+
+{
     id: 'bidmas', strand: 'N', diff: 1,
     gen() {
       const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9);
@@ -438,6 +541,7 @@
         [{ blockIndex: 0, text: String(ans) }]);
     }
   },
+
   {
     id: 'round-dp', strand: 'N', diff: 1,
     gen() {
@@ -480,6 +584,56 @@
         [T('Work out  ' + fracStr(n1, d1) + ' ' + op + ' ' + fracStr(n2, d2) +
            '  Give your answer as a fraction in its simplest form.')],
         [{ blockIndex: 0, text: mixedStr(num / g, den / g) }]);
+    }
+  },
+    {
+    id: 'frac-add-same-denom', strand: 'N', diff: 1,
+    gen() {
+      /* Four parts, each adding or subtracting two fractions with the
+         SAME denominator.  Numerators are chosen so that:
+           • addition gives a proper fraction (n1 + n2 < d);
+           • subtraction gives a positive proper fraction (n1 > n2). */
+      const parts = [];
+      for (let i = 0; i < 4; i++) {
+        const d = pick([3, 4, 5, 6, 8, 9, 10, 12]);
+        const isSub = rng() < 0.4;
+        let n1, n2;
+        if (isSub) {
+          n1 = ri(2, d - 1);
+          n2 = ri(1, n1 - 1);
+        } else {
+          n1 = ri(1, d - 2);
+          n2 = ri(1, d - 1 - n1);
+        }
+        const num = isSub ? (n1 - n2) : (n1 + n2);
+        const g = gcd(num, d);
+        const ansN = num / g, ansD = d / g;
+        const needsSimp = (g > 1);
+        parts.push({
+          n1: n1, n2: n2, d: d,
+          op: isSub ? ' - ' : ' + ',
+          ansN: ansN, ansD: ansD, needsSimp: needsSimp
+        });
+      }
+
+      const anySimp = parts.some(function (p) { return p.needsSimp; });
+
+      const lines = [T('Work out the following.')];
+      const answers = [];
+      const labels = ['(a)', '(b)', '(c)', '(d)'];
+      for (let i = 0; i < 4; i++) {
+        const p = parts[i];
+        lines.push(T('        ' + labels[i] + '  ' +
+          fracStr(p.n1, p.d) + p.op + fracStr(p.n2, p.d)));
+        answers.push({ blockIndex: i + 1, text: fracStr(p.ansN, p.ansD) });
+      }
+      if (anySimp) {
+        lines.push(T('Write your answer as a fraction in its simplest form.'));
+      }
+
+      return Q('fasd|' + parts.map(function (p) {
+        return p.n1 + '/' + p.n2 + '/' + p.d + '/' + p.op;
+      }).join('|'), lines, answers, null, { badge: 'NON-CALCULATOR' });
     }
   },
   {
@@ -712,11 +866,14 @@
   },
 
   /* ---------------- RATIO / PROPORTION ---------------- */
-  {
+    {
     id: 'ratio-share', strand: 'R', diff: 2,
     gen() {
-      const three = rng() < 0.35;
-      const parts = three ? [ri(1, 6), ri(1, 6), ri(1, 6)] : [ri(1, 6), ri(1, 6)];
+      const three = rng() < 0.20;
+      let parts;
+      do {
+        parts = three ? [ri(1, 6), ri(1, 6), ri(1, 6)] : [ri(1, 6), ri(1, 6)];
+      } while (parts.every(function (v) { return v === parts[0]; }));
       const sum = parts.reduce(function (a, b) { return a + b; }, 0);
       const unit = ri(2, 12);
       const total = sum * unit;
@@ -801,6 +958,85 @@
         [{ blockIndex: 0, text: dist + ' km' }]);
     }
   },
+
+  {
+  id: 'speed-units', strand: 'R', diff: 1,
+  gen() {
+    /* Units distribution:
+         km/h  55%
+         m/s   35%   → these two make up 90% of questions
+         cm/s   7%
+         mm/s   3%
+       Speeds and times are chosen so the answer is always a
+       whole number — no calculator needed. */
+    const r = rng();
+
+    let unit, distanceUnit, contexts, speedPool, timePool;
+
+    if (r < 0.55) {
+      unit = 'km/h'; distanceUnit = 'km';
+      speedPool = [20, 30, 40, 45, 50, 60, 70, 75, 80, 90, 100, 120];
+      timePool  = [1, 2, 3, 4, 5, 6];
+      contexts = [
+        'A train', 'A car', 'A bus', 'A coach',
+        'A lorry', 'A van', 'A motorbike', 'A taxi'
+      ];
+    } else if (r < 0.90) {
+      unit = 'm/s'; distanceUnit = 'm';
+      speedPool = [2, 3, 4, 5, 6, 8, 10];
+      timePool  = [5, 8, 10, 12, 15, 20, 25, 30];
+      contexts = [
+        'A runner', 'A sprinter', 'A cyclist',
+        'A swimmer', 'An athlete'
+      ];
+    } else if (r < 0.97) {
+      unit = 'cm/s'; distanceUnit = 'cm';
+      speedPool = [1, 2, 3, 4, 5];
+      timePool  = [5, 10, 15, 20, 25, 30];
+      contexts = ['A snail', 'A tortoise', 'A beetle', 'A caterpillar'];
+    } else {
+      unit = 'mm/s'; distanceUnit = 'mm';
+      speedPool = [1, 2, 3, 4, 5];
+      timePool  = [10, 20, 25, 30, 40, 50];
+      contexts = ['A snail', 'A slug', 'A tiny insect'];
+    }
+
+    const speed = pick(speedPool);
+    const time  = pick(timePool);
+    const distance = speed * time;
+
+    const context = pick(contexts);
+    const lower = context.toLowerCase();
+
+    let verb = 'travels';
+    if (lower.includes('runner') || lower.includes('sprinter') ||
+        lower.includes('athlete')) {
+      verb = 'runs';
+    } else if (lower.includes('swimmer')) {
+      verb = 'swims';
+    } else if (lower.includes('cyclist')) {
+      verb = 'cycles';
+    } else if (lower.includes('snail') || lower.includes('slug') ||
+               lower.includes('tortoise') || lower.includes('beetle') ||
+               lower.includes('caterpillar') || lower.includes('insect')) {
+      verb = 'moves';
+    }
+
+    const timeUnit = (unit === 'km/h')
+      ? (time === 1 ? 'hour' : 'hours')
+      : (time === 1 ? 'second' : 'seconds');
+
+    const qText = context + ' ' + verb + ' ' + distance + ' ' + distanceUnit +
+                  ' in ' + time + ' ' + timeUnit +
+                  '. Work out its average speed. Give the units of your answer.';
+
+    return Q('spd-units|' + unit + '|' + distance + '|' + time,
+      [T(qText)],
+      [{ blockIndex: 0, text: speed + ' ' + unit }],
+      null,
+      { badge: 'NON-CALCULATOR' });
+  }
+},
   {
     id: 'compound', strand: 'R', diff: 3,
     gen() {
@@ -990,12 +1226,15 @@
       const v = pick([0.5, 1.5, 2.5, 3.5, 4.5, 1.25, 2.25, 3.75, 6.5, 7.5]);
       const t = pick([
         ['km', 'm', 1000], ['m', 'cm', 100], ['cm', 'mm', 10],
-        ['kg', 'g', 1000], ['g', 'mg', 1000], ['litres', 'ml', 1000],
+        ['kg', 'g', 1000], ['litres', 'ml', 1000],
         ['m', 'mm', 1000], ['tonnes', 'kg', 1000]
+        // ['g', 'mg', 1000],  // Disabled: milligrams are not typically required in GCSE Foundation.
       ]);
       return Q('un|' + v + t[0] + t[1],
         [T('Convert ' + v + ' ' + t[0] + ' into ' + t[1] + '.')],
-        [{ blockIndex: 0, text: (v * t[2]) + ' ' + t[1] }]);
+        [{ blockIndex: 0, text: (v * t[2]) + ' ' + t[1] }],
+        null,
+        { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -1175,7 +1414,7 @@
     }
   },
 
-  {
+    {
     id: 'classify-numbers', strand: 'N', diff: 1,
     gen() {
       const oddPrimes = [11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47,
@@ -1459,16 +1698,34 @@
     }
   },
 
-  {
+    {
     id: 'expand-single-letter', strand: 'A', diff: 1,
     gen() {
-      const a = ri(2, 9), c = ri(2, 12);
-      const letter = pick(['b','c','d','g','h','k','m','n','p','q','y','z']);
-      return Q('esl|' + a + '|' + c + '|' + letter, [
-        T('Multiply out  ' + a + '(`' + letter + '` + ' + c + ')')
+      const letters = shuffle(['b','c','d','g','h','k','m','n','p','q','y','z'].slice());
+      const parts = [];
+      for (let i = 0; i < 4; i++) {
+        const a = ri(2, 9);
+        const c = ri(2, 12);
+        const v = letters.pop();
+        const neg = rng() < 0.5;
+        const inner = neg ? ('`' + v + '` - ' + c) : ('`' + v + '` + ' + c);
+        const ans = neg
+          ? a + v + ' - ' + (a * c)
+          : a + v + ' + ' + (a * c);
+        parts.push({ q: a + '(' + inner + ')', a: ans });
+      }
+      return Q('esl|' + parts.map(function (p) { return p.q; }).join('|'), [
+        T('Multiply out'),
+        T('        (a)  ' + parts[0].q),
+        T('        (b)  ' + parts[1].q),
+        T('        (c)  ' + parts[2].q),
+        T('        (d)  ' + parts[3].q)
       ], [
-        { blockIndex: 0, text: a + letter + ' + ' + (a * c) }
-      ]);
+        { blockIndex: 1, text: parts[0].a },
+        { blockIndex: 2, text: parts[1].a },
+        { blockIndex: 3, text: parts[2].a },
+        { blockIndex: 4, text: parts[3].a }
+      ], null, { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -1600,13 +1857,15 @@
       const totalCost = n * perItemCost;
       const profit = n * (perItemSell - perItemCost);
       const name = pick(['Andy', 'Ben', 'Cara', 'Dev', 'Ella', 'Freddie', 'Grace', 'Hannah']);
-      return Q('pf|' + n + '|' + perItemCost + '|' + perItemSell + '|' + item[0], [
-        T(name + ' buys ' + n + ' ' + item[0] + ' for a total price of ' + money(totalCost) + '.'),
-        T('He sells each ' + item[1] + ' for ' + money(perItemSell) +
-          '. How much profit does he make?')
-      ], [
-        { blockIndex: 1, text: money(profit) }
-      ]);
+          const p = randomPerson();
+    return Q('pf|' + n + '|' + perItemCost + '|' + perItemSell + '|' + item[0], [
+      T(p.name + ' buys ' + n + ' ' + item[0] +
+        ' for a total price of ' + money(totalCost) + '.'),
+      T(cap(p.pronoun) + ' sells each ' + item[1] + ' for ' + money(perItemSell) +
+        '. How much profit does ' + p.pronoun + ' make?')
+    ], [
+      { blockIndex: 1, text: money(profit) }
+    ]);
     }
   },
 
@@ -1631,6 +1890,61 @@
         { blockIndex: 3, text: String(a3) },
         { blockIndex: 4, text: String(a4) }
       ]);
+    }
+  },
+
+    {
+    id: 'multiply-by-10', strand: 'N', diff: 1,
+    gen() {
+      /* Four parts, loosely matching the style of the uploaded paper:
+         (a) a multiple of ten,             e.g. 40 × 10
+         (b) a two-digit whole number,      e.g. 63 × 10
+         (c) a decimal with two decimals,   e.g. 0.43 × 10
+         (d) a decimal with four decimals,  e.g. 0.0821 × 10
+         Every part is a shift of the digits one place to the left. */
+
+      function tidy(x) {
+        const r = Math.round(x * 1e10) / 1e10;
+        return String(r);
+      }
+
+      const aBase = ri(2, 9) * 10;
+      const aDisplay = String(aBase);
+      const aAns = String(aBase * 10);
+
+      const bVal = ri(10, 99);
+      const bDisplay = String(bVal);
+      const bAns = String(bVal * 10);
+
+      const cD1 = ri(1, 9), cD2 = ri(0, 9);
+      const cDisplay = '0.' + cD1 + cD2;
+      const cValue = (cD1 * 10 + cD2) / 100;
+      const cAns = tidy(cValue * 10);
+
+      const dRaw = ri(100, 9999);
+      const dDisplay = '0.' + String(dRaw).padStart(4, '0');
+      const dValue = dRaw / 10000;
+      const dAns = tidy(dValue * 10);
+
+      const parts = [
+        { q: aDisplay + ' × 10', a: aAns },
+        { q: bDisplay + ' × 10', a: bAns },
+        { q: cDisplay + ' × 10', a: cAns },
+        { q: dDisplay + ' × 10', a: dAns }
+      ];
+
+      return Q('mb10|' + parts.map(function (p) { return p.q; }).join('|'), [
+        T('Work out'),
+        T('        (a)  ' + parts[0].q),
+        T('        (b)  ' + parts[1].q),
+        T('        (c)  ' + parts[2].q),
+        T('        (d)  ' + parts[3].q)
+      ], [
+        { blockIndex: 1, text: parts[0].a },
+        { blockIndex: 2, text: parts[1].a },
+        { blockIndex: 3, text: parts[2].a },
+        { blockIndex: 4, text: parts[3].a }
+      ], null, { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -1805,7 +2119,7 @@
     }
   },
 
-  {
+    {
     id: 'simplify-fraction-multi', strand: 'N', diff: 1,
     gen() {
       function pickPair() {
@@ -1826,8 +2140,12 @@
         const g = gcd(p.n, p.d);
         return fracStr(p.n / g, p.d / g);
       });
+      const stem = pick([
+        'Simplify the following fractions fully.',
+        'Write these fractions in their simplest form.'
+      ]);
       return Q('sfm|' + parts.map(function (p) { return p.n + '/' + p.d; }).join('|'), [
-        T('Simplify the following fractions.'),
+        T(stem),
         T('        (a)  ' + fracStr(parts[0].n, parts[0].d)),
         T('        (b)  ' + fracStr(parts[1].n, parts[1].d)),
         T('        (c)  ' + fracStr(parts[2].n, parts[2].d)),
@@ -1837,10 +2155,9 @@
         { blockIndex: 2, text: ans[1] },
         { blockIndex: 3, text: ans[2] },
         { blockIndex: 4, text: ans[3] }
-      ]);
+      ], null, { badge: 'NON-CALCULATOR' });
     }
   },
-
   {
     id: 'list-factors', strand: 'N', diff: 1,
     gen() {
@@ -2012,7 +2329,7 @@
         { blockIndex: 6, text: parts[5].a },
         { blockIndex: 7, text: parts[6].a },
         { blockIndex: 8, text: parts[7].a }
-      ]);
+      ], null, { badge: 'NON-CALCULATOR' });
     }
   },
 
@@ -2514,7 +2831,7 @@
       const pq = pickProbabilityQuestion(outcomes, op, freq);
       const who = randomName();
 
-      return Q('spntbl|' + distinct.join('-') + '|' + op + '|' + pq.question, [
+            return Q('spntbl|' + distinct.join('-') + '|' + op + '|' + pq.question, [
         T('Here is a fair ' + spinnerSize + '-sided spinner.'),
         { type: 'spinner', values: spinnerValues },
         T(who + ' spins the spinner twice and records the ' + opName(op) +
@@ -2525,49 +2842,125 @@
           outcomes: outcomes, shownCells: shownCells },
         T('(b)  Find the probability that ' + pq.question + '.')
       ], [
-        { blockIndex: 5, text: pq.answer }
+        { blockIndex: 5, text: pq.answer,
+          answerTable: { operation: op,
+            colValues: distinct, rowValues: distinct,
+            outcomes: outcomes } }
       ]);
     }
   },
 
-  {
+    {
     id: 'spinner-design', strand: 'P', diff: 3,
     gen() {
-      const cases = [
-        { n: 5, p: 2, q: 3, z: 0, probStr: '0.48' },
-        { n: 5, p: 3, q: 2, z: 0, probStr: '0.48' },
-        { n: 5, p: 1, q: 3, z: 1, probStr: '0.24' },
-        { n: 5, p: 2, q: 2, z: 1, probStr: '0.32' },
-        { n: 5, p: 1, q: 2, z: 2, probStr: '0.16' },
-        { n: 5, p: 1, q: 1, z: 3, probStr: '0.08' },
-        { n: 6, p: 3, q: 3, z: 0, probStr: '0.50' }
-      ];
+            /* Two design variants:
+           • "product is negative" — depends only on the signs of the
+             numbers, so the answer is an example *shape* (p positives,
+             q negatives, z zeros).
+           • "sum > X" / "sum < X"  — depends on the actual values, so
+             each case carries a concrete multiset.
+         All probabilities are exact fractions of n² (or of n for the
+         sum variant being a ratio over n² equally likely ordered pairs);
+         every decimal below is verified. */
 
-      const c = pick(cases);
+      /* The "sum-vs-threshold" variant has been disabled at the user's
+         request.  Its code is retained in the else-branch below, but is
+         currently unreachable.  Set ALLOW_SUM_VARIANT to true to
+         re-enable it. */
+      const ALLOW_SUM_VARIANT = false;
 
-      const pos = [];
-      for (let i = 1; i <= c.p; i++) pos.push(String(i));
-      const neg = [];
-      for (let i = 1; i <= c.q; i++) neg.push('\u2212' + i);
-      const zeros = [];
-      for (let i = 0; i < c.z; i++) zeros.push('0');
-      const lab = shuffle(pos.concat(neg, zeros)).join(', ');
+      if (!ALLOW_SUM_VARIANT || rng() < 0.5) {
+        /* ---------- Product-negative variant ---------- */
+        const cases = [
+          /* n, p, q, z,  prob = 2pq / n² */
+          { n: 5,  p: 2, q: 3, z: 0, prob: '0.48' },
+          { n: 5,  p: 3, q: 2, z: 0, prob: '0.48' },
+          { n: 5,  p: 1, q: 3, z: 1, prob: '0.24' },
+          { n: 5,  p: 2, q: 2, z: 1, prob: '0.32' },
+          { n: 5,  p: 1, q: 2, z: 2, prob: '0.16' },
+          { n: 5,  p: 1, q: 1, z: 3, prob: '0.08' },
+          { n: 6,  p: 3, q: 3, z: 0, prob: '0.50' },
+          { n: 8,  p: 2, q: 4, z: 2, prob: '0.25' },
+          { n: 8,  p: 1, q: 4, z: 3, prob: '0.125' },
+          { n: 10, p: 5, q: 3, z: 2, prob: '0.30' },
+          { n: 10, p: 4, q: 5, z: 1, prob: '0.40' },
+          { n: 10, p: 3, q: 5, z: 2, prob: '0.30' },
+          { n: 10, p: 2, q: 5, z: 3, prob: '0.20' },
+          { n: 10, p: 4, q: 4, z: 2, prob: '0.32' }
+        ];
+        const c = pick(cases);
 
-      const who = randomName();
+        const values = [];
+        for (let i = 0; i < c.p; i++) values.push(String(ri(1, 9)));
+        for (let i = 0; i < c.q; i++) values.push('\u2212' + ri(1, 9));
+        for (let i = 0; i < c.z; i++) values.push('0');
+        const lab = shuffle(values).join(', ');
 
-      return Q('spndsn|' + c.n + '|' + c.probStr + '|' + c.p + '|' + c.q + '|' + c.z, [
-        T(who + ' makes a fair ' + c.n + '-sided spinner.'),
-        T('She spins the spinner twice and records the product of the two scores.'),
-        T(who + ' says:'),
-        T('        "The probability that the product is negative is ' + c.probStr + '."'),
-        T('Write numbers on the spinner below so that ' + who +
-          '\u2019s statement is correct.'),
-        { type: 'spinner', values: Array(c.n).fill('') }
-      ], [
-        { blockIndex: 4, text: 'e.g.  ' + lab }
-      ]);
+        const who = randomName();
+
+        return Q('spndsn|prod|' + c.n + '|' + c.prob, [
+          T(who + ' makes a fair ' + c.n + '-sided spinner.'),
+          T('She spins the spinner twice and records the product of the two scores.'),
+          T(who + ' says:'),
+          T('        "The probability that the product is negative is ' + c.prob + '."'),
+          T('Write numbers on the spinner below so that ' + who +
+            '\u2019s statement is correct.'),
+          { type: 'spinner', values: Array(c.n).fill('') }
+        ], [
+          { blockIndex: 4, text: 'e.g.  ' + lab }
+        ]);
+      } else {
+        /* ---------- Sum-vs-threshold variant ---------- */
+        /* Each case lists an example multiset and the probability it
+           gives.  All probabilities are k / n² with k an integer; they
+           have been checked by enumerating the n² ordered pairs. */
+        const cases = [
+          /* n,  X,  values,           op,  prob  */
+          { n: 5,  X: 5,  values: [1,2,3,4,5],            op: '>', prob: '0.60' },
+          { n: 5,  X: 6,  values: [1,2,3,4,5],            op: '>', prob: '0.40' },
+          { n: 5,  X: 7,  values: [1,2,3,4,5],            op: '>', prob: '0.24' },
+          { n: 5,  X: 8,  values: [1,2,3,4,5],            op: '>', prob: '0.12' },
+          { n: 5,  X: 4,  values: [1,2,3,4,5],            op: '<', prob: '0.12' },
+          { n: 5,  X: 5,  values: [1,2,3,4,5],            op: '<', prob: '0.24' },
+          { n: 5,  X: 6,  values: [1,2,3,4,5],            op: '<', prob: '0.40' },
+          { n: 5,  X: 7,  values: [1,2,3,4,5],            op: '<', prob: '0.60' },
+          { n: 5,  X: 4,  values: [0,1,2,3,4],            op: '>', prob: '0.40' },
+          { n: 5,  X: 3,  values: [0,1,2,3,4],            op: '>', prob: '0.60' },
+          { n: 5,  X: 3,  values: [0,1,2,3,4],            op: '<', prob: '0.24' },
+          { n: 5,  X: 2,  values: [0,1,2,3,4],            op: '<', prob: '0.12' },
+          { n: 10, X: 11, values: [1,2,3,4,5,6,7,8,9,10], op: '>', prob: '0.45' },
+          { n: 10, X: 12, values: [1,2,3,4,5,6,7,8,9,10], op: '>', prob: '0.36' },
+          { n: 10, X: 13, values: [1,2,3,4,5,6,7,8,9,10], op: '>', prob: '0.28' },
+          { n: 10, X: 14, values: [1,2,3,4,5,6,7,8,9,10], op: '>', prob: '0.21' },
+          { n: 10, X: 11, values: [1,2,3,4,5,6,7,8,9,10], op: '<', prob: '0.45' },
+          { n: 10, X: 12, values: [1,2,3,4,5,6,7,8,9,10], op: '<', prob: '0.55' },
+          { n: 10, X: 10, values: [1,2,3,4,5,6,7,8,9,10], op: '<', prob: '0.36' }
+        ];
+        const c = pick(cases);
+        const lab = shuffle(c.values.slice()).join(', ');
+
+        const who = randomName();
+        const opWord = c.op === '>' ? 'greater' : 'less';
+
+        const p = randomPerson();
+    
+        return Q('spndsn|prod|' + c.n + '|' + c.prob, [
+        T(p.name + ' makes a fair ' + c.n + '-sided spinner.'),
+        T(cap(p.pronoun) + ' spins the spinner twice and records the product ' +
+        'of the two scores.'),
+        T(p.name + ' says:'),
+        T('        "The probability that the product is negative is ' + c.prob + '."'),
+        T('Write numbers on the spinner below so that ' + p.name +
+        '\u2019s statement is correct.'),
+      { type: 'spinner', values: Array(c.n).fill('') }
+      ] , [
+      { blockIndex: 4, text: 'e.g.  ' + lab }
+    ]);
+      }
     }
   },
+  
+
 
     /* ---------------- SEQUENCES (expanded) ---------------- */
 
@@ -2739,6 +3132,112 @@
                qs, ans);
     }
   },
+
+
+  {
+  id: 'prob-card-scale', strand: 'P', diff: 2,
+  gen() {
+    let values = [], targetVal = 0, threshold = 0, condition = 'even';
+    let ok = false;
+
+    for (let attempt = 0; attempt < 80 && !ok; attempt++) {
+      const N = pick([6, 6, 6, 7, 7, 8, 8, 9, 10, 5]);
+      const tVal   = ri(2, 8);
+      const tCount = ri(2, Math.min(4, N - 2));
+
+      const arr = [];
+      for (let i = 0; i < tCount; i++) arr.push(tVal);
+
+      const others = [];
+      for (let v = 1; v <= 10; v++) if (v !== tVal) others.push(v);
+      shuffle(others);
+
+      const remaining = N - tCount;
+      for (let i = 0; i < remaining; i++) arr.push(others[i % others.length]);
+
+      const shuffled = arr.slice();
+      shuffle(shuffled);
+
+      const thresholds = [];
+      for (let T = 2; T <= 10; T++) {
+        const c = arr.filter(function (v) { return v < T; }).length;
+        if (c > 0 && c < N) thresholds.push(T);
+      }
+      if (!thresholds.length) continue;
+
+      const evenCount = arr.filter(function (v) { return v % 2 === 0; }).length;
+      const oddCount  = N - evenCount;
+      const canEven   = evenCount > 0 && evenCount < N;
+      const canOdd    = oddCount  > 0 && oddCount  < N;
+      if (!canEven && !canOdd) continue;
+
+      const T = pick(thresholds);
+      let cCond;
+      if (canEven && canOdd) cCond = rng() < 0.5 ? 'even' : 'odd';
+      else if (canEven)      cCond = 'even';
+      else                   cCond = 'odd';
+
+      values = shuffled;
+      targetVal = tVal;
+      threshold = T;
+      condition = cCond;
+      ok = true;
+    }
+
+    if (!ok) {
+      values = [3, 5, 7, 9, 3, 3];
+      targetVal = 3; threshold = 6; condition = 'even';
+    }
+
+    const N        = values.length;
+    const tCount   = values.filter(function (v) { return v === targetVal; }).length;
+    const ltCount  = values.filter(function (v) { return v <  threshold; }).length;
+    const condCount = values.filter(function (v) {
+      return condition === 'even' ? v % 2 === 0 : v % 2 === 1;
+    }).length;
+
+    const gA = gcd(tCount, N), gB = gcd(ltCount, N), gC = gcd(condCount, N);
+    const fracA = fracStr(tCount / gA, N / gA);
+    const fracB = fracStr(ltCount / gB, N / gB);
+    const fracC = fracStr(condCount / gC, N / gC);
+
+    return Q(
+      'pcs|' + values.join(',') + '|' + targetVal + '|' + threshold + '|' + condition,
+      [
+                T('These ' + N + ' cards are laid face down and mixed up. ' +
+          'Then a card is picked.'),
+        { type: 'card-row', values: values },
+        T('A probability scale is shown on the right. ' +
+          'Put arrows on it to show the probability of each of the ' +
+          'following events happening.'),
+        { type: 'prob-scale', intervals: N, rightSide: true,
+          arrows: [
+            { pos: tCount    / N, label: '(a)' },
+            { pos: ltCount   / N, label: '(b)' },
+            { pos: condCount / N, label: '(c)' }
+          ] },
+        T('The number on the card is'),
+        T('(a)  ' + targetVal + '.'),
+        T('(b)  less than ' + threshold + '.'),
+        T('(c)  ' + condition + '.')
+      ],
+      [
+        { blockIndex: 6, text: fracA },
+        { blockIndex: 7, text: fracB },
+        { blockIndex: 8, text: fracC }
+      ],
+      [
+        T('There are ' + N + ' cards in total.'),
+        T('(a)  ' + tCount + ' cards show ' + targetVal + ', so P = ' + fracA + '.'),
+        T('(b)  ' + ltCount + ' cards show a number less than ' + threshold +
+          ', so P = ' + fracB + '.'),
+        T('(c)  ' + condCount + ' cards show an ' + condition +
+          ' number, so P = ' + fracC + '.')
+      ],
+      { badge: 'NON-CALCULATOR' }
+    );
+  }
+},
 
   /* ---------------- PATTERN-SEQUENCE (graphic) ---------------- */
 
@@ -2988,7 +3487,7 @@
         const totalW = innerW + 0.20 * size;
         const barW = innerW + 0.08 * size;
         items.push({ t: textType, x: rx + (totalW - nw) / 2,
-                   y: y - 0.18 * size, size: sub, bold: false, italic: false, s: run.num });
+                   y: y - 0.32 * size, size: sub, bold: false, italic: false, s: run.num });
         items.push({ t: barType,
                    x1: rx + (totalW - barW) / 2, y1: y - 0.12 * size,
                    x2: rx + (totalW + barW) / 2, y2: y - 0.12 * size, w: 0.5 });
@@ -3009,6 +3508,11 @@
   const PH = 841.890;
   const MG = 42.52;
   const FIXED_FS = 11;
+
+  const CALC_BADGE_FS   = 7;
+  const CALC_BADGE_PADX = 4;
+  const CALC_BADGE_PADY = 2;
+  const CALC_BADGE_H    = 14;   /* reserved vertical strip above the question */
 
   const HEADER_H = 19 * 0.78 + 19 * 0.32 + 6 + 17 + 10.5 * 0.78 + 26;
   const CONT_HEADER_H = 9 * 1.4 + 8 + 14;
@@ -3067,7 +3571,7 @@
             const totalW2 = innerW + 0.20 * fs;
             const barW = innerW + 0.08 * fs;
             items.push({ t: 'text', x: cx + (totalW2 - nw) / 2,
-                         y: cy - 0.18 * fs, size: sub, bold: cellBold,
+                         y: cy - 0.32 * fs, size: sub, bold: cellBold,
                          italic: false, s: run.num });
             items.push({ t: 'line',
                          x1: cx + (totalW2 - barW) / 2, y1: cy - 0.12 * fs,
@@ -3493,7 +3997,7 @@
     return { items: items, height: figH };
   }
 
-  function layoutSpinTable(x, y, block, fs, maxW) {
+    function layoutSpinTable(x, y, block, fs, maxW) {
     const labelFs = fs * 0.85;
     const numFs = fs * 0.95;
     const n = block.colValues.length;
@@ -3575,9 +4079,33 @@
     return { items: items, height: figH };
   }
 
-  
+  function layoutSpinTableAnswer(x, y, spec, fs, maxW) {
+  /* Draws the fully-filled-in version of a spin table using the
+     `answer` / `answer-line` item types, so the whole thing is hidden
+     on screen until "Reveal answers" is clicked, and is skipped when
+     the worksheet PDF is generated. */
+  const n = spec.colValues.length;
+  const allCells = [];
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      allCells.push([r, c]);
+    }
+  }
+  const result = layoutSpinTable(x, y, {
+    operation: spec.operation,
+    colValues: spec.colValues,
+    rowValues: spec.rowValues,
+    outcomes: spec.outcomes,
+    shownCells: allCells
+  }, fs, maxW);
+  for (const it of result.items) {
+    if (it.t === 'run') it.t = 'answer';
+    else if (it.t === 'line') it.t = 'answer-line';
+  }
+  return result;
+}
 
-    function layoutPatternRow(x, y, block, fs, maxW) {
+  function layoutPatternRow(x, y, block, fs, maxW) {
     const kind = block.kind;
     const terms = block.terms || [1, 2, 3];
     const rows = block.rows || 3;
@@ -3698,7 +4226,156 @@
     return { items: items, height: maxH + 16 };
   }
 
-    /* ============================================================
+/* ============================================================
+   CARD ROW  (numbered cards laid face down)
+   ============================================================ */
+function layoutCardRow(x, y, block, fs, maxW) {
+  const values = block.values;
+  const n = values.length;
+
+  const gap = 5;
+  const availW = maxW - 20;
+  const cardW = Math.min(30, (availW - (n - 1) * gap) / n);
+  const cardH = cardW * 1.35;
+  const numFs = cardW * 0.6;
+
+  const totalW = n * cardW + (n - 1) * gap;
+  const startX = x + Math.max(0, (maxW - totalW) / 2);
+  const startY = y + 4;
+
+  const items = [];
+  for (let i = 0; i < n; i++) {
+    const cx = startX + i * (cardW + gap);
+    const cy = startY;
+    items.push({ t: 'rect', x: cx, y: cy, w: cardW, h: cardH, grey: 0.92 });
+    items.push({ t: 'line', x1: cx, y1: cy, x2: cx + cardW, y2: cy, w: 0.9 });
+    items.push({ t: 'line', x1: cx, y1: cy + cardH, x2: cx + cardW, y2: cy + cardH, w: 0.9 });
+    items.push({ t: 'line', x1: cx, y1: cy, x2: cx, y2: cy + cardH, w: 0.9 });
+    items.push({ t: 'line', x1: cx + cardW, y1: cy, x2: cx + cardW, y2: cy + cardH, w: 0.9 });
+    const v = String(values[i]);
+    const vw = textWidth(v, numFs, false);
+    items.push({ t: 'run', x: cx + (cardW - vw) / 2,
+                 y: cy + cardH / 2 + numFs * 0.36,
+                 size: numFs, bold: false, italic: false, s: v });
+  }
+  return { items: items, height: cardH + 10 };
+}
+
+/* ============================================================
+   PROBABILITY SCALE  (0 to 1 with optional arrow answers)
+   ------------------------------------------------------------
+   arrowMode:
+     'reveal' (default) — arrows drawn as `answer` / `answer-line`
+                          (hidden on screen until reveal, skipped
+                          in the worksheet PDF)
+     'print'            — arrows drawn as ordinary `run` / `line`
+                          (used for the answer-key PDF)
+   ============================================================ */
+function layoutProbScale(x, y, block, fs, maxW, arrowMode, asAnswer) {
+  const isPrint = (arrowMode === 'print');
+  const lineType = isPrint ? 'line' : 'answer-line';
+  const textType = isPrint ? 'run' : 'answer';
+
+  const labelFs = fs * 0.85;
+  const numFs   = fs * 0.9;
+  const scaleW  = Math.min(220, maxW - 40);
+  const scaleX  = x + 20;
+  /* The scale line sits 30 pt below the top of the block.  Previously
+     this was 55 pt, which left a large blank band between the
+     "Copy this probability scale." prompt and the "Impossible / Certain"
+     caption.  30 pt gives a small breathing gap above the arrows'
+     (a)/(b)/(c) labels while keeping the caption close to the text. */
+  const lineY   = y + 30;
+
+  const items = [];
+
+  /* Number of intervals on the scale.  Falls back to 10 if the block
+     doesn't specify (keeps any other users of prob-scale unchanged). */
+  const N = Math.max(2, block.intervals || 10);
+
+  items.push({ t: 'line', x1: scaleX, y1: lineY, x2: scaleX + scaleW, y2: lineY, w: 1 });
+
+  /* N intervals => N+1 ticks at k/N.  A tick is "major" (taller, heavier)
+     when it lands on 0, 0.5 or 1 — i.e. k=0, k=N, or (when N is even)
+     k=N/2.  So for 8 cards you get ticks at 1/8, 2/8, …, 8/8 with a taller
+     one at 4/8 (the 0.5 mark).  For an odd N the 0.5 label sits between
+     two ticks, which reads naturally as a midpoint reference. */
+  for (let k = 0; k <= N; k++) {
+    const tx = scaleX + scaleW * k / N;
+    const frac = k / N;
+    const isMajor = (k === 0 || k === N || Math.abs(frac - 0.5) < 1e-9);
+    const tickH = isMajor ? 5.5 : 3.5;
+    items.push({ t: 'line', x1: tx, y1: lineY, x2: tx, y2: lineY + tickH,
+                 w: isMajor ? 0.9 : 0.5 });
+  }
+
+  const numY = lineY + 5.5 + numFs * 1.1;
+  const nums = [{ v: '0', pos: 0 }, { v: '0.5', pos: 0.5 }, { v: '1', pos: 1 }];
+  for (const n of nums) {
+    const tx = scaleX + scaleW * n.pos;
+    const w = textWidth(n.v, numFs, false);
+    items.push({ t: 'run', x: tx - w / 2, y: numY,
+                 size: numFs, bold: false, italic: false, s: n.v });
+  }
+
+  const impLabel = 'Impossible', cerLabel = 'Certain';
+  const impW = textWidth(impLabel, labelFs, false);
+  const cerW = textWidth(cerLabel, labelFs, false);
+  /* Centre each label over its endpoint tick — the tick ends up under
+     the middle of the word, matching the "0" / "0.5" / "1" numbers,
+     which are also centred on their ticks. */
+  items.push({ t: 'run', x: scaleX - impW / 2, y: lineY - 12, size: labelFs,
+               bold: false, italic: false, s: impLabel });
+  items.push({ t: 'run', x: scaleX + scaleW - cerW / 2, y: lineY - 12, size: labelFs,
+               bold: false, italic: false, s: cerLabel });
+
+    if (block.arrows && block.arrows.length) {
+    /* Merge arrows that sit at the same position so they share a single
+       shaft with a combined label, e.g. "(a), (c)". */
+    const arrowGroups = [];
+    for (const a of block.arrows) {
+      let g = null;
+      for (const existing of arrowGroups) {
+        if (Math.abs(existing.pos - a.pos) < 1e-6) { g = existing; break; }
+      }
+      if (!g) { g = { pos: a.pos, labels: [] }; arrowGroups.push(g); }
+      g.labels.push(a.label || '');
+    }
+
+    for (const g of arrowGroups) {
+      const ax = scaleX + scaleW * g.pos;
+      const tipY = lineY - 3;
+      const shaftTopY = y + 10;
+      const headSize = 4;
+
+      items.push({ t: lineType, x1: ax - headSize, y1: tipY - headSize,
+                   x2: ax, y2: tipY, w: 1 });
+      items.push({ t: lineType, x1: ax, y1: tipY,
+                   x2: ax + headSize, y2: tipY - headSize, w: 1 });
+      items.push({ t: lineType, x1: ax, y1: tipY - headSize,
+                   x2: ax, y2: shaftTopY, w: 0.9 });
+
+      const lbl = g.labels.filter(function (s) { return s.length > 0; }).join(', ');
+      const w = textWidth(lbl, numFs, false);
+            items.push({ t: textType, x: ax - w / 2, y: shaftTopY - 3,
+                   size: numFs, bold: false, italic: false, s: lbl });
+    }
+  }
+
+  /* When requested, convert every item in the scale to answer styling
+     so the whole scale renders in blue (and is hidden until the
+     "Reveal answers" button is clicked). */
+  if (asAnswer && arrowMode !== 'print') {
+    for (const it of items) {
+      if (it.t === 'run') it.t = 'answer';
+      else if (it.t === 'line') it.t = 'answer-line';
+    }
+  }
+
+  return { items: items, height: numY - y + 12 };
+}
+
+  /* ============================================================
      ANGLE DIAGRAM
      ------------------------------------------------------------
      Draws one of:
@@ -3869,7 +4546,7 @@
     return { items: [], height: 0 };
   }
 
-  function drawQuestionBlocks(blocks, x, y, fs, maxW, items, variant, baselines) {
+  function drawQuestionBlocks(blocks, x, y, fs, maxW, items, variant, baselines, arrowMode) {
   const lineH = fs * 1.42;
   let cursor = y;
   for (const block of blocks) {
@@ -3884,6 +4561,20 @@
       const tl = layoutTable(x, cursor - fs * 0.4, block, fs, maxW);
       for (const it of tl.items) items.push(it);
       cursor = cursor - fs * 0.4 + tl.height + fs * 1.0;
+    } else if (block.type === 'card-row') {
+      const cr = layoutCardRow(x, cursor - fs * 0.4, block, fs, maxW);
+      for (const it of cr.items) items.push(it);
+      cursor = cursor - fs * 0.4 + cr.height + fs * 1.0;
+    } else if (block.type === 'prob-scale') {
+      if (block.rightSide && arrowMode !== 'print') {
+        /* Drawn later, in the right-hand answer column.
+           Reserve a small vertical gap here so the flow stays tidy. */
+        cursor += fs * 0.4;
+      } else {
+        const ps = layoutProbScale(x, cursor - fs * 0.4, block, fs, maxW, arrowMode);
+        for (const it of ps.items) items.push(it);
+        cursor = cursor - fs * 0.4 + ps.height + fs * 1.0;
+      }
     } else if (block.type === 'box') {
       const bl = layoutBox(x, cursor - fs * 0.4, block, fs, maxW);
       for (const it of bl.items) items.push(it);
@@ -3929,13 +4620,21 @@
   return cursor;
 }
 
-  function measureQuestion(q, fs, includeSolutions) {
+function measureQuestion(q, fs, includeSolutions) {
   const maxW = promptWidth(fs);
-  let h = 0;
+  const ruleX = columnRuleX();
+  const rightX = ruleX + 8;
+  const rightW = PW - MG - rightX;
+  const lineH = fs * 1.42;
+
+  const baseOffset = (q.badge || q.calculator) ? CALC_BADGE_H : 0;
+  let h = baseOffset;
+  let rightSideScaleH = 0;
+
   for (const b of q.blocks) {
     if (b.type === 'text') {
       const lines = wrapTokens(textToTokens(b.text), fs, false, maxW);
-      h += lines.length * fs * 1.42;
+      h += lines.length * lineH;
     } else if (b.type === 'table') {
       h += b.rows.length * fs * 1.8 + fs * 0.6;
     } else if (b.type === 'box') {
@@ -3958,22 +4657,47 @@
       const pr = layoutPatternRow(0, 0, b, fs, maxW); h += pr.height + fs * 0.6;
     } else if (b.type === 'angle-diagram') {
       const al = layoutAngleDiagram(0, 0, b, fs, maxW); h += al.height + fs * 0.6;
+    } else if (b.type === 'card-row') {
+      const cr = layoutCardRow(0, 0, b, fs, maxW); h += cr.height + fs * 0.6;
+    } else if (b.type === 'prob-scale') {
+      if (b.rightSide) {
+        /* Right-side scales live in the right-hand column and do not
+           contribute to the left column's height. */
+        const ps = layoutProbScale(0, 0, b, fs, rightW);
+        if (ps.height > rightSideScaleH) rightSideScaleH = ps.height;
+      } else {
+        const ps = layoutProbScale(0, 0, b, fs, maxW);
+        h += ps.height + fs * 0.6;
+      }
     }
   }
-    if (includeSolutions && q.solution && q.solution.length) {
-    const ruleX = columnRuleX();
-    const rightX = ruleX + 8;
-    const rightW = PW - MG - rightX;
-    const lineH = fs * 1.42;
-    let rightH = 0;
-    if (q.answers && q.answers.length) rightH += lineH * 1.2;
+
+  /* Compute the vertical extent of everything that will be drawn in
+     the right-hand column.  The right column begins at
+     contentTop + fs*0.78 below qTop; the offsets below add up to the
+     total height from qTop that the right side requires. */
+    let rightExtent = 0;
+  if (rightSideScaleH > 0) {
+    /* The right-side scale is drawn below the last answer baseline,
+       which sits roughly at the bottom of the left column.  So the
+       total extent of the right column is the full height of the
+       left column plus the scale below it. */
+    rightExtent = (h - baseOffset) + lineH * 0.5 + rightSideScaleH;
+  }
+  if (includeSolutions && q.solution && q.solution.length) {
+    if (rightSideScaleH > 0 || (q.answers && q.answers.length)) {
+      rightExtent += lineH * 1.2;
+    }
     for (const b of q.solution) {
       if (b.type === 'text') {
         const lines = wrapTokens(textToTokens(b.text), fs, false, rightW);
-        rightH += lines.length * lineH;
+        rightExtent += lines.length * lineH;
       }
     }
-    h = Math.max(h, rightH);
+  }
+  if (rightExtent > 0) {
+    const rightTotal = baseOffset + fs * 0.78 + rightExtent;
+    if (rightTotal > h) h = rightTotal;
   }
 
   return h;
@@ -4017,14 +4741,35 @@
   const rightW = PW - MG - rightX;
   const maxW = ruleX - textX;
 
-  items.push({ t: 'text', x: MG, y: qTop + fs * 0.78,
+  /* A question may carry either a CALCULATOR or NON-CALCULATOR badge,
+     drawn in the top-right of the question column.  A strip of height
+     CALC_BADGE_H is reserved above the content so the badge never
+     collides with the first line of text. */
+  const badgeText = q.badge || (q.calculator ? 'CALCULATOR' : null);
+  const contentTop = badgeText ? qTop + CALC_BADGE_H : qTop;
+
+  if (badgeText) {
+    const badgeW = textWidth(badgeText, CALC_BADGE_FS, true) + CALC_BADGE_PADX * 2;
+    const badgeH = CALC_BADGE_FS + CALC_BADGE_PADY * 2;
+    const badgeX = ruleX - badgeW - 2;
+    const badgeY = qTop + 1;
+    items.push({ t: 'line', x1: badgeX,          y1: badgeY,          x2: badgeX + badgeW, y2: badgeY,          w: 0.7 });
+    items.push({ t: 'line', x1: badgeX,          y1: badgeY + badgeH, x2: badgeX + badgeW, y2: badgeY + badgeH, w: 0.7 });
+    items.push({ t: 'line', x1: badgeX,          y1: badgeY,          x2: badgeX,          y2: badgeY + badgeH, w: 0.7 });
+    items.push({ t: 'line', x1: badgeX + badgeW, y1: badgeY,          x2: badgeX + badgeW, y2: badgeY + badgeH, w: 0.7 });
+    items.push({ t: 'text', x: badgeX + CALC_BADGE_PADX,
+                 y: badgeY + badgeH / 2 + CALC_BADGE_FS * 0.36,
+                 size: CALC_BADGE_FS, bold: true, s: badgeText });
+  }
+
+  items.push({ t: 'text', x: MG, y: contentTop + fs * 0.78,
                size: fs + 1, bold: true, s: (index + 1) + '.' });
 
   const baselines = [];
-  const cursor = drawQuestionBlocks(q.blocks, textX, qTop + fs * 0.78,
+  const cursor = drawQuestionBlocks(q.blocks, textX, contentTop + fs * 0.78,
                                     fs, maxW, items, 'normal', baselines);
 
-  let maxAnswerY = qTop + fs * 0.78;
+  let maxAnswerY = contentTop + fs * 0.78;
   let hasRightContent = false;
 
   if (q.answers && q.answers.length) {
@@ -4033,15 +4778,43 @@
       const ay = baselines[a.blockIndex] !== undefined
                  ? baselines[a.blockIndex]
                  : baselines[baselines.length - 1];
+
+      /* If the answer carries a filled-in table, draw it above the
+         answer text so that the answer itself stays exactly at its
+         usual baseline.  The table is only drawn on the "Reveal
+         answers" view — the CSS hides `answer` / `answer-line` items
+         until the sheet is revealed, and the PDF writer skips them
+         entirely. */
+      if (a.answerTable) {
+        const measured = layoutSpinTableAnswer(rightX, 0, a.answerTable, fs, rightW);
+        const tableY = ay - measured.height - lineH * 0.4;
+        const placed = layoutSpinTableAnswer(rightX, tableY, a.answerTable, fs, rightW);
+        for (const it of placed.items) items.push(it);
+      }
+
       emitRuns(parseRuns(a.text), rightX, ay, fs, items, 'answer');
       if (ay > maxAnswerY) maxAnswerY = ay;
     }
   }
 
+  /* Right-side prob-scale blocks (currently only the card/scale
+     question uses this) are drawn on the right, below the answers. */
+  let rightSideY = maxAnswerY;
+  for (const b of q.blocks) {
+    if (b.type === 'prob-scale' && b.rightSide) {
+      rightSideY += lineH * 0.5;
+      const ps = layoutProbScale(rightX, rightSideY, b, fs, rightW, 'reveal', true);
+      for (const it of ps.items) items.push(it);
+      rightSideY += ps.height;
+      hasRightContent = true;
+    }
+  }
+  if (rightSideY > maxAnswerY) maxAnswerY = rightSideY;
+
   let rightBottom;
   if (includeSolutions && q.solution && q.solution.length) {
     let solY = hasRightContent ? maxAnswerY + lineH * 1.2
-                               : qTop + fs * 0.78;
+                               : contentTop + fs * 0.78;
     for (const b of q.solution) {
       if (b.type === 'text') {
         const lines = wrapTokens(textToTokens(b.text), fs, false, rightW);
@@ -4052,10 +4825,10 @@
         solY += lines.length * lineH;
       }
     }
-    rightBottom = solY - lineH * 0.3;
-  } else {
+  rightBottom = solY - lineH * 0.3;
+    } else {
     rightBottom = hasRightContent ? maxAnswerY + lineH * 0.3
-                                  : qTop + fs * 0.78;
+                                  : contentTop + fs * 0.78;
   }
 
   const leftBottom = cursor - lineH * 0.5;
@@ -4065,6 +4838,60 @@
                w: 0.5, grey: true });
   return qBottom;
 }
+
+  function orderQuestions(questions, fs) {
+    /* Simulate a page layout with tight packing, returning the questions
+       in the order that minimises wasted space at the foot of each page.
+       Uses only the no-solutions heights, matching the worksheet PDF. */
+    const pending = questions.slice();
+    const placed  = [];
+    let y = MG + HEADER_H;
+    let placedOnPage = 0;
+
+    while (pending.length > 0) {
+      if (placedOnPage === 0) {
+        /* The lead question on a fresh page always gets placed. */
+        const q = pending.shift();
+        placed.push(q);
+        y += measureQuestion(q, fs, false) + QUESTION_GAP;
+        placedOnPage = 1;
+        continue;
+      }
+
+      const qH = measureQuestion(pending[0], fs, false);
+      const availH = PH - MG - y;
+
+      if (qH <= availH) {
+        placed.push(pending.shift());
+        y += qH + QUESTION_GAP;
+        placedOnPage++;
+        continue;
+      }
+
+      /* The front question doesn't fit — look for the largest one that does. */
+      let chosen = -1;
+      let chosenH = 0;
+      for (let k = 1; k < pending.length; k++) {
+        const h = measureQuestion(pending[k], fs, false);
+        if (h <= availH && h > chosenH) {
+          chosen = k;
+          chosenH = h;
+        }
+      }
+      if (chosen > 0) {
+        placed.push(pending.splice(chosen, 1)[0]);
+        y += chosenH + QUESTION_GAP;
+        placedOnPage++;
+        continue;
+      }
+
+      /* Nothing fits — simulate a page break. */
+      y = MG + CONT_HEADER_H;
+      placedOnPage = 0;
+    }
+
+    return placed;
+  }
 
   function layoutSheet(opts) {
     const title = opts.title;
@@ -4228,7 +5055,7 @@ function layoutWorkedAnswers(opts) {
                  size: fs + 1, bold: true, s: (i + 1) + '.' });
 
     let cursor = drawQuestionBlocks(q.blocks, textX, y + fs * 0.78,
-                                    fs, maxW, items, 'normal', null);
+      fs, maxW, items, 'normal', null, 'print');
 
     if (q.answers && q.answers.length) {
       cursor += fs * 0.2;
@@ -4276,38 +5103,50 @@ function layoutWorkedAnswers(opts) {
   return pages;
 }
 
-  /* ============================================================
-     DISABLED TOPICS
-     ------------------------------------------------------------
-     Fallback list. The Topics panel (📋) overrides this and
-     persists to localStorage. Reset in the panel reverts to this.
-     ============================================================ */
-  const DISABLED = [
-    'expand-double',
-    'factorise-quad',
-    'compound',
-    'midpoint',
-    'gradient',
-    'two-way',
-  ];
+  /* Topics disabled out-of-the-box.  Add or remove IDs here and the
+   next page load will use the new defaults (see the sanity check
+   inside loadDisabledFromStore). */
+const DISABLED = [
+  'expand-double',
+  'factorise-quad',
+  'compound',
+  'midpoint',
+  'gradient',
+  'two-way',
+];
 
-  const STORE_KEY = 'mixed-revision-disabled';
+/* Bumping the key discards any previously-persisted state — useful
+   when the topic bank changes shape and old IDs may no longer exist. */
+const STORE_KEY = 'mixed-revision-disabled-v2';
 
-  function loadDisabledFromStore() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return null;
-      const arr = JSON.parse(raw);
-      return Array.isArray(arr) ? arr : null;
-    } catch (e) { return null; }
-  }
-  function saveDisabledToStore(arr) {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch (e) {}
-  }
-  function disabledSet() {
-    const stored = loadDisabledFromStore();
-    return new Set(stored !== null ? stored : DISABLED);
-  }
+function loadDisabledFromStore() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return null;
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return null;
+
+    /* Sanity check: if the stored list disables more than half the
+       topic bank, treat it as corrupt (almost always an accidental
+       "All off" click) and fall back to the defaults.  A deliberate
+       selection of a handful of topics is preserved as normal. */
+    if (arr.length > TOPICS.length * 0.5) return null;
+
+    /* Drop any IDs that no longer exist in the current topic bank so
+       stale entries from earlier versions don't linger. */
+    const known = new Set(TOPICS.map(function (t) { return t.id; }));
+    return arr.filter(function (id) { return known.has(id); });
+  } catch (e) { return null; }
+}
+
+function saveDisabledToStore(arr) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(arr)); } catch (e) {}
+}
+
+function disabledSet() {
+  const stored = loadDisabledFromStore();
+  return new Set(stored !== null ? stored : DISABLED);
+}
   function activeTopics() {
     const off = disabledSet();
     if (!off.size) return TOPICS;
@@ -4372,8 +5211,16 @@ function layoutWorkedAnswers(opts) {
       usedTopics.add(topic.id);
       usedKeys.add(cand.key);
 
-      const test = layoutSheet({ title: 'Test', questions: out });
-      if (test.length > 2) { out.pop(); break; }
+      const ordered = orderQuestions(out, FIXED_FS);
+      const test = layoutSheet({ title: 'Test', questions: ordered });
+
+      /* Stop when we've filled the sheet, but never let a single
+         mis-measured question truncate the whole worksheet.  The
+         MIN_QUESTIONS guard means we always render at least that many
+         questions, even if the layout spills onto extra pages. */
+      const MIN_QUESTIONS = 10;
+      if (test.length > 2 && out.length >= MIN_QUESTIONS) { out.pop(); break; }
+      if (out.length >= 30) { out.pop(); break; }
     }
     return out;
   }
@@ -4583,7 +5430,7 @@ function layoutWorkedAnswers(opts) {
   const revealBtn = document.getElementById('revealBtn');
   const pagesEl = document.getElementById('pages');
 
-  let currentQuestions = [];
+    let currentQuestions = [];
   let lastSheetPages = [];
   let lastAnswerPages = [];
 
@@ -4592,22 +5439,22 @@ function layoutWorkedAnswers(opts) {
     return t || 'Mixed Revision';
   }
   let revealState = false;
+  let revealSolutionsState = false;
 
 function renderSheet() {
+  /* Preserve the current scroll position across the re-render */
+  const savedX = window.scrollX;
+  const savedY = window.scrollY;
+
+  /* Reorder to pack each page tightly */
+  currentQuestions = orderQuestions(currentQuestions, FIXED_FS);
+
   /* Worksheet PDF — never with solutions. */
   lastSheetPages = layoutSheet({
     title: sheetTitle(),
     questions: currentQuestions,
     includeSolutions: false
   });
-
-  /* On-screen — with solutions when revealed. */
-  const screenPages = layoutSheet({
-    title: sheetTitle(),
-    questions: currentQuestions,
-    includeSolutions: revealState
-  });
-  drawHTML(screenPages);
 
   /* Answer-key PDF — solution-aware. */
   lastAnswerPages = layoutAnswerKey({
@@ -4616,7 +5463,35 @@ function renderSheet() {
     seed: seedInput.value
   });
 
+  /* On-screen view: either the standard worksheet (with optional
+     inline blue answers) or the worked-solutions view. */
+  let screenPages;
+  if (revealSolutionsState) {
+    screenPages = layoutWorkedAnswers({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+  } else {
+    /* We pass includeSolutions: false here because we don't want the
+       long-form solution text cluttering the standard sheet. The short
+       blue answers ARE still generated, and are toggled via the
+       .revealed CSS class below. */
+    screenPages = layoutSheet({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      includeSolutions: false
+    });
+  }
+  drawHTML(screenPages);
+
+  /* This class makes the .ans spans (the blue answers) visible or
+     invisible on the standard worksheet. It does nothing on the
+     worked-solutions view, which doesn't use that class. */
+  pagesEl.classList.toggle('revealed', revealState);
+
   fitPage();
+  window.scrollTo(savedX, savedY);
 }
 
   function regenerate() {
@@ -4642,6 +5517,15 @@ function renderSheet() {
     pagesEl.classList.toggle('revealed', revealState);
     revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
     revealBtn.classList.toggle('reveal-on', revealState);
+    renderSheet();
+  }
+
+    function setSolutionsMode(on) {
+    revealSolutionsState = !!on;
+    revealSolutionsBtn.textContent = on
+      ? '📝 Back to worksheet'
+      : '📖 Reveal solutions';
+    revealSolutionsBtn.classList.toggle('reveal-on', revealSolutionsState);
     renderSheet();
   }
 
@@ -4682,6 +5566,10 @@ function renderSheet() {
 
   revealBtn.addEventListener('click', function () {
     setRevealed(!revealState);
+  });
+
+  revealSolutionsBtn.addEventListener('click', function () {
+    setSolutionsMode(!revealSolutionsState);
   });
 
   document.getElementById('regenBtn').addEventListener('click', function () {
