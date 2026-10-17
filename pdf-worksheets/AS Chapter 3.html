@@ -1,0 +1,1739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AS Quadratic Functions Worksheet Generator</title>
+<!-- KaTeX (local copy, sibling folder) -->
+<link rel="stylesheet" href="katex/katex.min.css">
+<script defer src="katex/katex.min.js"></script>
+
+<style>
+  :root{ --ink:#0f172a; --muted:#64748b; --accent:#2563eb; --accent-dark:#1d4ed8; --page-bg:#eef2f7; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg); color:var(--ink); font-size:16px;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .toolbar{position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap;
+    align-items:center; gap:12px; padding:12px 20px;
+    background:#0f172a; color:#f8fafc; box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;}
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],.toolbar input[type=text]{padding:7px 9px; border-radius:8px;
+    border:1px solid #334155; background:#1e293b; color:#f8fafc; font:inherit;}
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:240px}
+  .toolbar button{padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{background:#15803d; border-color:#16a34a}
+  .toolbar button.reveal-on:hover{background:#166534}
+  .viewport{padding:28px 0 6px;}
+  .pages{display:flex; flex-direction:column; align-items:center; gap:24px;}
+  .page-wrap{position:relative; overflow:hidden;}
+  .page{position:absolute; top:0; left:0; width:210mm; height:297mm;
+    background:#fff; box-shadow:0 6px 26px rgba(15,23,42,.16);
+    transform-origin:top left; font-family:Helvetica,Arial,sans-serif; color:#000;}
+  .page .tx{position:absolute; white-space:pre; line-height:1; font-family:Helvetica,Arial,sans-serif;}
+  .page .ans{visibility:hidden; color:#2563eb;}
+  .pages.revealed .ans{visibility:visible;}
+  .hint{text-align:center; color:var(--muted); font-size:13px; line-height:1.5; padding:4px 16px 34px;}
+  .hint kbd{background:#e2e8f0; border-radius:5px; padding:1px 6px; font-family:inherit; font-size:12px;}
+  .topics-panel{position:fixed; top:0; right:0; bottom:0; width:420px; max-width:92vw;
+    background:#fff; color:var(--ink); box-shadow:-4px 0 24px rgba(15,23,42,.25);
+    transform:translateX(100%); transition:transform .22s ease; z-index:100;
+    display:flex; flex-direction:column; font-size:14px;}
+  .topics-panel.open{transform:translateX(0);}
+  .tp-head{padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex;
+    align-items:center; justify-content:space-between; gap:12px;}
+  .tp-head h2{margin:0; font-size:15px;}
+  .tp-head .count{color:var(--muted); font-size:13px; margin-top:2px;}
+  .tp-head button{background:none; border:none; font-size:22px; line-height:1;
+    cursor:pointer; color:var(--muted); padding:0 4px;}
+  .tp-body{overflow-y:auto; padding:4px 0 24px; flex:1;}
+  .tp-strand{padding:12px 18px 4px; font-weight:700; font-size:12px;
+    letter-spacing:.6px; text-transform:uppercase; color:var(--muted);}
+  .tp-item{display:flex; align-items:center; gap:10px; padding:7px 18px;
+    cursor:pointer; user-select:none;}
+  .tp-item:hover{background:#f1f5f9;}
+  .tp-item input{flex:none; margin:0; width:16px; height:16px; cursor:pointer;}
+  .tp-item .name{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px;}
+  .tp-foot{padding:12px 18px; border-top:1px solid #e2e8f0; display:flex;
+    gap:8px; justify-content:flex-end; flex-wrap:wrap;}
+  .tp-foot button{padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1;
+    background:#f8fafc; color:var(--ink); font:inherit; font-weight:600; cursor:pointer;}
+  .tp-foot button:hover{background:#e2e8f0;}
+  .backdrop{position:fixed; inset:0; background:rgba(15,23,42,.35);
+    opacity:0; pointer-events:none; transition:opacity .2s; z-index:99;}
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{padding:0 !important;}
+    .pages{display:block;}
+    .page-wrap{width:auto !important; height:auto !important; overflow:visible !important;
+      page-break-after:always; break-after:page;}
+    .page-wrap:last-child{page-break-after:auto; break-after:auto;}
+    .page{position:relative !important; transform:none !important;
+      width:210mm !important; height:296.9mm !important; box-shadow:none !important;}
+    .pages .ans { visibility: hidden !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">📐 AS Quadratic Functions</span>
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Quadratic Functions — Revision" spellcheck="false">
+  </label>
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="topicsBtn">📋 Topics</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="backdrop no-print" id="backdrop"></div>
+<aside class="topics-panel no-print" id="topicsPanel" aria-hidden="true">
+  <div class="tp-head">
+    <div>
+      <h2>Topic bank</h2>
+      <div class="count" id="tpCount"></div>
+    </div>
+    <button id="tpClose" title="Close">×</button>
+  </div>
+  <div class="tp-body" id="tpBody"></div>
+  <div class="tp-foot">
+    <button id="tpAll">All on</button>
+    <button id="tpNone">All off</button>
+    <button id="tpReset">Reset</button>
+  </div>
+</aside>
+
+<div class="viewport" id="viewport">
+  <div class="pages" id="pages"></div>
+</div>
+
+<p class="hint no-print">
+  Generates a <b>two-page</b> worksheet drawn from the AS Chapter 3 topic bank.
+  Answers appear on the right when you click <b>Reveal answers</b>.
+  Add <kbd>?seed=12345</kbd> to the URL to reproduce a sheet.
+</p>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   RNG + helpers
+   ============================================================ */
+let rng = Math.random;
+function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0;
+  let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t;
+  return ((t^(t>>>14))>>>0)/4294967296; }; }
+const pick = a => a[Math.floor(rng()*a.length)];
+const ri   = (a,b) => a + Math.floor(rng()*(b-a+1));
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1));
+  const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b);
+  while(b){ const t=a%b; a=b; b=t; } return a; }
+const MINUS = '\u2212';
+function nStr(x){ return x<0 ? MINUS + Math.abs(x) : String(x); }
+function T(text){ return { type:'text', text: text }; }
+function Q(key, blocks, answers, solution, opts){
+  const q = { key, blocks, answers: answers||[], solution: solution||null };
+  if (opts) for (const k in opts) if (opts[k]!==undefined) q[k]=opts[k];
+  return q;
+}
+
+/* Format a quadratic in the standard way, using LaTeX-friendly syntax. */
+function fmtQuad(a,b,c){
+  let s='';
+  if (a!==0){
+    if (a===1) s='x^2';
+    else if (a===-1) s='-x^2';
+    else s=a+'x^2';
+  }
+  if (b!==0){
+    const sign = b>0 ? ' + ' : ' - ';
+    const mag  = Math.abs(b);
+    s += s==='' ? (b<0?'-':'')+(mag===1?'x':mag+'x')
+                : sign+(mag===1?'x':mag+'x');
+  }
+  if (c!==0){
+    const sign = c>0 ? ' + ' : ' - ';
+    s += (s==='' ? (c<0?'-':'')+Math.abs(c) : sign+Math.abs(c));
+  }
+  if (s==='') s='0';
+  return s;
+}
+
+/* ============================================================
+   Text measurement (Helvetica widths × 1000)
+   ============================================================ */
+const W_REG = [
+  278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+  556,556,556,556,556,556,556,556,556,556,
+  278,278,584,584,584,556,1015,
+  667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+  278,278,278,469,556,333,
+  556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+  334,260,334,584
+];
+const W_BOLD = [
+  278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+  556,556,556,556,556,556,556,556,556,556,
+  333,333,584,584,584,611,975,
+  722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+  333,278,333,584,556,333,
+  556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+  389,280,389,584
+];
+function textWidth(str, size, bold){
+  const t = bold ? W_BOLD : W_REG;
+  let w=0;
+  for (let i=0;i<str.length;i++){
+    const c=str.charCodeAt(i);
+    if (c===96) continue;
+    if (c===0xE000){ w += t[0]*0.55; continue; }
+    w += (c>=32 && c<=126) ? t[c-32] : 556;
+  }
+  return w * size / 1000;
+}
+
+/* ============================================================
+   Run parsing + emission
+   - `…`      → italic word
+   - \frac{}{} → stacked fraction (PDF fallback)
+   - \sqrt{}   → radical glyph  (PDF fallback)
+   - $…$       → ATOMIC math token (goes to KaTeX in HTML,
+                 goes to a LaTeX-cleaner in the PDF)
+   ============================================================ */
+function parseRuns(text){
+  const runs=[]; let i=0;
+  while(i<text.length){
+    const tick = text.indexOf('`', i);
+    const frac = text.indexOf('\\frac{', i);
+    const sqrt = text.indexOf('\\sqrt{', i);
+    const dollar = text.indexOf('$', i);
+
+    let next = -1, kind = null;
+    if (dollar !== -1 && (next===-1 || dollar<next)) { next=dollar; kind='math'; }
+    if (tick !== -1 && (next===-1 || tick<next)) { next=tick; kind='tick'; }
+    if (frac !== -1 && (next===-1 || frac<next)) { next=frac; kind='frac'; }
+    if (sqrt !== -1 && (next===-1 || sqrt<next)) { next=sqrt; kind='sqrt'; }
+
+    if (next === -1){ if (i<text.length) runs.push({kind:'text',text:text.slice(i),italic:false}); break; }
+    if (next > i) runs.push({kind:'text', text:text.slice(i,next), italic:false});
+
+    if (kind==='math'){
+      const close = text.indexOf('$', next+1);
+      if (close !== -1) {
+        let inner = text.slice(next+1, close);
+        inner = inner.replace(/\u2212/g, '-');
+        runs.push({kind:'math', text: '$'+inner+'$', inner: inner});
+        i = close+1;
+      } else {
+        runs.push({kind:'text', text: text.slice(next), italic:false});
+        break;
+      }
+    } else if (kind==='tick'){
+      const close = text.indexOf('`', next+1);
+      if (close===-1){ runs.push({kind:'text',text:text.slice(next),italic:false}); break; }
+      runs.push({kind:'text', text:text.slice(next+1,close), italic:true});
+      i = close+1;
+    } else if (kind==='sqrt'){
+      const open = text.indexOf('{', next);
+      let close = open + 1, depth = 1;
+      while (close < text.length && depth > 0) {
+          if (text[close] === '{') depth++;
+          else if (text[close] === '}') depth--;
+          close++;
+      }
+      runs.push({kind:'sqrt', inner: text.slice(open+1, close-1)});
+      i = close;
+    } else {
+      const o1=text.indexOf('{',next); const c1=o1===-1?-1:text.indexOf('}',o1);
+      const o2=c1===-1?-1:text.indexOf('{',c1); const c2=o2===-1?-1:text.indexOf('}',o2);
+      if (o1===-1||c1===-1||o2===-1||c2===-1){
+        runs.push({kind:'text',text:text.slice(next),italic:false}); break;
+      }
+      runs.push({kind:'frac', num:text.slice(o1+1,c1), den:text.slice(o2+1,c2)});
+      i = c2+1;
+    }
+  }
+  const merged=[];
+  for (const r of runs){
+    const last = merged[merged.length-1];
+    if (r.kind==='text' && last && last.kind==='text' && last.italic===r.italic){
+      last.text += r.text;
+    } else merged.push(r);
+  }
+  return merged.filter(r => r.kind!=='text' || r.text.length>0);
+}
+
+function textToTokens(text){
+  const runs = parseRuns(text);
+  const tokens=[]; let pendingSpace=false;
+  for (const r of runs){
+    if (r.kind==='math'){ tokens.push({kind:'math', text:r.text, inner:r.inner, space:pendingSpace}); pendingSpace=false; continue; }
+    if (r.kind==='frac'){ tokens.push({kind:'frac', num:r.num, den:r.den, space:pendingSpace}); pendingSpace=false; continue; }
+    if (r.kind==='sqrt'){ tokens.push({kind:'sqrt', inner:r.inner, space:pendingSpace}); pendingSpace=false; continue; }
+    const parts = r.text.split(/(\s+)/);
+    for (const p of parts){
+      if (p==='') continue;
+      if (/^\s+$/.test(p)){ pendingSpace=true; continue; }
+      tokens.push({kind:'word', word:p, italic:r.italic, space:pendingSpace});
+      pendingSpace=false;
+    }
+  }
+  return tokens;
+}
+
+function approxMathWidth(inner, size, bold){
+  let approx = inner
+    .replace(/\\[a-zA-Z]+/g, 'xxxx')
+    .replace(/[\{\}]/g, '')
+    .replace(/\s+/g, '');
+  let baseW = textWidth(approx, size, bold);
+  let supCount = (inner.match(/\^|_/g) || []).length;
+  let opCount = (inner.match(/[+\-=<>]/g) || []).length;
+  // KaTeX requires extra space for superscripts, operators, and general padding
+  return Math.max(25, baseW * 1.15 + supCount * size * 0.3 + opCount * size * 0.25 + 10);
+}
+
+function tokenWidth(tok, size, bold){
+  if (tok.kind==='math') return approxMathWidth(tok.inner, size, bold);
+  if (tok.kind==='frac'){
+    const sub=size*0.7;
+    const nw=textWidth(tok.num,sub,bold);
+    const dw=textWidth(tok.den,sub,bold);
+    return Math.max(nw,dw)+0.20*size;
+  }
+  if (tok.kind==='sqrt') return textWidth(tok.inner, size, bold) + 0.4*size;
+  return textWidth(tok.word,size,bold);
+}
+
+function wrapTokens(tokens, size, bold, maxW){
+  const lines=[]; let cur=[]; let curW=0;
+  for (const tok of tokens){
+    const spaceW = (tok.space && cur.length) ? textWidth(' ',size,bold) : 0;
+    const w = spaceW + tokenWidth(tok,size,bold);
+    if (cur.length && curW + w > maxW){
+      lines.push(cur);
+      cur = [{ kind:tok.kind, num:tok.num, den:tok.den, inner:tok.inner,
+               text:tok.text, word:tok.word, italic:tok.italic, space:false }];
+      curW = tokenWidth(tok,size,bold);
+    } else { cur.push(tok); curW += w; }
+  }
+  if (cur.length) lines.push(cur);
+  return lines;
+}
+
+function lineToRuns(lineTokens){
+  const runs=[];
+  for (let i=0;i<lineTokens.length;i++){
+    const tok = lineTokens[i];
+    const prefix = (i===0) ? '' : (tok.space ? ' ' : '');
+    if (tok.kind==='math') runs.push({kind:'math', text:tok.text, inner:tok.inner, prefix});
+    else if (tok.kind==='frac') runs.push({kind:'frac', num:tok.num, den:tok.den, prefix});
+    else if (tok.kind==='sqrt') runs.push({kind:'sqrt', inner:tok.inner, prefix});
+    else {
+      const last = runs[runs.length-1];
+      if (last && last.kind==='text' && last.italic===tok.italic) last.text += prefix + tok.word;
+      else runs.push({kind:'text', text:prefix + tok.word, italic:tok.italic});
+    }
+  }
+  return runs;
+}
+
+function emitRuns(runs, x0, y, size, items, variant){
+  let textType, barType;
+  if (variant==='answer'){ textType='answer'; barType='answer-line'; }
+  else { textType='run'; barType='line'; }
+  let rx = x0;
+  for (let i = 0; i < runs.length; i++){
+    const run = runs[i];
+    let prefix = '';
+    if (i > 0 && run.prefix) {
+      prefix = ' ';
+      rx += textWidth(' ', size, false);
+    }
+    
+    if (run.kind==='math'){
+      items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix + run.text });
+      rx += approxMathWidth(run.inner, size, false);
+    } else if (run.kind==='frac'){
+      if (prefix) items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix });
+      const sub = size*0.7;
+      const nw = textWidth(run.num, sub, false);
+      const dw = textWidth(run.den, sub, false);
+      const innerW = Math.max(nw, dw);
+      const totalW = innerW + 0.20*size;
+      const barW = innerW + 0.08*size;
+      items.push({ t: textType, x: rx + (totalW-nw)/2, y: y - 0.32*size,
+        size: sub, bold:false, italic:false, s: run.num });
+      items.push({ t: barType,
+        x1: rx + (totalW-barW)/2, y1: y - 0.12*size,
+        x2: rx + (totalW+barW)/2, y2: y - 0.12*size, w: 0.5 });
+      items.push({ t: textType, x: rx + (totalW-dw)/2, y: y + 0.44*size,
+        size: sub, bold:false, italic:false, s: run.den });
+      rx += totalW;
+    } else if (run.kind==='sqrt'){
+      if (prefix) items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix });
+      const innerW = textWidth(run.inner, size, false);
+      const totalW = innerW + size * 0.4;
+      items.push({ t: barType, x1: rx, y1: y, x2: rx + size*0.15, y2: y - size*0.5, w: 0.7 });
+      items.push({ t: barType, x1: rx + size*0.15, y1: y - size*0.5, x2: rx + size*0.3, y2: y + size*0.1, w: 0.7 });
+      items.push({ t: barType, x1: rx + size*0.3, y1: y + size*0.1, x2: rx + totalW, y2: y + size*0.1, w: 0.7 });
+      items.push({ t: textType, x: rx + size*0.35, y: y, size: size, bold: false, italic: false, s: run.inner });
+      rx += totalW;
+    } else {
+      items.push({ t: textType, x: rx, y, size, bold:false, italic:run.italic, s: prefix + run.text });
+      rx += textWidth(run.text, size, false);
+    }
+  }
+  return rx;
+}
+
+/* ============================================================
+   LAYOUT — quadratic graph block
+   ============================================================ */
+function layoutQuadGraph(x, y, block, fs, maxW){
+  const a = block.a, b = block.b, c = block.c;
+  const xMin = block.xMin, xMax = block.xMax;
+  const yMin = block.yMin, yMax = block.yMax;
+
+  const drawW = Math.min(190, maxW * 0.52);
+  const drawH = Math.min(135, drawW * 0.72);
+  const scaleX = drawW / (xMax - xMin);
+  const scaleY = drawH / (yMax - yMin);
+
+  const gx = x + Math.max(6, (maxW - drawW - 20)/2);
+  const gy = y + 8;
+  const px = u => gx + (u - xMin) * scaleX;
+  const py = u => gy + (yMax - u) * scaleY;
+  const items = [];
+
+  const originX = px(0);
+  const originY = py(0);
+
+  // Axes with arrowheads (no tick scales — labels on points only)
+  items.push({t:'line', x1:gx, y1:originY, x2:gx+drawW, y2:originY, w:0.9});
+  items.push({t:'line', x1:gx+drawW-5, y1:originY-2.5, x2:gx+drawW, y2:originY, w:0.9});
+  items.push({t:'line', x1:gx+drawW-5, y1:originY+2.5, x2:gx+drawW, y2:originY, w:0.9});
+  items.push({t:'line', x1:originX, y1:gy+drawH, x2:originX, y2:gy, w:0.9});
+  items.push({t:'line', x1:originX-2.5, y1:gy+5, x2:originX, y2:gy, w:0.9});
+  items.push({t:'line', x1:originX+2.5, y1:gy+5, x2:originX, y2:gy, w:0.9});
+
+  // O, x, y labels
+  items.push({t:'run', x:originX-8, y:originY+7, size:fs*0.7, bold:false, italic:false, s:'O'});
+  items.push({t:'run', x:gx+drawW+2, y:originY+3, size:fs*0.75, bold:false, italic:true, s:'x'});
+  items.push({t:'run', x:originX+3, y:gy-1, size:fs*0.75, bold:false, italic:true, s:'y'});
+
+  // Parabola — blue
+  if (!block.blank){
+    const steps = 100;
+    let prev = null;
+    for (let i = 0; i <= steps; i++){
+      const ux = xMin + (xMax-xMin) * i / steps;
+      const uy = a*ux*ux + b*ux + c;
+      if (uy < yMin - 0.4 || uy > yMax + 0.4){ prev = null; continue; }
+      const cx = px(ux);
+      const cy = py(Math.max(yMin, Math.min(yMax, uy)));
+      if (prev) items.push({t:'line', x1:prev[0], y1:prev[1], x2:cx, y2:cy, w:1.5, color: [37, 99, 235]});
+      prev = [cx, cy];
+    }
+  }
+
+  // Marked points (roots, y-intercept, vertex)
+  if (block.markPoints){
+    for (const p of block.markPoints){
+      if (p.x < xMin || p.x > xMax || p.y < yMin || p.y > yMax) continue;
+      const mx = px(p.x), my = py(p.y);
+      const pts = [];
+      for (let i=0; i<10; i++){ const ang = i/10*Math.PI*2;
+        pts.push([mx + 2.2*Math.cos(ang), my + 2.2*Math.sin(ang)]); }
+      items.push({t:'poly', grey:0, pts});
+      if (p.label){
+        const lw = textWidth(p.label, fs*0.65, false);
+        items.push({t:'run', x:mx - lw/2, y:my - 8, size:fs*0.65, bold:false, italic:false, s:p.label});
+      }
+    }
+  }
+
+  const figH = drawH + 22;
+  return { items, height: figH };
+}
+
+/* ============================================================
+   LAYOUT — question layout
+   ============================================================ */
+const PW = 595.276, PH = 841.890, MG = 42.52, FIXED_FS = 11;
+const HEADER_H = 19*0.78 + 19*0.32 + 6 + 17 + 10.5*0.78 + 26;
+const CONT_HEADER_H = 9*1.4 + 8 + 14;
+const QUESTION_GAP = 14;
+
+function columnRuleX(){ return MG + (PW - 2*MG) * 0.60; }
+// Added a 6pt safety buffer to ensure text never overflows into the right column
+function promptWidth(fs){ return columnRuleX() - (MG + fs*1.6) - 6; }
+
+function drawQuestionBlocks(blocks, x, y, fs, maxW, items, baselines){
+  const lineH = fs*1.42;
+  let cursor = y;
+  for (const block of blocks){
+    if (baselines) baselines.push(cursor);
+    if (block.type === 'text'){
+      const lines = wrapTokens(textToTokens(block.text), fs, false, maxW);
+      for (let j=0;j<lines.length;j++)
+        emitRuns(lineToRuns(lines[j]), x, cursor + j*lineH, fs, items, 'normal');
+      cursor += lines.length * lineH;
+    } else if (block.type === 'quad-graph'){
+      const gl = layoutQuadGraph(x, cursor - fs*0.4, block, fs, maxW);
+      for (const it of gl.items) items.push(it);
+      cursor = cursor - fs*0.4 + gl.height + fs*1.0;
+    }
+  }
+  return cursor;
+}
+
+function measureQuestion(q, fs){
+  const maxW = promptWidth(fs);
+  const lineH = fs*1.42;
+  let h = 0;
+  for (const b of q.blocks){
+    if (b.type === 'text'){
+      const lines = wrapTokens(textToTokens(b.text), fs, false, maxW);
+      h += lines.length * lineH;
+    } else if (b.type === 'quad-graph'){
+      const gl = layoutQuadGraph(0, 0, b, fs, maxW);
+      h += gl.height + fs*1.0;
+    }
+  }
+  return h;
+}
+
+function drawHeader(items, title){
+  const innerW = PW - 2*MG;
+  const ts = 19;
+  const tw = textWidth(title, ts, true);
+  let bl = MG + ts*0.78;
+  items.push({t:'text', x: MG + Math.max(0, (innerW-tw)/2), y: bl, size: ts, bold: true, s: title});
+  let top = bl + ts*0.32 + 6;
+  items.push({t:'line', x1:MG, y1:top, x2:PW-MG, y2:top, w:1.1});
+  top += 17;
+  const ns = 10.5;
+  bl = top + ns*0.78;
+  items.push({t:'text', x:MG, y:bl, size:ns, bold:false, s:'Name:'});
+  const nlw = textWidth('Name:', ns, false);
+  items.push({t:'line', x1:MG+nlw+6, y1:bl+2.2, x2:MG+innerW*0.46, y2:bl+2.2, w:0.6});
+  items.push({t:'text', x:MG+innerW*0.60, y:bl, size:ns, bold:false, s:'Date:'});
+  const dlw = textWidth('Date:', ns, false);
+  items.push({t:'line', x1:MG+innerW*0.60+dlw+6, y1:bl+2.2, x2:PW-MG, y2:bl+2.2, w:0.6});
+}
+function drawContinuationHeader(items, title){
+  items.push({t:'text', x:MG, y:MG+9*0.78, size:9, bold:false, s:title+' (continued)'});
+  const ruleY = MG + 9*1.4 + 8;
+  items.push({t:'line', x1:MG, y1:ruleY, x2:PW-MG, y2:ruleY, w:0.4, grey:true});
+}
+
+function drawQuestion(q, index, fs, qTop, items, revealState){
+  const lineH = fs*1.42;
+  const numColW = fs*1.6;
+  const textX = MG + numColW;
+  const ruleX = columnRuleX();
+  const maxW = ruleX - textX - 4; // 4pt safety buffer
+
+  items.push({t:'text', x:MG, y:qTop + fs*0.78, size:fs, bold:true, s:(index+1)+'.'});
+  drawQuestionBlocks(q.blocks, textX, qTop + fs*0.78, fs, maxW, items, null);
+
+  const qH = measureQuestion(q, fs);
+  items.push({t:'line', x1:ruleX, y1:qTop+2, x2:ruleX, y2:qTop+qH-2, w:0.4, grey:true});
+
+  if (revealState && q.answers && q.answers.length) {
+      const rightX = ruleX + 8;
+      const rightW = PW - MG - rightX - 4; // 4pt safety buffer
+      const ansStr = q.answers.map(a => a.text).join('   ');
+      const lines = wrapTokens(textToTokens(ansStr), fs, false, rightW);
+      for (let j=0; j<lines.length; j++) {
+          emitRuns(lineToRuns(lines[j]), rightX, qTop + fs*0.78 + j*lineH, fs, items, 'answer');
+      }
+  }
+  return qTop + qH;
+}
+
+function layoutSheet(opts){
+  const title = opts.title, questions = opts.questions, revealState = opts.revealState;
+  const fs = FIXED_FS;
+  const pages = []; let items = []; let y = MG;
+  drawHeader(items, title);
+  y = MG + HEADER_H;
+  let onPage = 0;
+  for (let i = 0; i < questions.length; i++){
+    const q = questions[i];
+    const qH = measureQuestion(q, fs);
+    if (onPage > 0 && y + qH > PH - MG){
+      pages.push(items); items = []; y = MG + CONT_HEADER_H;
+      drawContinuationHeader(items, title); onPage = 0;
+    }
+    if (onPage > 0){
+      items.push({t:'line', x1:MG, y1:y-7, x2:PW-MG, y2:y-7, w:0.4, grey:true});
+    }
+    drawQuestion(q, i, fs, y, items, revealState);
+    y += qH + QUESTION_GAP;
+    onPage++;
+  }
+  if (items.length) pages.push(items);
+  if (pages.length > 1){
+    for (let i = 0; i < pages.length; i++){
+      const s = 'Page ' + (i+1) + ' of ' + pages.length;
+      const w = textWidth(s, 8, false);
+      pages[i].push({t:'text', x:PW-MG-w, y:PH-MG+12, size:8, bold:false, s:s});
+    }
+  }
+  return pages;
+}
+
+function layoutCompactAnswers(opts){
+  const title = opts.title, questions = opts.questions, seed = opts.seed;
+  const items = []; const innerW = PW - 2*MG;
+  let top = MG;
+  const ts = 17;
+  const heading = title + ' — Answers';
+  const tw = textWidth(heading, ts, true);
+  let bl = top + ts*0.78;
+  items.push({t:'text', x:MG + Math.max(0,(innerW-tw)/2), y:bl, size:ts, bold:true, s:heading});
+  top = bl + ts*0.32 + 6;
+  items.push({t:'line', x1:MG, y1:top, x2:PW-MG, y2:top, w:1.1});
+  top += 24;
+
+  const fs = 11;
+  const lineH = fs * 2.4;
+  const colW = innerW/2;
+  const perCol = Math.ceil(questions.length/2);
+
+  for (let i = 0; i < questions.length; i++){
+    const col = Math.floor(i/perCol);
+    const row = i % perCol;
+    const x0 = MG + col*colW;
+    const yy = top + row*lineH + fs*0.78;
+    items.push({t:'text', x:x0, y:yy, size:fs, bold:true, s:(i+1)+'.'});
+    const numW = textWidth((i+1)+'.', fs, true) + 5;
+    const ansJoined = (questions[i].answers||[]).map(a=>a.text).join('   ');
+    emitRuns(parseRuns(ansJoined), x0+numW, yy, fs, items, 'normal');
+  }
+  const note = 'Seed: ' + seed;
+  const noteSize = 8.5;
+  const noteW = textWidth(note, noteSize, false);
+  items.push({t:'text', x:PW-MG-noteW, y:PH-MG+2, size:noteSize, bold:false, s:note});
+  return [items];
+}
+
+/* ============================================================
+   PDF writer
+   ============================================================ */
+const WINANSI = {
+  0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84,
+  0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88,
+  0x2030:0x89, 0x0160:0x8A, 0x2039:0x8B, 0x0152:0x8C,
+  0x017D:0x8E, 0x2018:0x91, 0x2019:0x92, 0x201C:0x93,
+  0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97,
+  0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B,
+  0x0153:0x9C, 0x017E:0x9E, 0x0178:0x9F
+};
+function cleanLatexForPdf(text){
+  if (!text.includes('$')) return text;
+  return text.replace(/\$([^$]*)\$/g, function(match, inner) {
+    let s = inner;
+    s = s.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)');
+    s = s.replace(/\\sqrt\{([^{}]*)\}/g, '√($1)');
+    s = s.replace(/\\pm/g, '±');
+    s = s.replace(/\\Delta/g, 'Δ');
+    s = s.replace(/\\cdot/g, '·');
+    s = s.replace(/\^2/g, '²');
+    s = s.replace(/\^3/g, '³');
+    s = s.replace(/\\log_2/g, 'log₂');
+    s = s.replace(/\\div/g, '÷');
+    s = s.replace(/\\times/g, '×');
+    s = s.replace(/\\le/g, '≤').replace(/\\ge/g, '≥');
+    s = s.replace(/\\Rightarrow/g, '⇒');
+    s = s.replace(/\u2212/g, '-');
+    return s;
+  });
+}
+function pdfEsc(s){
+  s = cleanLatexForPdf(s);
+  let out='';
+  for (let i=0;i<s.length;i++){
+    const ch = s[i]; const code = ch.charCodeAt(0);
+    if (ch==='\\') out += '\\\\';
+    else if (ch==='(') out += '\\(';
+    else if (ch===')') out += '\\)';
+    else if (code >= 32 && code <= 126) out += ch;
+    else if (code >= 0xA0 && code <= 0xFF) out += '\\' + code.toString(8).padStart(3,'0');
+    else if (WINANSI[code] !== undefined) out += '\\' + WINANSI[code].toString(8).padStart(3,'0');
+    else out += '?';
+  }
+  return out;
+}
+function pdfStrokeColourOp(it){
+  if (it.color) {
+      return (it.color[0]/255).toFixed(3) + ' ' + (it.color[1]/255).toFixed(3) + ' ' + (it.color[2]/255).toFixed(3) + ' RG';
+  }
+  return (it.grey ? '0.58' : '0') + ' G';
+}
+function pdfFillColourOp(it){
+  return (it.grey !== undefined ? it.grey : 0) + ' g';
+}
+function contentStream(items){
+  const ops=[];
+  for (const it of items){
+    if (it.t === 'text' || it.t === 'run'){
+      let font = 'F1';
+      if (it.bold && it.italic) font='F4';
+      else if (it.bold) font='F2';
+      else if (it.italic) font='F3';
+      ops.push('0 g');
+      ops.push('BT /' + font + ' ' + it.size.toFixed(2) + ' Tf ' +
+        it.x.toFixed(2) + ' ' + (PH-it.y).toFixed(2) + ' Td (' + pdfEsc(it.s) + ') Tj ET');
+    } else if (it.t === 'line'){
+      ops.push(pdfStrokeColourOp(it) + ' ' + it.w.toFixed(2) + ' w ' +
+        it.x1.toFixed(2) + ' ' + (PH-it.y1).toFixed(2) + ' m ' +
+        it.x2.toFixed(2) + ' ' + (PH-it.y2).toFixed(2) + ' l S');
+    } else if (it.t === 'poly'){
+      const pts = it.pts;
+      let s = pdfFillColourOp(it);
+      s += ' ' + pts[0][0].toFixed(2) + ' ' + (PH-pts[0][1]).toFixed(2) + ' m';
+      for (let k=1; k<pts.length; k++)
+        s += ' ' + pts[k][0].toFixed(2) + ' ' + (PH-pts[k][1]).toFixed(2) + ' l';
+      s += ' h f';
+      ops.push(s);
+    }
+  }
+  return ops.join('\n');
+}
+function assemblePDF(pagesItems){
+  const N = pagesItems.length;
+  const maxObj = 6 + 2*N;
+  const objects = []; const kidRefs = [];
+  for (let i = 0; i < N; i++) kidRefs.push((8 + 2*i) + ' 0 R');
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = '<< /Type /Pages /Kids [' + kidRefs.join(' ') + '] /Count ' + N + ' >>';
+  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
+  objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
+  for (let i = 0; i < N; i++){
+    const stream = contentStream(pagesItems[i]);
+    const streamObj = 7 + 2*i;
+    const pageObj = 8 + 2*i;
+    objects[streamObj] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+    objects[pageObj] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+      '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+      '/Contents ' + streamObj + ' 0 R >>';
+  }
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+  for (let i = 1; i <= maxObj; i++){ offsets[i] = out.length;
+    out += i + ' 0 obj\n' + objects[i] + '\nendobj\n'; }
+  const xrefPos = out.length;
+  out += 'xref\n0 ' + (maxObj+1) + '\n0000000000 65535 f \n';
+  for (let i = 1; i <= maxObj; i++)
+    out += String(offsets[i]).padStart(10,'0') + ' 00000 n \n';
+  out += 'trailer\n<< /Size ' + (maxObj+1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF\n';
+  return out;
+}
+function downloadPDF(pagesItems, filename){
+  const pdfStr = assemblePDF(pagesItems);
+  const bytes = new Uint8Array(pdfStr.length);
+  for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+  const blob = new Blob([bytes], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* ============================================================
+   TOPIC BANK — quadratic functions
+   Difficulty assigned per topic based on standard A-level progression.
+   ============================================================ */
+
+/* -------- Q1: Solving equations -------- */
+
+const tSolveFactorise = {
+  id:'solve-factorise', strand:'Q1', difficulty: 1,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-4, 4) || 2; r2 = ri(-4, 4) || -3; }
+    while (r1 === r2 || r1 === 0 || r2 === 0);
+    const B = -(r1 + r2), C = r1 * r2;
+    const a = ri(2, 4);
+    const c = a - 1;
+    const b = ri(-4, 6);
+    const d = b - B;
+    const e = -C;
+    const lhs = fmtQuad(a, b, 0);
+    const rhs = fmtQuad(c, d, e);
+    const arr = fmtQuad(1, B, C);
+    const f1 = r1 > 0 ? `(x - ${r1})` : `(x + ${-r1})`;
+    const f2 = r2 > 0 ? `(x - ${r2})` : `(x + ${-r2})`;
+    return Q('fq|'+a+'|'+b+'|'+c+'|'+d+'|'+e,
+      [ T('Solve the equation  $'+lhs+' = '+rhs+'$') ],
+      [{ text: '$x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$' }],
+      [ T('Rearrange:  $'+arr+' = 0$'),
+        T('Factorise:  $'+f1+f2+' = 0$'),
+        T('So  $x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$.') ]);
+  }
+};
+
+const tSolveBracket = {
+  id:'solve-bracket', strand:'Q1', difficulty: 1,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-5, 5) || 3; r2 = ri(-5, 5) || -2; }
+    while (r1 === r2 || r1 === 0 || r2 === 0);
+    const B = -(r1 + r2), C = r1 * r2;
+    let a, b;
+    if (B >= 0){ a = ri(1, 3); b = a + B; }
+    else        { b = ri(1, 3); a = b - B; }
+    const c = -a*b - C;
+    if (c === 0) return tSolveBracket.gen();
+    const rhs = nStr(c);
+    const lhsBracket = `(x - ${a})(x + ${b})`;
+    const expanded = fmtQuad(1, B, C);
+    const f1 = r1 > 0 ? `(x - ${r1})` : `(x + ${-r1})`;
+    const f2 = r2 > 0 ? `(x - ${r2})` : `(x + ${-r2})`;
+    return Q('sb|'+a+'|'+b+'|'+c,
+      [ T('Solve  $'+lhsBracket+' = '+rhs+'$') ],
+      [{ text: '$x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$' }],
+      [ T('Expand:  $x^2 + '+(b-a)+'x - '+a*b+' = '+rhs+'$'),
+        T('Rearrange:  $'+expanded+' = 0$'),
+        T('Factorise:  $'+f1+f2+' = 0$'),
+        T('So  $x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$.') ]);
+  }
+};
+
+const tSolveFraction = {
+  id:'solve-fraction', strand:'Q1', difficulty: 2,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(2, 6); r2 = -ri(1, 5); } while (r1 === -r2);
+    const L = 1;
+    const b = -L*(r1 + r2);
+    const c = -L * r1 * r2;
+    if (b <= 0 || c <= 0) return tSolveFraction.gen();
+    const lhs = 'x';
+    const rhs = b + ' + \\frac{' + c + '}{x}';
+    const expanded = fmtQuad(1, -b, -c);
+    return Q('sfr|'+L+'|'+b+'|'+c,
+      [ T('Solve  $'+lhs+' = '+rhs+'$') ],
+      [{ text: '$x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$' }],
+      [ T('Multiply both sides by $x$:  $x^2 = '+b+'x + '+c+'$'),
+        T('Rearrange:  $'+expanded+' = 0$'),
+        T('Factorise:  $(x - '+r1+')(x + '+(-r2)+') = 0$'),
+        T('So  $x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$.') ]);
+  }
+};
+
+const tSolveFormula = {
+  id:'solve-formula', strand:'Q1', difficulty: 2,
+  gen(){
+    const cases = [
+      {B:-4, C:-3, a:1, simp:[2,7]},
+      {B:6,  C:7,  a:1, simp:[3,2]},
+      {B:-2, C:-4, a:1, simp:[1,5]},
+      {B:-6, C:4,  a:1, simp:[3,5]},
+      {B:-8, C:9,  a:1, simp:[4,7]},
+      {B:4,  C:-1, a:1, simp:[-2,5]}
+    ];
+    const c = pick(cases);
+    const a = c.a, b = c.B, cc = c.C;
+    const lhs = fmtQuad(a, b, cc);
+    const [p, k] = [c.simp[0], c.simp[1]];
+    const ans = '$x = ' + nStr(p) + ' \\pm \\sqrt{' + k + '}$';
+    const discVal = b*b - 4*a*cc;
+    return Q('sfo|'+a+'|'+b+'|'+cc,
+      [ T('Solve  $'+lhs+' = 0$, giving exact answers.') ],
+      [{ text: ans }],
+      [ T('Use the quadratic formula:  $x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$'),
+        T('Discriminant:  $b^2 - 4ac = '+discVal+'$'),
+        T('Simplifies to give '+ans+'.') ]);
+  }
+};
+
+/* -------- Q2: Graphs -------- */
+
+const tGraphSketch = {
+  id:'graph-sketch', strand:'Q2', difficulty: 1,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-4, 4) || 3; r2 = ri(-4, 4) || -2; } while (r1 === r2 || r1 === 0 || r2 === 0);
+    const a = pick([1, 1, 2, -1, -2]);
+    const b = -a*(r1 + r2);
+    const c = a * r1 * r2;
+    const eq = 'y = ' + fmtQuad(a, b, c);
+    const dirTxt = a > 0 ? 'positive quadratic (opens upward)' : 'negative quadratic (opens downward)';
+    const rootsTxt = (r1 === r2) ? `repeated root at $x = ${r1}$` :
+                     `roots at $x = ${nStr(r1)}$ and $x = ${nStr(r2)}$`;
+    const yIntTxt = `y-intercept at $(0, ${nStr(c)})$`;
+    const vx = -b / (2*a);
+    const vy = a*vx*vx + b*vx + c;
+    const vxR = Math.round(vx*100)/100;
+    const vyR = Math.round(vy*100)/100;
+    const vertexTxt = 'turning point at $(' + vxR + ', ' + vyR + ')$';
+    const xs = [0, r1, r2].sort((p,q)=>p-q);
+    const ys = [0, c, vy];
+    const xPad = Math.max(1.5, (xs[2]-xs[0])*0.3);
+    const yPad = Math.max(2, (Math.max(...ys)-Math.min(...ys))*0.3);
+    return Q('gsk|'+a+'|'+b+'|'+c,
+      [ T('Sketch the graph of  $'+eq+'$,  labelling all axis intercepts.'),
+        { type:'quad-graph', a, b, c, blank:true,
+          xMin: Math.floor(xs[0]-xPad), xMax: Math.ceil(xs[2]+xPad),
+          yMin: Math.floor(Math.min(...ys)-yPad), yMax: Math.ceil(Math.max(...ys)+yPad) } ],
+      [{ text: 'See sketch — '+dirTxt+'; '+rootsTxt+'; '+yIntTxt+'; '+vertexTxt+'.' }],
+      [ T('Direction: '+dirTxt+'.'),
+        T('x-intercepts: '+rootsTxt+'.'),
+        T('y-intercept: '+yIntTxt+'.'),
+        T('Vertex: '+vertexTxt+'.') ]);
+  }
+};
+
+const tGraphFromRoots = {
+  id:'graph-from-roots', strand:'Q2', difficulty: 2,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-3, 3) || 2; r2 = ri(-3, 3) || -2; }
+    while (r1 === r2 || r1 === 0 || r2 === 0);
+    const a = pick([1, 1, 2, -1, -2]);
+    const b = -a*(r1 + r2);
+    const c = a*r1*r2;
+    if (Math.abs(c) < 2) return tGraphFromRoots.gen();
+    const pts = [
+      { x: r1, y: 0, label: nStr(r1) },
+      { x: r2, y: 0, label: nStr(r2) },
+      { x: 0,  y: c, label: nStr(c) }
+    ];
+    const xs = [0, r1, r2].sort((p,q)=>p-q);
+    const ys = [0, c];
+    const xPad = 1.5, yPad = Math.max(2, Math.abs(c)*0.3);
+    return Q('gfr|'+a+'|'+b+'|'+c,
+      [ T('Find the equation of this graph, giving your answer in the form $y = ax^2 + bx + c$.'),
+        { type:'quad-graph', a, b, c, markPoints: pts,
+          xMin: Math.floor(xs[0]-xPad), xMax: Math.ceil(xs[2]+xPad),
+          yMin: Math.floor(Math.min(...ys)-yPad), yMax: Math.ceil(Math.max(...ys)+yPad) } ],
+      [{ text: '$y = ' + fmtQuad(a, b, c) + '$' }],
+      [ T('The parabola crosses the x-axis at $x = '+nStr(r1)+'$ and $x = '+nStr(r2)+'$.'),
+        T('So the factorised form is  $y = k(x - '+r1+')(x - '+r2+')$.'),
+        T('The y-intercept $(0, '+nStr(c)+')$ gives $k \\cdot '+r1+' \\cdot '+r2+' = '+nStr(c)+'$, so $k = '+a+'$.'),
+        T('Thus  $y = '+a+'(x - '+r1+')(x - '+r2+') = '+fmtQuad(a, b, c)+'$.') ]);
+  }
+};
+
+const tGraphFromVertex = {
+  id:'graph-from-vertex', strand:'Q2', difficulty: 2,
+  gen(){
+    const h = ri(-3, 3);
+    const k = ri(-4, 4);
+    if (k === 0) return tGraphFromVertex.gen();
+    const a = pick([1, 1, -1, 2, -2]);
+    let x0;
+    do { x0 = ri(-4, 4); } while (x0 === h || x0 === 0);
+    const y0 = a*(x0-h)*(x0-h) + k;
+    const eqExpanded = fmtQuad(a, -2*a*h, a*h*h + k);
+    const pts = [
+      { x: h,  y: k,  label: `(${nStr(h)}, ${nStr(k)})` },
+      { x: x0, y: y0, label: `(${nStr(x0)}, ${nStr(y0)})` }
+    ];
+    const xs = [h, x0].sort((p,q)=>p-q);
+    const ys = [k, y0, 0].sort((p,q)=>p-q);
+    const xPad = 1.5;
+    const yPad = Math.max(2, (ys[2]-ys[0])*0.25);
+    return Q('gfv|'+a+'|'+h+'|'+k+'|'+x0+'|'+y0,
+      [ T('The graph of a quadratic function has a turning point at $('+
+          nStr(h)+', '+nStr(k)+')$ and passes through the point $('+
+          nStr(x0)+', '+nStr(y0)+')$.'),
+        T('Find the equation of the graph, giving your answer in the form $y = a(x - p)^2 + q$.'),
+        { type:'quad-graph', a, b: -2*a*h, c: a*h*h + k, markPoints: pts,
+          xMin: Math.floor(xs[0]-xPad), xMax: Math.ceil(xs[1]+xPad),
+          yMin: Math.floor(ys[0]-yPad), yMax: Math.ceil(ys[2]+yPad) } ],
+      [{ text: `$y = ${a}(x ${h>=0?'- ':'+ '}${Math.abs(h)})^2 ${k>=0?'+ ':MINUS+' '}${Math.abs(k)}$` }],
+      [ T('Vertex form:  $y = a(x '+(h>=0?'- ':'+ ')+Math.abs(h)+')^2 '+
+          (k>=0?'+ '+k:'- '+Math.abs(k))+'$.'),
+        T('Using $('+nStr(x0)+', '+nStr(y0)+')$:  $'+nStr(y0)+' = a('+
+          nStr(x0)+' '+(h>=0?'- ':'+ ')+Math.abs(h)+')^2 '+(k>=0?'+ '+k:'- '+Math.abs(k))+'$'),
+        T('So $a = '+a+'$.'),
+        T('Expanding gives  $y = '+eqExpanded+'$.') ]);
+  }
+};
+
+/* -------- Q3: Completing the square -------- */
+
+const tCtsBasic = {
+  id:'cts-basic', strand:'Q3', difficulty: 1,
+  gen(){
+    const B = 2 * pick([-5,-4,-3,-2,-1,1,2,3,4,5]);
+    const C = ri(-8, 8);
+    const halfB = B/2;
+    const q = C - B*B/4;
+    const eq = fmtQuad(1, B, C);
+    const ansStr = '(x ' + (halfB>=0?'+ '+halfB:'- '+(-halfB)) + ')^2 ' +
+                   (q>=0?'+ '+q:'- '+(-q));
+    return Q('cb|'+B+'|'+C,
+      [ T('Write  $'+eq+'$  in the form $(x + p)^2 + q$, stating $p$ and $q$.') ],
+      [{ text: '$'+ansStr+'$   ($p = '+nStr(halfB)+'$, $q = '+nStr(q)+'$)' }],
+      [ T('Halve the coefficient of $x$:  $'+B+' \\div 2 = '+halfB+'$.'),
+        T('Subtract the square of this:  $(x '+(halfB>=0?'+ ':'- ')+halfB+')^2 - '+halfB*halfB+'$'),
+        T('Result:  $'+ansStr+'$.') ]);
+  }
+};
+
+const tCtsFractional = {
+  id:'cts-fractional', strand:'Q3', difficulty: 2,
+  gen(){
+    const B = pick([-7,-5,-3,-1,1,3,5,7,9]);
+    const C = ri(2, 12);
+    const halfB = B/2;
+    const q = C - B*B/4;
+    const eq = fmtQuad(1, B, C);
+    const pStr = Number.isInteger(halfB) ? nStr(halfB) : (halfB<0?MINUS:'')+Math.abs(halfB*2)+'/2';
+    const ansStr = '(x ' + (halfB>=0?'+ ':MINUS) + pStr.replace('-','') + ')^2 ' + (q>=0?'+ ':'- ')+Math.abs(q).toFixed(2);
+    return Q('cbf|'+B+'|'+C,
+      [ T('Write  $'+eq+'$  in the form $(x + p)^2 + q$.') ],
+      [{ text: '$'+ansStr+'$' }],
+      [ T('Halve the coefficient of $x$:  $'+B+'/2 = '+pStr+'$.'),
+        T('Subtract its square:  $'+((B*B)/4).toFixed(2)+'$'),
+        T('Result:  $'+ansStr+'$.') ]);
+  }
+};
+
+const tCtsLeading = {
+  id:'cts-leading', strand:'Q3', difficulty: 2,
+  gen(){
+    const a = pick([2, 3, -1, -2]);
+    const B = a * ri(-4, 4);
+    if (B === 0) return tCtsLeading.gen();
+    const C = ri(-4, 8);
+    const p = B / (2*a);
+    const q = C - a*p*p;
+    const eq = fmtQuad(a, B, C);
+    const pStr = Number.isInteger(p) ? nStr(p) : (p<0?MINUS:'')+Math.abs(p*2)+'/2';
+    const qStr = Number.isInteger(q) ? nStr(q) : q.toFixed(2);
+    const ansStr = a + '(x ' + (p>=0?'+ ':MINUS) + pStr.replace('-','') + ')^2 ' +
+                   (q>=0?'+ '+qStr:'- '+Math.abs(q).toFixed(2));
+    return Q('cl|'+a+'|'+B+'|'+C,
+      [ T('Write  $'+eq+'$  in the form $a(x + p)^2 + q$.') ],
+      [{ text: '$'+ansStr+'$' }],
+      [ T('Factor out $'+a+'$:  $'+a+'(x^2 '+(B/a>=0?'+ '+B/a:MINUS+' '+Math.abs(B/a))+'x)$'),
+        T('Complete the square inside:  $p = '+pStr+'$.'),
+        T('Result:  $'+ansStr+'$.') ]);
+  }
+};
+
+const tCtsVertex = {
+  id:'cts-vertex', strand:'Q3', difficulty: 2,
+  gen(){
+    const a = pick([1, 1, -1, 2, -2]);
+    const B = a * 2 * ri(-3, 3);
+    if (B === 0) return tCtsVertex.gen();
+    const C = ri(-6, 8);
+    const eq = fmtQuad(a, B, C);
+    const vx = -B/(2*a);
+    const vy = C - B*B/(4*a);
+    const vxR = Math.round(vx*100)/100;
+    const vyR = Math.round(vy*100)/100;
+    const vertexStr = '(' + vxR + ', ' + vyR + ')';
+    return Q('cv|'+a+'|'+B+'|'+C,
+      [ T('Find the coordinates of the turning point of  $'+eq+'$.') ],
+      [{ text: '$'+vertexStr+'$' }],
+      [ T('Complete the square to get  $y = '+a+'(x - '+vxR+')^2 '+nStr(vyR)+'$.'),
+        T('So the vertex is at $'+vertexStr+'$.') ]);
+  }
+};
+
+const tCtsNoReal = {
+  id:'cts-no-real', strand:'Q3', difficulty: 3,
+  gen(){
+    const B = pick([4, 6, 8, 10, 12]);
+    const C = ri(6, 15);
+    if (!(C > B*B/4)) return tCtsNoReal.gen();
+    const p = B/2;
+    const q = B*B/4 - C;
+    const eqFmt = fmtQuad(-1, B, -C);
+    const completed = '-(x - '+p+')^2 '+(q>=0?'+ '+q:'- '+Math.abs(q));
+    return Q('cn|'+B+'|'+C,
+      [ T('a)  Complete the square for  $'+eqFmt+'$.'),
+        T('b)  Hence explain why the equation  $'+eqFmt+' = 0$  has no real solutions.') ],
+      [{ text: 'a)  $'+completed+'$.  b)  This has maximum $'+nStr(q)+' < 0$, so never $0$.' }],
+      [ T('a)  $'+eqFmt+' = '+completed+'$.'),
+        T('b)  $-(x - '+p+')^2 \\le 0$ always, so $'+completed+' \\le '+nStr(q)+' < 0$.'),
+        T('Therefore $'+eqFmt+'$ is never 0.') ]);
+  }
+};
+
+/* -------- Q4: Inequalities -------- */
+
+const tIneqFactorised = {
+  id:'ineq-factorised', strand:'Q4', difficulty: 1,
+  gen(){
+    let a, b;
+    do { a = ri(-5, 5); b = ri(-5, 5); } while (a === b || a === 0 && b === 0);
+    const op = pick(['>', '<']);
+    const ea = a > 0 ? '+ '+a : MINUS+' '+(-a);
+    const eb = b > 0 ? '+ '+b : MINUS+' '+(-b);
+    const eq = '(x '+ea+')(x '+eb+') '+op+' 0';
+    const lo = Math.min(a,b), hi = Math.max(a,b);
+    const soln = op === '>' ? ('$x < '+lo+'$ or $x > '+hi+'$') : ('$'+lo+' < x < '+hi+'$');
+    return Q('iqf|'+a+'|'+b+'|'+op,
+      [ T('Solve the inequality  $'+eq+'$.') ],
+      [{ text: soln }],
+      [ T(op === '>' ? 'Roots at '+lo+' and '+hi+'; upward parabola, so outside the roots: $x < '+lo+'$ or $x > '+hi+'$.'
+                     : 'Roots at '+lo+' and '+hi+'; upward parabola, so between the roots: $'+lo+' < x < '+hi+'$.') ]);
+  }
+};
+
+const tIneqRearrange = {
+  id:'ineq-rearrange', strand:'Q4', difficulty: 2,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-3, 3); r2 = ri(-3, 3); } while (r1 === r2);
+    const coef = pick([1, 1, 2]);
+    const B = -coef * (r1 + r2);
+    const C = coef * r1 * r2;
+    const q = ri(-4, 6);
+    const p = B + q;
+    const r = -C;
+    const op = pick(['<', '>']);
+    const lhs = fmtQuad(coef, p, 0);
+    const rhs = fmtQuad(0, q, r);
+    const eq = lhs + ' ' + op + ' ' + rhs;
+    const rearranged = fmtQuad(coef, B, C) + ' ' + op + ' 0';
+    const lo = Math.min(r1, r2), hi = Math.max(r1, r2);
+    const soln = op === '<'
+      ? '$' + lo + ' < x < ' + hi + '$'
+      : '$x < ' + lo + '$ or $x > ' + hi + '$';
+    return Q('iqr|'+coef+'|'+p+'|'+q+'|'+r+'|'+op,
+      [T('Solve the inequality  $' + eq + '$.')],
+      [{ text: soln }],
+      [ T('Rearrange:  $' + rearranged + '$.'),
+        T('Solution:  ' + soln + '.') ]);
+  }
+};
+
+const tIneqSimultaneous = {
+  id:'ineq-simultaneous', strand:'Q4', difficulty: 3,
+  gen(){
+    let a = ri(-3, 2);
+    let b = a + ri(2, 4);
+    let c = b + ri(1, 3);
+    let d = c + ri(2, 4);
+
+    let r1 = a, r2 = b, r3 = c, r4 = d;
+    // Ensure inequalities are clean
+    const eq1 = `x^2 - ${r1+r2}x + ${r1*r2} < 0`;
+    const eq2 = `x^2 - ${r3+r4}x + ${r3*r4} > 0`;
+
+    const lo1 = Math.min(r1,r2), hi1 = Math.max(r1,r2); // lo1 < x < hi1
+    const lo2 = Math.min(r3,r4), hi2 = Math.max(r3,r4); // x < lo2 or x > hi2
+
+    // The intersection will be lo1 < x < lo2 since lo1 < lo2 < hi1 < hi2
+    const soln = `$${lo1} < x < ${lo2}$`;
+
+    return Q('iqs|'+r1+'|'+r2+'|'+r3+'|'+r4,
+      [ T('Solve simultaneously  $'+eq1+'$ and $'+eq2+'$.') ],
+      [{ text: soln }],
+      [ T('First inequality:  $('+r1+' < x < '+r2+')$.'),
+        T('Second inequality:  $(x < '+r3+'$ or $x > '+r4+')$.'),
+        T('Intersection of these regions:  '+soln+'.') ]);
+  }
+};
+
+const tIneqWordProblem = {
+  id:'ineq-word-problem', strand:'Q4', difficulty: 3,
+  gen(){
+    let m = ri(1, 5);
+    let n = ri(5, 10);
+    // roots are -m and n
+    // x^2 + (m-n)x - mn > 0
+    const k = n - m;
+    const A = m * n;
+
+    return Q('iqw|'+m+'|'+n,
+      [ T('A rectangular garden has length $(x + '+k+')$ m and width $x$ m.'),
+        T('The area of the garden is at least $'+A+'\\text{ m}^2$.'),
+        T('Find the range of possible values of $x$.') ],
+      [{ text: '$x \\ge '+n+'$' }],
+      [ T('Area:  $x(x + '+k+') \\ge '+A+'$'),
+        T('$x^2 + '+k+'x - '+A+' \\ge 0$'),
+        T('Factorise:  $(x + '+m+')(x - '+n+') \\ge 0$'),
+        T('Since $x > 0$, we must have $x \\ge '+n+'$.') ]);
+  }
+};
+
+/* -------- Q5: Discriminant -------- */
+
+const tDiscEvaluate = {
+  id:'disc-evaluate', strand:'Q5', difficulty: 1,
+  gen(){
+    const a = ri(1, 3), b = ri(-8, 8), c = ri(-8, 8);
+    if (b === 0 && c === 0) return tDiscEvaluate.gen();
+    const disc = b*b - 4*a*c;
+    const eq = fmtQuad(a, b, c) + ' = 0';
+    let kind;
+    if (disc > 0){ kind = 'two distinct real roots'; }
+    else if (disc === 0){ kind = 'one (repeated) real root'; }
+    else { kind = 'no real roots'; }
+    return Q('de|'+a+'|'+b+'|'+c,
+      [ T('For the quadratic equation  $'+eq+'$,'),
+        T('(a)  find the discriminant.'),
+        T('(b)  state the number of real roots.') ],
+      [{ text: '(a)  $\\Delta = '+disc+'$    (b)  '+kind }],
+      [ T('$a = '+a+'$, $b = '+b+'$, $c = '+c+'$.'),
+        T('$\\Delta = b^2 - 4ac = '+disc+'$.'),
+        T('So the equation has '+kind+'.') ]);
+  }
+};
+
+const tDiscRepeated = {
+  id:'disc-repeated', strand:'Q5', difficulty: 3,
+  gen(){
+    return Q('dr|'+(4+2*Math.sqrt(3)).toFixed(4),
+      [ T('The quadratic equation  $kx^2 - (k + 2)x + 3 = 0$  has a repeated root.'),
+        T('Find the exact values of $k$.') ],
+      [{ text: '$k = 4 \\pm 2\\sqrt{3}$' }],
+      [ T('Repeated root $\\Rightarrow \\Delta = 0$.'),
+        T('$(k + 2)^2 - 12k = k^2 - 8k + 4 = 0$.'),
+        T('$k = \\frac{8 \\pm \\sqrt{48}}{2} = 4 \\pm 2\\sqrt{3}$.') ]);
+  }
+};
+
+const tDiscTwoDistinct = {
+  id:'disc-two-distinct', strand:'Q5', difficulty: 3,
+  gen(){
+    return Q('dtd|10|39',
+      [ T('Find the set of values of $k$ for which  $2x^2 - (k + 1)x + (5 - k) = 0$  has two distinct real solutions.') ],
+      [{ text: '$k < -13$ or $k > 3$' }],
+      [ T('$\\Delta = (k + 1)^2 - 8(5 - k) = k^2 + 10k - 39 > 0$.'),
+        T('$(k + 13)(k - 3) > 0$.'),
+        T('So $k < -13$ or $k > 3$.') ]);
+  }
+};
+
+const tDiscAlwaysPositive = {
+  id:'disc-always-positive', strand:'Q5', difficulty: 3,
+  gen(){
+    return Q('dap|3|12|144',
+      [ T('The quadratic  $y = -3x^2 + kx - 12$  is negative for all values of $x$.'),
+        T('Find the range of values of $k$.') ],
+      [{ text: '$-12 < k < 12$' }],
+      [ T('$a = -3 < 0$, so the parabola opens downward.'),
+        T('For $y < 0$ always, we need $\\Delta < 0$:'),
+        T('$k^2 - 144 < 0 \\Rightarrow -12 < k < 12$.') ]);
+  }
+};
+
+/* -------- Q6: Disguised quadratics -------- */
+
+const tDisguisedQuartic = {
+  id:'disguised-quartic', strand:'Q6', difficulty: 3,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(-4, 4) || 2; r2 = ri(-4, 4) || -3; }
+    while (r1 === r2 || r1 === 0 || r2 === 0 || Math.sign(r1) === Math.sign(r2));
+    const B = -(r1 + r2);
+    const C = r1 * r2;
+    const quarticStr = 'x^4 ' + (B>0?'+ '+B:'- '+(-B)) + 'x^2 ' + (C>0?'+ '+C:'- '+(-C)) + ' = 0';
+    const posR = Math.max(r1, r2);
+    const sqrts = [Math.sqrt(posR), -Math.sqrt(posR)].filter(v => Number.isInteger(v));
+    if (sqrts.length === 0) return tDisguisedQuartic.gen();
+    const ans = sqrts.map(v => '$x = '+v+'$').join(' or ');
+    const f1 = r1 > 0 ? `(y - ${r1})` : `(y + ${-r1})`;
+    const f2 = r2 > 0 ? `(y - ${r2})` : `(y + ${-r2})`;
+    return Q('dq|'+r1+'|'+r2,
+      [ T('Solve  $'+quarticStr+'$') ],
+      [{ text: ans }],
+      [ T('Let $y = x^2$.  Then $y^2 '+(B>0?'+ '+B:'- '+(-B))+'y '+(C>0?'+ '+C:'- '+(-C))+' = 0$.'),
+        T('Factorise:  $'+f1+f2+' = 0  \\Rightarrow  y = '+nStr(r1)+'$ or $y = '+nStr(r2)+'$.'),
+        T('$y = '+nStr(Math.min(r1,r2))+'$ gives $x^2 < 0$ — rejected.'),
+        T('$y = '+posR+'$ gives $x = \\pm'+Math.sqrt(posR)+'$.  So '+ans+'.') ]);
+  }
+};
+
+const tDisguisedReciprocal = {
+  id:'disguised-reciprocal', strand:'Q6', difficulty: 3,
+  gen(){
+    let y1, y2;
+    do { y1 = ri(1, 6); y2 = ri(1, 6); } while (y1 === y2);
+    const c = y1 + y2;
+    const k = y1 * y2;
+    const eq = 'x^2 + \\frac{'+k+'}{x^2} = '+c;
+    const sq1 = Math.sqrt(y1), sq2 = Math.sqrt(y2);
+    let answer;
+    if (Number.isInteger(sq1) && Number.isInteger(sq2)){
+      answer = '$x = \\pm'+sq1+'$ or $x = \\pm'+sq2+'$';
+    } else {
+      answer = '$x = \\pm\\sqrt{'+y1+'}$ or $x = \\pm\\sqrt{'+y2+'}$';
+    }
+    return Q('dre|'+y1+'|'+y2, [T('Solve  $'+eq+'$.  Give your answers in exact form.')],
+      [{ text: answer }],
+      [ T('Multiply by $x^2$:  $x^4 - '+c+'x^2 + '+k+' = 0$.'),
+        T('Let $y = x^2$:  $y^2 - '+c+'y + '+k+' = 0  \\Rightarrow  y = '+y1+'$ or $y = '+y2+'$.'),
+        T('So $x^2 = '+y1+'$ or $x^2 = '+y2+'  \\Rightarrow  '+answer+'$.') ]);
+  }
+};
+
+const tDisguisedExp = {
+  id:'disguised-exp', strand:'Q6', difficulty: 3,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(1, 4); r2 = ri(2, 6); } while (r1 === r2);
+    const B = r1 + r2, C = r1 * r2;
+    const eq = '2^{2x} - '+B+' \\cdot 2^x + '+C+' = 0';
+    const l1 = Math.log2(r1), l2 = Math.log2(r2);
+    let answer;
+    if (Number.isInteger(l1) && Number.isInteger(l2)){
+      answer = '$x = '+l1+'$ or $x = '+l2+'$';
+    } else {
+      answer = '$x = \\log_2('+r1+')$ or $x = \\log_2('+r2+')$';
+    }
+    return Q('dex|'+r1+'|'+r2, [T('Solve  $'+eq+'$.')], [{ text: answer }],
+      [ T('Let $y = 2^x$.  $y^2 - '+B+'y + '+C+' = 0  \\Rightarrow  y = '+r1+'$ or $y = '+r2+'$.'),
+        T('$2^x = '+r1+' \\Rightarrow x = '+l1+'$;  $2^x = '+r2+' \\Rightarrow x = '+l2+'$.') ]);
+  }
+};
+
+const tDisguisedSqrt = {
+  id:'disguised-sqrt', strand:'Q6', difficulty: 3,
+  gen(){
+    let r1, r2;
+    do { r1 = ri(1, 5); r2 = ri(1, 6); } while (r1 === r2);
+    const B = r1 + r2, C = r1 * r2;
+    const eq = 'x - '+B+'\\sqrt{x} + '+C+' = 0';
+    const x1 = r1*r1, x2 = r2*r2;
+    return Q('dsq|'+r1+'|'+r2, [T('Solve  $'+eq+'$.')],
+      [{ text: '$x = '+x1+'$ or $x = '+x2+'$' }],
+      [ T('Let $y = \\sqrt{x}$.  Then $y^2 - '+B+'y + '+C+' = 0  \\Rightarrow  y = '+r1+'$ or $y = '+r2+'$.'),
+        T('$\\sqrt{x} = '+r1+' \\Rightarrow x = '+x1+'$;  $\\sqrt{x} = '+r2+' \\Rightarrow x = '+x2+'$.') ]);
+  }
+};
+
+/* -------- Q7: Challenging -------- */
+
+const tChallengingTangent = {
+  id:'challenging-tangent', strand:'Q7', difficulty: 4,
+  gen(){
+    const p = ri(-4, 4);
+    const q = ri(-5, 10);
+    const m = ri(-4, 6);
+    // c = q - (p-m)^2 / 4
+    const num = (p - m) * (p - m);
+    if (num % 4 !== 0) return tChallengingTangent.gen();
+    const c = q - num / 4;
+
+    return Q('cht|'+p+'|'+q+'|'+m,
+      [ T('The line $y = '+m+'x + c$ is a tangent to the curve $y = x^2 '+ (p>0?'+ '+p:p)+'x + '+q+'$.'),
+        T('Find the value of $c$.') ],
+      [{ text: '$c = '+c+'$' }],
+      [ T('At the point of intersection:  $x^2 '+ (p>0?'+ '+p:p)+'x + '+q+' = '+m+'x + c$'),
+        T('$x^2 + '+ (p-m)+'x + ('+(q-c)+') = 0$'),
+        T('Since the line is a tangent, the discriminant is zero:'),
+        T('$\\Delta = ('+(p-m)+')^2 - 4('+(q-c)+') = 0$'),
+        T('$'+(p-m)*(p-m)+' - 4q + 4c = 0  \\Rightarrow  c = '+c+'$.') ]);
+  }
+};
+
+const tChallengingRoots = {
+  id:'challenging-roots', strand:'Q7', difficulty: 4,
+  gen(){
+    // x^2 - kx + (k-2) = 0
+    // alpha^2 + beta^2 = k^2 - 2(k-2) = k^2 - 2k + 4
+    // Let target be 12 -> k^2 - 2k - 8 = 0 -> k = 4 or -2
+    return Q('chr|4|2',
+      [ T('The equation $x^2 - kx + (k - 2) = 0$ has roots $\\alpha$ and $\\beta$.'),
+        T('Given that $\\alpha^2 + \\beta^2 = 12$, find the possible values of $k$.') ],
+      [{ text: '$k = 4$ or $k = -2$' }],
+      [ T('Sum of roots: $\\alpha + \\beta = k$;  product of roots: $\\alpha\\beta = k - 2$.'),
+        T('$\\alpha^2 + \\beta^2 = (\\alpha + \\beta)^2 - 2\\alpha\\beta = k^2 - 2(k - 2) = k^2 - 2k + 4$.'),
+        T('So $k^2 - 2k + 4 = 12  \\Rightarrow  k^2 - 2k - 8 = 0$.'),
+        T('Factorise: $(k - 4)(k + 2) = 0  \\Rightarrow  k = 4$ or $k = -2$.') ]);
+  }
+};
+
+const tChallengingMinimum = {
+  id:'challenging-minimum', strand:'Q7', difficulty: 4,
+  gen(){
+    const h = ri(-3, 3);
+    const k = ri(2, 8);
+    // y = (x-h)^2 + k
+    // Max of 1/y is 1/k
+    return Q('chm|'+h+'|'+k,
+      [ T('Write $x^2 - '+2*h+'x + '+(h*h+k)+'$ in the form $(x - p)^2 + q$.'),
+        T('Hence find the maximum value of $\\frac{1}{x^2 - '+2*h+'x + '+(h*h+k)+'}$.') ],
+      [{ text: '$(x - '+h+')^2 + '+k+'$;  maximum is $\\frac{1}{'+k+'}$' }],
+      [ T('Complete the square: $x^2 - '+2*h+'x + '+(h*h+k)+' = (x - '+h+')^2 + '+k+'$.'),
+        T('The minimum value of the quadratic is $'+k+'$ (at $x = '+h+'$).'),
+        T('Therefore, the maximum value of the reciprocal is $\\frac{1}{'+k+'}$.') ]);
+  }
+};
+
+const tChallengingDisguised = {
+  id:'challenging-disguised', strand:'Q7', difficulty: 4,
+  gen(){
+    // 2^(2x) - B * 2^x + C = 0
+    // roots 1/2 and 4 -> B = 4.5, C = 2 -> bad.
+    // Let's use 4^x - 5 * 2^x + 4 = 0. Roots 1 and 4. x = 0, 2.
+    return Q('chd|5|4',
+      [ T('Solve the equation $4^x - 5(2^x) + 4 = 0$.') ],
+      [{ text: '$x = 0$ or $x = 2$' }],
+      [ T('Notice that $4^x = (2^x)^2 = 2^{2x}$.'),
+        T('Let $y = 2^x$. The equation becomes $y^2 - 5y + 4 = 0$.'),
+        T('Factorise: $(y - 1)(y - 4) = 0  \\Rightarrow  y = 1$ or $y = 4$.'),
+        T('$2^x = 1 \\Rightarrow x = 0$;  $2^x = 4 \\Rightarrow x = 2$.') ]);
+  }
+};
+
+const TOPICS = [
+  tSolveFactorise, tSolveBracket, tSolveFraction, tSolveFormula,
+  tGraphSketch, tGraphFromRoots, tGraphFromVertex,
+  tCtsBasic, tCtsFractional, tCtsLeading, tCtsVertex, tCtsNoReal,
+  tIneqFactorised, tIneqRearrange, tIneqSimultaneous, tIneqWordProblem,
+  tDiscEvaluate, tDiscRepeated, tDiscTwoDistinct, tDiscAlwaysPositive,
+  tDisguisedQuartic, tDisguisedReciprocal, tDisguisedExp, tDisguisedSqrt,
+  tChallengingTangent, tChallengingRoots, tChallengingMinimum, tChallengingDisguised
+];
+
+const STRAND_LABEL = {
+  Q1:'Solving equations', Q2:'Graphs', Q3:'Completing the square',
+  Q4:'Inequalities', Q5:'Discriminant', Q6:'Disguised quadratics', Q7:'Challenging'
+};
+
+/* ============================================================
+   Composition — fill 2 pages
+   ============================================================ */
+const DISABLED_KEY = 'as-quadratic-disabled-v1';
+const DEFAULT_DISABLED = ['graph-from-vertex'];
+
+function loadDisabled(){
+  try {
+    const raw = localStorage.getItem(DISABLED_KEY);
+    if (!raw) return new Set(DEFAULT_DISABLED);
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set(DEFAULT_DISABLED);
+    const known = new Set(TOPICS.map(t=>t.id));
+    return new Set(arr.filter(id => known.has(id)));
+  } catch(e) { return new Set(DEFAULT_DISABLED); }
+}
+function saveDisabled(s){ try { localStorage.setItem(DISABLED_KEY, JSON.stringify(Array.from(s))); } catch(e){} }
+
+function activeTopics(){
+  const off = loadDisabled();
+  return TOPICS.filter(t => !off.has(t.id));
+}
+
+function strandOrder(topics){
+  const byStrand = {};
+  for (const t of shuffle(topics.slice())) (byStrand[t.strand]=byStrand[t.strand]||[]).push(t);
+  const strands = Object.keys(byStrand).filter(s => byStrand[s].length > 0);
+  const order = [];
+  while (order.length < topics.length){
+    for (const s of strands){
+      if (byStrand[s].length > 0) order.push(byStrand[s].shift());
+    }
+  }
+  return order;
+}
+
+function generateSheet(){
+  const usedKeys = new Set();
+  const usedTopics = new Set();
+  const out = [];
+  const order = strandOrder(activeTopics());
+  for (const topic of order){
+    if (usedTopics.has(topic.id)) continue;
+    let cand = null;
+    for (let t = 0; t < 20; t++){
+      const c = topic.gen();
+      if (c && !usedKeys.has(c.key) && c.blocks.length > 0){ cand = c; break; }
+    }
+    if (!cand) continue;
+    
+    // Attach difficulty so we can sort by it
+    cand.difficulty = topic.difficulty || 1;
+    
+    const trial = out.concat([cand]);
+    const testPages = layoutSheet({ title:'Test', questions: trial, revealState: false });
+    if (testPages.length > 2 && out.length >= 8) break;
+    out.push(cand);
+    usedTopics.add(topic.id);
+    usedKeys.add(cand.key);
+    if (out.length >= 20) break;
+  }
+  
+  // Sort by difficulty: easier questions first, harder questions at the end.
+  out.sort((a, b) => a.difficulty - b.difficulty);
+  
+  return out;
+}
+
+/* ============================================================
+   HTML renderer (with KaTeX)
+   ============================================================ */
+function esc(s){
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'};
+  return String(s).replace(/[&<>"]/g, function(c){ return map[c]; });
+}
+function greyToColour(g){
+  const shade = Math.round(g * 255);
+  return 'rgb('+shade+','+shade+','+shade+')';
+}
+function renderMath(text) {
+  if (!text.includes('$')) return esc(text);
+  if (typeof katex === 'undefined') return esc(text);
+  const parts = text.split(/(\$[^$]*\$)/);
+  let html = '';
+  for (let p of parts) {
+    if (p.length >= 2 && p.startsWith('$') && p.endsWith('$')) {
+      try {
+        html += katex.renderToString(p.slice(1, -1), { throwOnError: false, displayMode: false });
+      } catch(e) {
+        html += esc(p);
+      }
+    } else {
+      html += esc(p);
+    }
+  }
+  return html;
+}
+
+function drawHTML(pagesItems){
+  const pagesEl = document.getElementById('pages');
+  pagesEl.innerHTML = '';
+  for (const items of pagesItems){
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    const pg = document.createElement('div');
+    pg.className = 'page';
+    const parts = [];
+    
+    const grouped = [];
+    let currentGroup = null;
+    for (const it of items) {
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer') {
+        if (currentGroup && Math.abs(currentGroup.y - it.y) < 1 && currentGroup.size === it.size) {
+          currentGroup.s += it.s;
+        } else {
+          if (currentGroup) grouped.push(currentGroup);
+          currentGroup = { t: it.t, x: it.x, y: it.y, size: it.size, s: it.s };
+        }
+      } else {
+        if (currentGroup) { grouped.push(currentGroup); currentGroup = null; }
+        grouped.push(it);
+      }
+    }
+    if (currentGroup) grouped.push(currentGroup);
+
+    for (const it of grouped){
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer'){
+        const top = it.y - it.size * 0.755;
+        const cls = it.t === 'answer' ? 'tx ans' : 'tx';
+        parts.push('<span class="' + cls + '" style="left:'+it.x.toFixed(2)+
+          'pt;top:'+top.toFixed(2)+'pt;font-size:'+it.size.toFixed(2)+'pt;' +
+          (it.bold ? 'font-weight:700;' : '') +
+          (it.italic ? 'font-style:italic;' : '') + '">' + renderMath(it.s) + '</span>');
+      } else if (it.t === 'line' || it.t === 'answer-line'){
+        let color = it.grey ? '#94a3b8' : '#000';
+        if (it.color) color = `rgb(${it.color[0]}, ${it.color[1]}, ${it.color[2]})`;
+        const cls = it.t === 'answer-line' ? 'ans' : '';
+        parts.push(
+          '<svg class="' + cls + '" ' +
+          'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+          'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+          '<line x1="'+it.x1.toFixed(2)+'" y1="'+it.y1.toFixed(2)+
+          '" x2="'+it.x2.toFixed(2)+'" y2="'+it.y2.toFixed(2)+
+          '" stroke="'+color+'" stroke-width="'+it.w.toFixed(2)+'"/></svg>');
+      } else if (it.t === 'poly'){
+        const fill = greyToColour(it.grey!==undefined ? it.grey : 0);
+        const ptsStr = it.pts.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join(' ');
+        parts.push('<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg"><polygon points="'+ptsStr+'" fill="'+fill+'"/></svg>');
+      }
+    }
+    pg.innerHTML = parts.join('');
+    wrap.appendChild(pg);
+    pagesEl.appendChild(wrap);
+  }
+}
+
+/* ============================================================
+   UI wiring
+   ============================================================ */
+const titleInput = document.getElementById('titleInput');
+const seedInput  = document.getElementById('seedInput');
+const pagesEl    = document.getElementById('pages');
+const revealBtn = document.getElementById('revealBtn');
+
+let currentQuestions = [];
+let lastSheetPages = [];
+let lastAnswerPages = [];
+let revealState = false;
+
+function sheetTitle(){ return titleInput.value.trim() || 'Quadratic Functions — Revision'; }
+
+function renderSheet(){
+  const sx = window.scrollX, sy = window.scrollY;
+  lastSheetPages = layoutSheet({ title: sheetTitle(), questions: currentQuestions, revealState: revealState });
+  lastAnswerPages = layoutCompactAnswers({ title: sheetTitle(), questions: currentQuestions, seed: seedInput.value });
+  drawHTML(lastSheetPages);
+  pagesEl.classList.toggle('revealed', revealState);
+  fitPage();
+  window.scrollTo(sx, sy);
+}
+function regenerate(){ currentQuestions = generateSheet(); renderSheet(); }
+function fitPage(){
+  const vp = document.getElementById('viewport');
+  const pw = 210 * 96 / 25.4;
+  const ph = 297 * 96 / 25.4;
+  const avail = vp.clientWidth - 40;
+  const z = Math.max(0.22, Math.min(1, avail / pw));
+  document.querySelectorAll('.page-wrap').forEach(w => {
+    w.style.width = (pw*z)+'px'; w.style.height = (ph*z)+'px';
+  });
+  document.querySelectorAll('.page').forEach(p => {
+    p.style.transform = 'scale('+z+')';
+  });
+}
+function applySeed(){
+  const s = parseInt(seedInput.value, 10);
+  rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+}
+function getSeedFromURL(){
+  const p = new URLSearchParams(window.location.search).get('seed');
+  if (p === null) return null;
+  const n = parseInt(p, 10);
+  return isNaN(n) ? null : n;
+}
+function setSeedInURL(seed){
+  try { const url = new URL(window.location.href); url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url); } catch(e){}
+}
+function dateSeed(){
+  const d = new Date();
+  return parseInt(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') +
+    String(d.getDate()).padStart(2,'0') + String(d.getHours()).padStart(2,'0') +
+    String(d.getMinutes()).padStart(2,'0') + String(d.getSeconds()).padStart(2,'0'), 10);
+}
+function safeFilename(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+revealBtn.addEventListener('click', () => {
+  revealState = !revealState;
+  revealBtn.textContent = revealState ? '🙈 Hide answers' : '👁 Reveal answers';
+  revealBtn.classList.toggle('reveal-on', revealState);
+  renderSheet();
+});
+
+document.getElementById('regenBtn').addEventListener('click', () => {
+  seedInput.value = dateSeed(); applySeed(); regenerate(); setSeedInURL(seedInput.value);
+});
+document.getElementById('dlBtn').addEventListener('click', () => {
+  if (!lastSheetPages.length) return;
+  downloadPDF(lastSheetPages, 'quadratics-'+safeFilename(sheetTitle())+'-'+seedInput.value+'.pdf');
+});
+document.getElementById('dlAnsBtn').addEventListener('click', () => {
+  if (!lastAnswerPages.length) return;
+  downloadPDF(lastAnswerPages, 'quadratics-'+safeFilename(sheetTitle())+'-ANSWERS-'+seedInput.value+'.pdf');
+});
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+seedInput.addEventListener('change', () => { applySeed(); regenerate(); setSeedInURL(seedInput.value); });
+titleInput.addEventListener('input', renderSheet);
+window.addEventListener('resize', fitPage);
+
+/* Topics panel */
+function buildTopicsPanel(){
+  const body = document.getElementById('tpBody');
+  body.innerHTML = '';
+  const off = loadDisabled();
+  const byStrand = {};
+  for (const t of TOPICS) (byStrand[t.strand]=byStrand[t.strand]||[]).push(t);
+  Object.keys(byStrand).sort().forEach(s => {
+    const head = document.createElement('div');
+    head.className = 'tp-strand';
+    head.textContent = (STRAND_LABEL[s]||s) + ' ('+byStrand[s].length+')';
+    body.appendChild(head);
+    byStrand[s].forEach(t => {
+      const row = document.createElement('label');
+      row.className = 'tp-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = !off.has(t.id);
+      cb.addEventListener('change', () => {
+        const cur = loadDisabled();
+        if (cb.checked) cur.delete(t.id); else cur.add(t.id);
+        saveDisabled(cur); refreshCount(); scheduleRegen();
+      });
+      const name = document.createElement('span');
+      name.className = 'name'; name.textContent = t.id;
+      row.appendChild(cb); row.appendChild(name); body.appendChild(row);
+    });
+  });
+  refreshCount();
+}
+function refreshCount(){
+  const off = loadDisabled();
+  document.getElementById('tpCount').textContent =
+    (TOPICS.length - off.size) + ' of ' + TOPICS.length + ' topics enabled';
+}
+let regenTimer = null;
+function scheduleRegen(){ if (regenTimer) clearTimeout(regenTimer);
+  regenTimer = setTimeout(regenerate, 120); }
+
+function openTopicsPanel(){
+  buildTopicsPanel();
+  document.getElementById('topicsPanel').classList.add('open');
+  document.getElementById('topicsPanel').setAttribute('aria-hidden','false');
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeTopicsPanel(){
+  document.getElementById('topicsPanel').classList.remove('open');
+  document.getElementById('topicsPanel').setAttribute('aria-hidden','true');
+  document.getElementById('backdrop').classList.remove('open');
+}
+document.getElementById('topicsBtn').addEventListener('click', openTopicsPanel);
+document.getElementById('tpClose').addEventListener('click', closeTopicsPanel);
+document.getElementById('backdrop').addEventListener('click', closeTopicsPanel);
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeTopicsPanel(); });
+document.getElementById('tpAll').addEventListener('click', () => {
+  saveDisabled(new Set()); buildTopicsPanel(); scheduleRegen();
+});
+document.getElementById('tpNone').addEventListener('click', () => {
+  saveDisabled(new Set(TOPICS.map(t => t.id))); buildTopicsPanel(); scheduleRegen();
+});
+document.getElementById('tpReset').addEventListener('click', () => {
+  try { localStorage.removeItem(DISABLED_KEY); } catch(e){}
+  buildTopicsPanel(); scheduleRegen();
+});
+
+/* Boot */
+function boot(){
+  const urlSeed = getSeedFromURL();
+  seedInput.value = (urlSeed !== null) ? urlSeed : Date.now() % 100000;
+  applySeed();
+  regenerate();
+  setSeedInURL(seedInput.value);
+  fitPage();
+}
+if (document.readyState === 'complete') boot();
+else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
