@@ -213,11 +213,6 @@ function textWidth(str, size, bold){
 
 /* ============================================================
    Run parsing + emission
-   - `…`      → italic word
-   - \frac{}{} → stacked fraction (PDF fallback)
-   - \sqrt{}   → radical glyph  (PDF fallback)
-   - $…$       → ATOMIC math token (goes to KaTeX in HTML,
-                 goes to a LaTeX-cleaner in the PDF)
    ============================================================ */
 function parseRuns(text){
   const runs=[]; let i=0;
@@ -308,8 +303,8 @@ function approxMathWidth(inner, size, bold){
   let baseW = textWidth(approx, size, bold);
   let supCount = (inner.match(/\^|_/g) || []).length;
   let opCount = (inner.match(/[+\-=<>]/g) || []).length;
-  // KaTeX requires extra space for superscripts, operators, and general padding
-  return Math.max(25, baseW * 1.15 + supCount * size * 0.3 + opCount * size * 0.25 + 10);
+  // Increased multipliers to prevent math blocks from overflowing the column
+  return Math.max(25, baseW * 1.3 + supCount * size * 0.3 + opCount * size * 0.3 + 20);
 }
 
 function tokenWidth(tok, size, bold){
@@ -428,7 +423,6 @@ function layoutQuadGraph(x, y, block, fs, maxW){
   const originX = px(0);
   const originY = py(0);
 
-  // Axes with arrowheads (no tick scales — labels on points only)
   items.push({t:'line', x1:gx, y1:originY, x2:gx+drawW, y2:originY, w:0.9});
   items.push({t:'line', x1:gx+drawW-5, y1:originY-2.5, x2:gx+drawW, y2:originY, w:0.9});
   items.push({t:'line', x1:gx+drawW-5, y1:originY+2.5, x2:gx+drawW, y2:originY, w:0.9});
@@ -436,12 +430,10 @@ function layoutQuadGraph(x, y, block, fs, maxW){
   items.push({t:'line', x1:originX-2.5, y1:gy+5, x2:originX, y2:gy, w:0.9});
   items.push({t:'line', x1:originX+2.5, y1:gy+5, x2:originX, y2:gy, w:0.9});
 
-  // O, x, y labels
   items.push({t:'run', x:originX-8, y:originY+7, size:fs*0.7, bold:false, italic:false, s:'O'});
   items.push({t:'run', x:gx+drawW+2, y:originY+3, size:fs*0.75, bold:false, italic:true, s:'x'});
   items.push({t:'run', x:originX+3, y:gy-1, size:fs*0.75, bold:false, italic:true, s:'y'});
 
-  // Parabola — blue
   if (!block.blank){
     const steps = 100;
     let prev = null;
@@ -456,8 +448,7 @@ function layoutQuadGraph(x, y, block, fs, maxW){
     }
   }
 
-  // Marked points (roots, y-intercept, vertex)
-  if (block.markPoints){
+    if (block.markPoints){
     for (const p of block.markPoints){
       if (p.x < xMin || p.x > xMax || p.y < yMin || p.y > yMax) continue;
       const mx = px(p.x), my = py(p.y);
@@ -465,9 +456,36 @@ function layoutQuadGraph(x, y, block, fs, maxW){
       for (let i=0; i<10; i++){ const ang = i/10*Math.PI*2;
         pts.push([mx + 2.2*Math.cos(ang), my + 2.2*Math.sin(ang)]); }
       items.push({t:'poly', grey:0, pts});
+      
       if (p.label){
         const lw = textWidth(p.label, fs*0.65, false);
-        items.push({t:'run', x:mx - lw/2, y:my - 8, size:fs*0.65, bold:false, italic:false, s:p.label});
+        let lx = mx - lw/2;
+        let ly = my - 8;
+
+        if (p.y === 0 && p.x !== 0) {
+          // x-intercept: keep horizontally centered, but push vertically away from the curve
+          ly = a > 0 ? my + 14 : my - 6;
+          // lx remains mx - lw/2 so it is perfectly aligned
+        } else if (p.x === 0 && p.y !== 0) {
+          // y-intercept: push it to the left
+          lx = mx - lw - 6;
+          ly = my + fs * 0.3;
+        } else if (p.x === 0 && p.y === 0) {
+          // origin: push it bottom-left
+          lx = mx - lw - 6;
+          ly = my + 14;
+        } else {
+          // general point (like vertex): push it outside the parabola
+          if (a > 0) {
+            ly = my + 16; // below minimum
+          } else {
+            ly = my - 6; // above maximum
+          }
+          if (p.x > 0) lx = mx + 8;
+          else lx = mx - lw - 8;
+        }
+
+        items.push({t:'run', x:lx, y:ly, size:fs*0.65, bold:false, italic:false, s:p.label});
       }
     }
   }
@@ -485,8 +503,7 @@ const CONT_HEADER_H = 9*1.4 + 8 + 14;
 const QUESTION_GAP = 14;
 
 function columnRuleX(){ return MG + (PW - 2*MG) * 0.60; }
-// Added a 6pt safety buffer to ensure text never overflows into the right column
-function promptWidth(fs){ return columnRuleX() - (MG + fs*1.6) - 6; }
+function promptWidth(fs){ return columnRuleX() - (MG + fs*1.6) - 10; }
 
 function drawQuestionBlocks(blocks, x, y, fs, maxW, items, baselines){
   const lineH = fs*1.42;
@@ -511,6 +528,13 @@ function measureQuestion(q, fs){
   const maxW = promptWidth(fs);
   const lineH = fs*1.42;
   let h = 0;
+
+  // ADD THIS BLOCK
+  if (q.difficulty >= 4) {
+    h += fs * 1.1 + 8; 
+  }
+  // ------------------------------
+
   for (const b of q.blocks){
     if (b.type === 'text'){
       const lines = wrapTokens(textToTokens(b.text), fs, false, maxW);
@@ -552,21 +576,48 @@ function drawQuestion(q, index, fs, qTop, items, revealState){
   const numColW = fs*1.6;
   const textX = MG + numColW;
   const ruleX = columnRuleX();
-  const maxW = ruleX - textX - 4; // 4pt safety buffer
+  const maxW = ruleX - textX - 10; 
 
-  items.push({t:'text', x:MG, y:qTop + fs*0.78, size:fs, bold:true, s:(index+1)+'.'});
-  drawQuestionBlocks(q.blocks, textX, qTop + fs*0.78, fs, maxW, items, null);
+  let contentY = qTop + fs*0.78;
+
+  // --- ADD CHALLENGING BADGE ---
+  if (q.difficulty >= 4) {
+    const badgeText = 'CHALLENGING';
+    const badgeFs = fs * 0.55; 
+    const badgeW = textWidth(badgeText, badgeFs, true) + 8;
+    const boxH = fs * 1.1;
+    const badgeX = ruleX - badgeW - 2; 
+    
+    // Changed from qTop + 2 to qTop to make it flush
+    const badgeY = qTop - 6; 
+
+    items.push({t:'line', x1:badgeX, y1:badgeY, x2:badgeX+badgeW, y2:badgeY, w:0.8});
+    items.push({t:'line', x1:badgeX, y1:badgeY+boxH, x2:badgeX+badgeW, y2:badgeY+boxH, w:0.8});
+    items.push({t:'line', x1:badgeX, y1:badgeY, x2:badgeX, y2:badgeY+boxH, w:0.8});
+    items.push({t:'line', x1:badgeX+badgeW, y1:badgeY, x2:badgeX+badgeW, y2:badgeY+boxH, w:0.8});
+    items.push({t:'text', x: badgeX + 4, y: badgeY + boxH*0.72, size: badgeFs, bold: true, s: badgeText});
+
+    // Reduced the gap from + 8 to + 4
+    contentY += fs * 1.1 + 4; 
+  }
+  // ------------------------------
+// ... rest of the function
+  // ------------------------------
+
+  items.push({t:'text', x:MG, y:contentY, size:fs, bold:true, s:(index+1)+'.'});
+  drawQuestionBlocks(q.blocks, textX, contentY, fs, maxW, items, null);
 
   const qH = measureQuestion(q, fs);
   items.push({t:'line', x1:ruleX, y1:qTop+2, x2:ruleX, y2:qTop+qH-2, w:0.4, grey:true});
 
   if (revealState && q.answers && q.answers.length) {
       const rightX = ruleX + 8;
-      const rightW = PW - MG - rightX - 4; // 4pt safety buffer
+      const rightW = PW - MG - rightX - 4;
       const ansStr = q.answers.map(a => a.text).join('   ');
       const lines = wrapTokens(textToTokens(ansStr), fs, false, rightW);
       for (let j=0; j<lines.length; j++) {
-          emitRuns(lineToRuns(lines[j]), rightX, qTop + fs*0.78 + j*lineH, fs, items, 'answer');
+          // Changed qTop + fs*0.78 to contentY so answers align with the pushed-down question
+          emitRuns(lineToRuns(lines[j]), rightX, contentY + j*lineH, fs, items, 'answer');
       }
   }
   return qTop + qH;
@@ -767,7 +818,6 @@ function downloadPDF(pagesItems, filename){
 
 /* ============================================================
    TOPIC BANK — quadratic functions
-   Difficulty assigned per topic based on standard A-level progression.
    ============================================================ */
 
 /* -------- Q1: Solving equations -------- */
@@ -928,6 +978,10 @@ const tGraphFromRoots = {
     const xs = [0, r1, r2].sort((p,q)=>p-q);
     const ys = [0, c];
     const xPad = 1.5, yPad = Math.max(2, Math.abs(c)*0.3);
+    
+    const f1 = r1 > 0 ? `(x - ${r1})` : `(x + ${-r1})`;
+    const f2 = r2 > 0 ? `(x - ${r2})` : `(x + ${-r2})`;
+
     return Q('gfr|'+a+'|'+b+'|'+c,
       [ T('Find the equation of this graph, giving your answer in the form $y = ax^2 + bx + c$.'),
         { type:'quad-graph', a, b, c, markPoints: pts,
@@ -935,9 +989,9 @@ const tGraphFromRoots = {
           yMin: Math.floor(Math.min(...ys)-yPad), yMax: Math.ceil(Math.max(...ys)+yPad) } ],
       [{ text: '$y = ' + fmtQuad(a, b, c) + '$' }],
       [ T('The parabola crosses the x-axis at $x = '+nStr(r1)+'$ and $x = '+nStr(r2)+'$.'),
-        T('So the factorised form is  $y = k(x - '+r1+')(x - '+r2+')$.'),
-        T('The y-intercept $(0, '+nStr(c)+')$ gives $k \\cdot '+r1+' \\cdot '+r2+' = '+nStr(c)+'$, so $k = '+a+'$.'),
-        T('Thus  $y = '+a+'(x - '+r1+')(x - '+r2+') = '+fmtQuad(a, b, c)+'$.') ]);
+        T('So the factorised form is  $y = k'+f1+f2+'$.'),
+        T('The y-intercept $(0, '+nStr(c)+')$ gives $k \\cdot ('+r1+') \\cdot ('+r2+') = '+nStr(c)+'$, so $k = '+a+'$.'),
+        T('Thus  $y = '+a+f1+f2+' = '+fmtQuad(a, b, c)+'$.') ]);
   }
 };
 
@@ -960,6 +1014,9 @@ const tGraphFromVertex = {
     const ys = [k, y0, 0].sort((p,q)=>p-q);
     const xPad = 1.5;
     const yPad = Math.max(2, (ys[2]-ys[0])*0.25);
+    
+    const aStr = (a === 1 ? '' : (a === -1 ? '-' : a));
+    
     return Q('gfv|'+a+'|'+h+'|'+k+'|'+x0+'|'+y0,
       [ T('The graph of a quadratic function has a turning point at $('+
           nStr(h)+', '+nStr(k)+')$ and passes through the point $('+
@@ -968,7 +1025,7 @@ const tGraphFromVertex = {
         { type:'quad-graph', a, b: -2*a*h, c: a*h*h + k, markPoints: pts,
           xMin: Math.floor(xs[0]-xPad), xMax: Math.ceil(xs[1]+xPad),
           yMin: Math.floor(ys[0]-yPad), yMax: Math.ceil(ys[2]+yPad) } ],
-      [{ text: `$y = ${a}(x ${h>=0?'- ':'+ '}${Math.abs(h)})^2 ${k>=0?'+ ':MINUS+' '}${Math.abs(k)}$` }],
+      [{ text: `$y = ${aStr}(x ${h>=0?'- ':'+ '}${Math.abs(h)})^2 ${k>=0?'+ ':MINUS+' '}${Math.abs(k)}$` }],
       [ T('Vertex form:  $y = a(x '+(h>=0?'- ':'+ ')+Math.abs(h)+')^2 '+
           (k>=0?'+ '+k:'- '+Math.abs(k))+'$.'),
         T('Using $('+nStr(x0)+', '+nStr(y0)+')$:  $'+nStr(y0)+' = a('+
@@ -1140,21 +1197,20 @@ const tIneqSimultaneous = {
     let d = c + ri(2, 4);
 
     let r1 = a, r2 = b, r3 = c, r4 = d;
-    // Ensure inequalities are clean
-    const eq1 = `x^2 - ${r1+r2}x + ${r1*r2} < 0`;
-    const eq2 = `x^2 - ${r3+r4}x + ${r3*r4} > 0`;
+    
+    const eq1 = fmtQuad(1, -(r1+r2), r1*r2) + ' < 0';
+    const eq2 = fmtQuad(1, -(r3+r4), r3*r4) + ' > 0';
 
-    const lo1 = Math.min(r1,r2), hi1 = Math.max(r1,r2); // lo1 < x < hi1
-    const lo2 = Math.min(r3,r4), hi2 = Math.max(r3,r4); // x < lo2 or x > hi2
+    const lo1 = Math.min(r1,r2), hi1 = Math.max(r1,r2);
+    const lo2 = Math.min(r3,r4), hi2 = Math.max(r3,r4);
 
-    // The intersection will be lo1 < x < lo2 since lo1 < lo2 < hi1 < hi2
     const soln = `$${lo1} < x < ${lo2}$`;
 
     return Q('iqs|'+r1+'|'+r2+'|'+r3+'|'+r4,
       [ T('Solve simultaneously  $'+eq1+'$ and $'+eq2+'$.') ],
       [{ text: soln }],
-      [ T('First inequality:  $('+r1+' < x < '+r2+')$.'),
-        T('Second inequality:  $(x < '+r3+'$ or $x > '+r4+')$.'),
+      [ T('First inequality:  $'+fmtQuad(1, -(r1+r2), r1*r2)+' < 0  \\Rightarrow  '+r1+' < x < '+r2+'$.'),
+        T('Second inequality:  $'+fmtQuad(1, -(r3+r4), r3*r4)+' > 0  \\Rightarrow  x < '+r3+'$ or $x > '+r4+'$.'),
         T('Intersection of these regions:  '+soln+'.') ]);
   }
 };
@@ -1164,8 +1220,6 @@ const tIneqWordProblem = {
   gen(){
     let m = ri(1, 5);
     let n = ri(5, 10);
-    // roots are -m and n
-    // x^2 + (m-n)x - mn > 0
     const k = n - m;
     const A = m * n;
 
@@ -1336,19 +1390,23 @@ const tChallengingTangent = {
     const p = ri(-4, 4);
     const q = ri(-5, 10);
     const m = ri(-4, 6);
-    // c = q - (p-m)^2 / 4
     const num = (p - m) * (p - m);
     if (num % 4 !== 0) return tChallengingTangent.gen();
     const c = q - num / 4;
+    
+    const curveEq = 'y = ' + fmtQuad(1, p, q);
+    const lineEq = 'y = ' + m + 'x + c';
+    const rearranged = fmtQuad(1, p - m, q - c);
+    const deltaEq = '(' + (p-m) + ')^2 - 4(' + (q-c) + ') = 0';
 
     return Q('cht|'+p+'|'+q+'|'+m,
-      [ T('The line $y = '+m+'x + c$ is a tangent to the curve $y = x^2 '+ (p>0?'+ '+p:p)+'x + '+q+'$.'),
+      [ T('The line $'+lineEq+'$ is a tangent to the curve $'+curveEq+'$.'),
         T('Find the value of $c$.') ],
       [{ text: '$c = '+c+'$' }],
-      [ T('At the point of intersection:  $x^2 '+ (p>0?'+ '+p:p)+'x + '+q+' = '+m+'x + c$'),
-        T('$x^2 + '+ (p-m)+'x + ('+(q-c)+') = 0$'),
+      [ T('At the point of intersection:  $'+curveEq+' = '+lineEq+'$'),
+        T('$'+rearranged+' = 0$'),
         T('Since the line is a tangent, the discriminant is zero:'),
-        T('$\\Delta = ('+(p-m)+')^2 - 4('+(q-c)+') = 0$'),
+        T('$\\Delta = '+deltaEq+'$'),
         T('$'+(p-m)*(p-m)+' - 4q + 4c = 0  \\Rightarrow  c = '+c+'$.') ]);
   }
 };
@@ -1356,9 +1414,6 @@ const tChallengingTangent = {
 const tChallengingRoots = {
   id:'challenging-roots', strand:'Q7', difficulty: 4,
   gen(){
-    // x^2 - kx + (k-2) = 0
-    // alpha^2 + beta^2 = k^2 - 2(k-2) = k^2 - 2k + 4
-    // Let target be 12 -> k^2 - 2k - 8 = 0 -> k = 4 or -2
     return Q('chr|4|2',
       [ T('The equation $x^2 - kx + (k - 2) = 0$ has roots $\\alpha$ and $\\beta$.'),
         T('Given that $\\alpha^2 + \\beta^2 = 12$, find the possible values of $k$.') ],
@@ -1370,18 +1425,60 @@ const tChallengingRoots = {
   }
 };
 
-const tChallengingMinimum = {
-  id:'challenging-minimum', strand:'Q7', difficulty: 4,
+const tChallengingConjugate = {
+  id:'challenging-conjugate', strand:'Q7', difficulty: 4,
+  gen(){
+    const p = ri(1, 5);
+    const q = pick([2, 3, 5, 6, 7]);
+    
+    // Conjugate pair p ± √q gives equation x² - 2px + (p² - q) = 0
+    const b = -2 * p;
+    const c = p * p - q;
+    
+    // Completing the square: (x - p)² - q
+    const m = -p;
+    const n = -q;
+
+    const bStr = (b > 0 ? '+ ' + b : '- ' + Math.abs(b));
+    const cStr = (c > 0 ? '+ ' + c : '- ' + Math.abs(c));
+    const eq = 'x^2 ' + bStr + 'x ' + cStr + ' = 0';
+    const rootStr = p + ' - \\sqrt{' + q + '}';
+
+    const mStr = (m > 0 ? '+ ' + m : '- ' + Math.abs(m));
+    const nStr = (n > 0 ? '+ ' + n : '- ' + Math.abs(n));
+    const compSquare = '(x ' + mStr + ')^2 ' + nStr;
+
+    return Q('ccr|'+p+'|'+q,
+      [
+        T('The equation $' + eq + '$, where $b$ and $c$ are integers, has $' + rootStr + '$ as one of its roots.'),
+        T('(a) Find the exact values of $b$ and $c$.'),
+        T('(b) Hence, write the expression $x^2 + bx + c$ in the form $(x + m)^2 + n$, where $m$ and $n$ are integers to be found.')
+      ],
+      [
+        { text: '(a) $b = ' + b + '$, $c = ' + c + '$   (b) $' + compSquare + '$' }
+      ],
+      [
+        T('(a) Since the coefficients are integers and the root is irrational, the conjugate $' + p + ' + \\sqrt{' + q + '}$ must also be a root.'),
+        T('Sum of roots: $(' + p + ' - \\sqrt{' + q + '}) + (' + p + ' + \\sqrt{' + q + '}) = ' + (2*p) + '$, so $b = -2p = ' + b + '$.'),
+        T('Product of roots: $(' + p + ' - \\sqrt{' + q + '})(' + p + ' + \\sqrt{' + q + '}) = ' + p + '^2 - (' + q + ') = ' + c + '$.'),
+        T('(b) Complete the square: $x^2 - ' + (2*p) + 'x + ' + c + ' = (x - ' + p + ')^2 - ' + q + '$.'),
+        T('So $m = ' + m + '$ and $n = ' + n + '$.')
+      ]
+    );
+  }
+};
+
+const tCtsMaximum = {
+  id:'cts-maximum', strand:'Q3', difficulty: 3,
   gen(){
     const h = ri(-3, 3);
     const k = ri(2, 8);
-    // y = (x-h)^2 + k
-    // Max of 1/y is 1/k
+    const eq = fmtQuad(1, -2*h, h*h+k);
     return Q('chm|'+h+'|'+k,
-      [ T('Write $x^2 - '+2*h+'x + '+(h*h+k)+'$ in the form $(x - p)^2 + q$.'),
-        T('Hence find the maximum value of $\\frac{1}{x^2 - '+2*h+'x + '+(h*h+k)+'}$.') ],
+      [ T('Write $'+eq+'$ in the form $(x - p)^2 + q$.'),
+        T('Hence find the maximum value of $\\frac{1}{'+eq+'}$.') ],
       [{ text: '$(x - '+h+')^2 + '+k+'$;  maximum is $\\frac{1}{'+k+'}$' }],
-      [ T('Complete the square: $x^2 - '+2*h+'x + '+(h*h+k)+' = (x - '+h+')^2 + '+k+'$.'),
+      [ T('Complete the square: $'+eq+' = (x - '+h+')^2 + '+k+'$.'),
         T('The minimum value of the quadratic is $'+k+'$ (at $x = '+h+'$).'),
         T('Therefore, the maximum value of the reciprocal is $\\frac{1}{'+k+'}$.') ]);
   }
@@ -1390,9 +1487,6 @@ const tChallengingMinimum = {
 const tChallengingDisguised = {
   id:'challenging-disguised', strand:'Q7', difficulty: 4,
   gen(){
-    // 2^(2x) - B * 2^x + C = 0
-    // roots 1/2 and 4 -> B = 4.5, C = 2 -> bad.
-    // Let's use 4^x - 5 * 2^x + 4 = 0. Roots 1 and 4. x = 0, 2.
     return Q('chd|5|4',
       [ T('Solve the equation $4^x - 5(2^x) + 4 = 0$.') ],
       [{ text: '$x = 0$ or $x = 2$' }],
@@ -1403,6 +1497,113 @@ const tChallengingDisguised = {
   }
 };
 
+/* -------- Q8: Challenging Extra -------- */
+
+const tExtraDistinctRoots = {
+  id:'extra-distinct-roots', strand:'Q4', difficulty: 3,
+  gen(){
+    const m = ri(1, 4);
+    const n = m + 1;
+    const eq = `kx^2 + (2k - ${m})x + (k - ${n}) = 0`;
+    
+    // Simplify the fraction m*m / 4
+    const g = gcd(m*m, 4);
+    const num = m*m / g;
+    const den = 4 / g;
+    const fracStr = den === 1 ? String(num) : `${num}/${den}`;
+
+    return Q('edr|'+m+'|'+n,
+      [ T(`Find all values of $k$ for which the equation $${eq}$ has two distinct real roots.`) ],
+      [{ text: `$k > -${fracStr}, k \\neq 0$` }],
+      [ T(`For two distinct real roots, we need $a \\neq 0$ and $\\Delta > 0$.`),
+        T(`Here $a = k$, so $k \\neq 0$.`),
+        T(`$\\Delta = (2k - ${m})^2 - 4(k)(k - ${n}) = 4k^2 - ${4*m}k + ${m*m} - 4k^2 + ${4*n}k = ${4*(n-m)}k + ${m*m}$.`),
+        T(`So $${4*(n-m)}k + ${m*m} > 0 \\Rightarrow k > -${fracStr}$.`),
+        T(`Therefore, $k > -${fracStr}$ and $k \\neq 0$.`) ]);
+  }
+};
+
+const tExtraTwoIneq = {
+  id:'extra-two-ineq', strand:'Q8', difficulty: 5,
+  gen(){
+    const p = 3, q = 2;
+    const r = 2, s = 4;
+    const eq1 = `x^2 - ${2*p}x + ${p*p - q} < 0`;
+    const eq2 = `x^2 - ${r+s}x + ${r*s} \\ge 0`;
+    const ans = `$${p} - \\sqrt{${q}} < x \\le ${r}$ or $${s} \\le x < ${p} + \\sqrt{${q}}$`;
+    return Q('eti|'+p+'|'+q+'|'+r+'|'+s,
+      [ T(`Find all values of $x$ that satisfy both inequalities`),
+        T(`$${eq1} \\quad \\text{and} \\quad ${eq2}$.`),
+        T(`Give your answer in surd form.`) ],
+      [{ text: ans }],
+      [ T(`First inequality: $x^2 - ${2*p}x + ${p*p - q} = 0$ gives $x = ${p} \\pm \\sqrt{${q}}$.`),
+        T(`Since the parabola opens upward, the solution is $${p} - \\sqrt{${q}} < x < ${p} + \\sqrt{${q}}$.`),
+        T(`Second inequality: $x^2 - ${r+s}x + ${r*s} = 0$ gives $x = ${r}$ or $x = ${s}$.`),
+        T(`The solution is $x \\le ${r}$ or $x \\ge ${s}$.`),
+        T(`The intersection of these two regions is $${p} - \\sqrt{${q}} < x \\le ${r}$ or $${s} \\le x < ${p} + \\sqrt{${q}}$.`) ]);
+  }
+};
+
+const tExtraParamIneq = {
+  id:'extra-param-ineq', strand:'Q8', difficulty: 5,
+  gen(){
+    const m = ri(1, 3);
+    const c = m*(m+1);
+    const eq = `x^2 - 2px + p^2 - p - ${c} < 0`;
+    return Q('epi|'+m+'|'+c,
+      [ T(`Here $p$ is a constant.`),
+        T(`(a) Solve the inequality $${eq}$, giving your answer in terms of $p$.`),
+        T(`State clearly for which values of $p$ any solutions exist at all.`),
+        T(`(b) Find the values of $p$ for which $x = 0$ satisfies this inequality.`) ],
+      [{ text: `a) $p - \\sqrt{p + ${c}} < x < p + \\sqrt{p + ${c}}$, exists if $p > -${c}$.  b) $-${m} < p < ${m+1}$` }],
+      [ T(`(a) Complete the square: $(x - p)^2 - (p + ${c}) < 0 \\Rightarrow (x - p)^2 < p + ${c}$.`),
+        T(`For solutions to exist, we need $p + ${c} > 0 \\Rightarrow p > -${c}$.`),
+        T(`The solution is $p - \\sqrt{p + ${c}} < x < p + \\sqrt{p + ${c}}$.`),
+        T(`(b) Substitute $x = 0$: $p^2 - p - ${c} < 0$.`),
+        T(`Factorise: $(p - ${m+1})(p + ${m}) < 0 \\Rightarrow -${m} < p < ${m+1}$.`) ]);
+  }
+};
+
+const tExtraSymmetric = {
+  id:'extra-symmetric', strand:'Q6', difficulty: 3,
+  gen(){
+    const p = pick([2, 3, 5]);
+    let q = pick([2, 3, 5]);
+    while (q === p) q = pick([2, 3, 5]);
+    const c = 2*(p+q);
+    return Q('esy|'+p+'|'+q,
+      [ T(`Solve, for real $x$,`) ,
+        T(`$x^2 + \\frac{1}{x^2} = ${c}$`),
+        T(`giving all your answers in their simplest surd form.`) ],
+      [{ text: `$x = \\pm (\\sqrt{${p}} \\pm \\sqrt{${q}})$` }],
+      [ T(`Multiply by $x^2$: $x^4 - ${c}x^2 + 1 = 0$.`),
+        T(`Let $y = x^2$. Then $y^2 - ${c}y + 1 = 0$.`),
+        T(`$y = \\frac{${c} \\pm \\sqrt{${c*c} - 4}}{2} = \\frac{${c} \\pm \\sqrt{${c*c - 4}}}{2}$.`),
+        T(`Notice that $x^2 = ${p} + ${q} \\pm 2\\sqrt{${p*q}}$.`),
+        T(`So $x^2 = (\\sqrt{${p}} \\pm \\sqrt{${q}})^2$.`),
+        T(`Therefore, $x = \\pm (\\sqrt{${p}} \\pm \\sqrt{${q}})$.`) ]);
+  }
+};
+
+const tExtraMinimum = {
+  id:'extra-minimum', strand:'Q8', difficulty: 5,
+  gen(){
+    const c = pick([2, 3, 5, 6, 7, 10]);
+    return Q('emi|'+c,
+      [ T(`(a) Find the set of values of $k$ for which the equation $x^2 - kx + ${c} = 0$ has real roots.`),
+        T(`(b) Hence, or otherwise, show that $x + \\frac{${c}}{x} \\ge 2\\sqrt{${c}}$ for all $x > 0$,`),
+        T(`and find the value of $x$ for which equality holds.`) ],
+      [{ text: `a) $k \\le -2\\sqrt{${c}}$ or $k \\ge 2\\sqrt{${c}}$.  b) equality at $x = \\sqrt{${c}}$` }],
+      [ T(`(a) For real roots, $\\Delta \\ge 0$: $k^2 - 4(${c}) \\ge 0 \\Rightarrow k^2 \\ge ${4*c}$.`),
+        T(`So $k \\le -2\\sqrt{${c}}$ or $k \\ge 2\\sqrt{${c}}$.`),
+        T(`(b) Consider the equation $x^2 - kx + ${c} = 0$ with $k = x + \\frac{${c}}{x}$.`),
+        T(`For this to have real roots, we need $k \\ge 2\\sqrt{${c}}$ (since $x>0$, $k>0$).`),
+        T(`So $x + \\frac{${c}}{x} \\ge 2\\sqrt{${c}}$.`),
+        T(`Equality holds when $\\Delta = 0$, i.e. $x^2 - 2\\sqrt{${c}}x + ${c} = 0 \\Rightarrow (x - \\sqrt{${c}})^2 = 0 \\Rightarrow x = \\sqrt{${c}}$.`) ]);
+  }
+};
+
+
 const TOPICS = [
   tSolveFactorise, tSolveBracket, tSolveFraction, tSolveFormula,
   tGraphSketch, tGraphFromRoots, tGraphFromVertex,
@@ -1410,12 +1611,14 @@ const TOPICS = [
   tIneqFactorised, tIneqRearrange, tIneqSimultaneous, tIneqWordProblem,
   tDiscEvaluate, tDiscRepeated, tDiscTwoDistinct, tDiscAlwaysPositive,
   tDisguisedQuartic, tDisguisedReciprocal, tDisguisedExp, tDisguisedSqrt,
-  tChallengingTangent, tChallengingRoots, tChallengingMinimum, tChallengingDisguised
+  tChallengingTangent, tChallengingRoots, tChallengingConjugate, tCtsMaximum, tChallengingDisguised,
+  tExtraDistinctRoots, tExtraTwoIneq, tExtraParamIneq, tExtraSymmetric, tExtraMinimum
 ];
 
 const STRAND_LABEL = {
   Q1:'Solving equations', Q2:'Graphs', Q3:'Completing the square',
-  Q4:'Inequalities', Q5:'Discriminant', Q6:'Disguised quadratics', Q7:'Challenging'
+  Q4:'Inequalities', Q5:'Discriminant', Q6:'Disguised quadratics', 
+  Q7:'Challenging', Q8:'Challenging Extra'
 };
 
 /* ============================================================
@@ -1468,7 +1671,6 @@ function generateSheet(){
     }
     if (!cand) continue;
     
-    // Attach difficulty so we can sort by it
     cand.difficulty = topic.difficulty || 1;
     
     const trial = out.concat([cand]);
@@ -1480,7 +1682,6 @@ function generateSheet(){
     if (out.length >= 20) break;
   }
   
-  // Sort by difficulty: easier questions first, harder questions at the end.
   out.sort((a, b) => a.difficulty - b.difficulty);
   
   return out;
