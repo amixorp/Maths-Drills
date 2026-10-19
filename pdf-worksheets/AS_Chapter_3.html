@@ -1052,7 +1052,7 @@ const tCtsBasic = {
       [ T('Write  $'+eq+'$  in the form $(x + p)^2 + q$, stating $p$ and $q$.') ],
       [{ text: '$'+ansStr+'$   ($p = '+nStr(halfB)+'$, $q = '+nStr(q)+'$)' }],
       [ T('Halve the coefficient of $x$:  $'+B+' \\div 2 = '+halfB+'$.'),
-        T('Subtract the square of this:  $(x '+(halfB>=0?'+ ':'- ')+halfB+')^2 - '+halfB*halfB+'$'),
+        T('Subtract the square of this:  $(x '+(halfB>=0?'+ ':MINUS+' ')+Math.abs(halfB)+')^2 '+MINUS+' '+halfB*halfB+'$'),
         T('Result:  $'+ansStr+'$.') ]);
   }
 };
@@ -1065,8 +1065,8 @@ const tCtsFractional = {
     const halfB = B/2;
     const q = C - B*B/4;
     const eq = fmtQuad(1, B, C);
-    const pStr = Number.isInteger(halfB) ? nStr(halfB) : (halfB<0?MINUS:'')+Math.abs(halfB*2)+'/2';
-    const ansStr = '(x ' + (halfB>=0?'+ ':MINUS) + pStr.replace('-','') + ')^2 ' + (q>=0?'+ ':'- ')+Math.abs(q).toFixed(2);
+    const pStr = Number.isInteger(halfB) ? Math.abs(halfB) : Math.abs(halfB*2)+'/2';
+    const ansStr = '(x ' + (halfB>=0?'+ ':MINUS+' ') + pStr + ')^2 ' + (q>=0?'+ ':MINUS+' ')+Math.abs(q).toFixed(2);
     return Q('cbf|'+B+'|'+C,
       [ T('Write  $'+eq+'$  in the form $(x + p)^2 + q$.') ],
       [{ text: '$'+ansStr+'$' }],
@@ -1086,10 +1086,10 @@ const tCtsLeading = {
     const p = B / (2*a);
     const q = C - a*p*p;
     const eq = fmtQuad(a, B, C);
-    const pStr = Number.isInteger(p) ? nStr(p) : (p<0?MINUS:'')+Math.abs(p*2)+'/2';
+    const pStr = Number.isInteger(p) ? Math.abs(p) : Math.abs(p*2)+'/2';
     const qStr = Number.isInteger(q) ? nStr(q) : q.toFixed(2);
-    const ansStr = a + '(x ' + (p>=0?'+ ':MINUS) + pStr.replace('-','') + ')^2 ' +
-                   (q>=0?'+ '+qStr:'- '+Math.abs(q).toFixed(2));
+    const ansStr = a + '(x ' + (p>=0?'+ ':MINUS+' ') + pStr + ')^2 ' +
+                   (q>=0?'+ '+qStr:MINUS+' '+Math.abs(q).toFixed(2));
     return Q('cl|'+a+'|'+B+'|'+C,
       [ T('Write  $'+eq+'$  in the form $a(x + p)^2 + q$.') ],
       [{ text: '$'+ansStr+'$' }],
@@ -1115,7 +1115,7 @@ const tCtsVertex = {
     return Q('cv|'+a+'|'+B+'|'+C,
       [ T('Find the coordinates of the turning point of  $'+eq+'$.') ],
       [{ text: '$'+vertexStr+'$' }],
-      [ T('Complete the square to get  $y = '+a+'(x - '+vxR+')^2 '+nStr(vyR)+'$.'),
+      [ T('Complete the square to get  $y = '+a+'(x '+(vxR>=0?'- ':MINUS+' ')+Math.abs(vxR)+')^2 '+nStr(vyR)+'$.'),
         T('So the vertex is at $'+vertexStr+'$.') ]);
   }
 };
@@ -1479,7 +1479,7 @@ const tCtsMaximum = {
       [ T('Write $'+eq+'$ in the form $(x - p)^2 + q$.'),
         T('Hence find the maximum value of $\\frac{1}{'+eq+'}$.') ],
       [{ text: '$(x - '+h+')^2 + '+k+'$;  maximum is $\\frac{1}{'+k+'}$' }],
-      [ T('Complete the square: $'+eq+' = (x - '+h+')^2 + '+k+'$.'),
+      [ T('Complete the square: $'+eq+' = (x '+(h>=0?'- ':MINUS+' ')+Math.abs(h)+')^2 + '+k+'$.'),
         T('The minimum value of the quadratic is $'+k+'$ (at $x = '+h+'$).'),
         T('Therefore, the maximum value of the reciprocal is $\\frac{1}{'+k+'}$.') ]);
   }
