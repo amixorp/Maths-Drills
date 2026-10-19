@@ -879,20 +879,21 @@ const tSolveFraction = {
   id:'solve-fraction', strand:'Q1', difficulty: 2,
   gen(){
     let r1, r2;
-    do { r1 = ri(2, 6); r2 = -ri(1, 5); } while (r1 === -r2);
+    do { r1 = ri(2, 6); r2 = -ri(1, 5); } while (r1 + r2 <= 0);
     const L = 1;
-    const b = -L*(r1 + r2);
+    const b = L * (r1 + r2);
     const c = -L * r1 * r2;
-    if (b <= 0 || c <= 0) return tSolveFraction.gen();
     const lhs = 'x';
     const rhs = b + ' + \\frac{' + c + '}{x}';
     const expanded = fmtQuad(1, -b, -c);
+    const f1 = r1 > 0 ? `(x - ${r1})` : `(x + ${-r1})`;
+    const f2 = r2 > 0 ? `(x - ${r2})` : `(x + ${-r2})`;
     return Q('sfr|'+L+'|'+b+'|'+c,
       [ T('Solve  $'+lhs+' = '+rhs+'$') ],
       [{ text: '$x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$' }],
       [ T('Multiply both sides by $x$:  $x^2 = '+b+'x + '+c+'$'),
         T('Rearrange:  $'+expanded+' = 0$'),
-        T('Factorise:  $(x - '+r1+')(x + '+(-r2)+') = 0$'),
+        T('Factorise:  $'+f1+f2+' = 0$'),
         T('So  $x = '+nStr(r1)+'$ or $x = '+nStr(r2)+'$.') ]);
   }
 };
@@ -1227,11 +1228,11 @@ const tIneqWordProblem = {
       [ T('A rectangular garden has length $(x + '+k+')$ m and width $x$ m.'),
         T('The area of the garden is at least $'+A+'\\text{ m}^2$.'),
         T('Find the range of possible values of $x$.') ],
-      [{ text: '$x \\ge '+n+'$' }],
+      [{ text: '$x \\ge '+m+'$' }],
       [ T('Area:  $x(x + '+k+') \\ge '+A+'$'),
         T('$x^2 + '+k+'x - '+A+' \\ge 0$'),
-        T('Factorise:  $(x + '+m+')(x - '+n+') \\ge 0$'),
-        T('Since $x > 0$, we must have $x \\ge '+n+'$.') ]);
+        T('Factorise:  $(x + '+n+')(x - '+m+') \\ge 0$'),
+        T('Since $x > 0$, we must have $x \\ge '+m+'$.') ]);
   }
 };
 
@@ -1567,21 +1568,20 @@ const tExtraParamIneq = {
 const tExtraSymmetric = {
   id:'extra-symmetric', strand:'Q6', difficulty: 3,
   gen(){
-    const p = pick([2, 3, 5]);
-    let q = pick([2, 3, 5]);
-    while (q === p) q = pick([2, 3, 5]);
-    const c = 2*(p+q);
-    return Q('esy|'+p+'|'+q,
+    const a = pick([2, 3, 4, 5]);
+    const b = a*a - 1;
+    const c = 4*a*a - 2;
+    return Q('esy|'+a+'|'+b,
       [ T(`Solve, for real $x$,`) ,
         T(`$x^2 + \\frac{1}{x^2} = ${c}$`),
         T(`giving all your answers in their simplest surd form.`) ],
-      [{ text: `$x = \\pm (\\sqrt{${p}} \\pm \\sqrt{${q}})$` }],
+      [{ text: `$x = \\pm (${a} \\pm \\sqrt{${b}})$` }],
       [ T(`Multiply by $x^2$: $x^4 - ${c}x^2 + 1 = 0$.`),
         T(`Let $y = x^2$. Then $y^2 - ${c}y + 1 = 0$.`),
         T(`$y = \\frac{${c} \\pm \\sqrt{${c*c} - 4}}{2} = \\frac{${c} \\pm \\sqrt{${c*c - 4}}}{2}$.`),
-        T(`Notice that $x^2 = ${p} + ${q} \\pm 2\\sqrt{${p*q}}$.`),
-        T(`So $x^2 = (\\sqrt{${p}} \\pm \\sqrt{${q}})^2$.`),
-        T(`Therefore, $x = \\pm (\\sqrt{${p}} \\pm \\sqrt{${q}})$.`) ]);
+        T(`Notice that $x^2 = ${a*a} + ${b} \\pm 2(${a})\\sqrt{${b}}$.`),
+        T(`So $x^2 = (${a} \\pm \\sqrt{${b}})^2$.`),
+        T(`Therefore, $x = \\pm (${a} \\pm \\sqrt{${b}})$.`) ]);
   }
 };
 
