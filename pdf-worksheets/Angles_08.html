@@ -1,0 +1,1838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Angles — Worksheet Generator</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-size:16px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  /* ---------------- toolbar ---------------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:12px 20px;
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;
+  }
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],
+  .toolbar input[type=text],
+  .toolbar select{
+    padding:7px 9px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit;
+  }
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:215px}
+  .toolbar button{
+    padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{
+    background:#15803d; border-color:#16a34a;
+  }
+  .toolbar button.reveal-on:hover{background:#166534}
+
+  /* ---------------- paper ---------------- */
+  .viewport{
+    overflow:hidden;
+    padding-top:28px;
+    padding-bottom:24px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:32px;
+  }
+  .page{
+    position:relative;
+    width:210mm;
+    height:297mm;
+    background:#fff;
+    box-shadow:0 6px 26px rgba(15,23,42,.16);
+    transform-origin:top center;
+    font-family:Helvetica,Arial,sans-serif;
+    color:#000;
+    flex-shrink: 0;
+  }
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .ln{
+    position:absolute; height:0; border-top-style:solid; border-color:#000;
+  }
+  .page .rr{
+    position:absolute;
+    border-style:solid;
+    border-color:#000;
+    box-sizing:border-box;
+  }
+  .page svg {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ---------- inline answers ---------- */
+  .page .ans{
+    display: none;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .page.reveal .ans{
+    display: block;
+  }
+
+  .hint{
+    text-align:center; color:var(--muted);
+    font-size:13px; line-height:1.5;
+    padding:4px 16px 34px;
+  }
+  .hint kbd{
+    background:#e2e8f0; border-radius:5px; padding:1px 6px;
+    font-family:inherit; font-size:12px;
+  }
+
+  /* ---------------- print ---------------- */
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{height:auto !important; padding:0 !important; overflow:visible !important; gap:0 !important;}
+    .page{
+      transform:none !important;
+      box-shadow:none !important;
+      width:210mm;
+      height:296.9mm;
+      page-break-after: always;
+    }
+    .page:last-child { page-break-after: auto; }
+    .page .ans{ display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">📐 Angles</span>
+
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Calculating Angles" spellcheck="false">
+  </label>
+
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+
+  <label>Pages
+    <select id="pageSel">
+      <option value="1">1 Page (8 Questions)</option>
+      <option value="2" selected>2 Pages (16 Questions)</option>
+      <option value="3">3 Pages (24 Questions)</option>
+    </select>
+  </label>
+
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">⬇️ Answers PDF</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="viewport" id="viewport"></div>
+
+<p class="hint no-print">
+  Five bands, in equal measure: straight-line angles → angles round a point → triangles (including valid exterior-angle questions) → isosceles triangles → parallel lines.<br>
+  Rare right-angled isosceles triangles are marked with a square and need no given angle values.<br>
+  All angles are whole degrees; the first two isosceles questions use round, easy-to-calculate values.<br>
+  Triangles are randomly rotated and scaled to fit neatly inside their boxes.<br>
+  <b>Reveal answers</b> shows them inline on screen — they're never printed.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+
+  /* ============================================================
+     FONT METRICS
+     ============================================================ */
+  const W_REG = [
+    278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584
+  ];
+  const W_BOLD = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    333,333,584,584,584,611,975,
+    722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    333,278,333,584,556,333,
+    556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+    389,280,389,584
+  ];
+  function textWidth(str, size, bold) {
+    const t = bold ? W_BOLD : W_REG;
+    let w = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
+    }
+    return w * size / 1000;
+  }
+
+  /* ============================================================
+     GEOMETRY HELPERS
+     ============================================================ */
+  function getPt(cx, cy, r, deg) {
+    const rad = deg * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+  }
+
+  function textAt(cx, cy, r, deg, text, italic, size) {
+    const rad = deg * Math.PI / 180;
+    return {
+      t: 'text',
+      x: cx + r * Math.cos(rad),
+      y: cy - r * Math.sin(rad),
+      s: text,
+      size: size || 10,
+      italic: !!italic,
+      centered: true
+    };
+  }
+
+  /* ============================================================
+     INTELLIGENT ANGLE STYLING
+     ============================================================ */
+    function getAngleStyle(angle, bisector, text, isItalic = false, fontSize = 10, padding = 1.5) {
+    const w = textWidth(text, fontSize, false) / 2;
+    const h = fontSize * 0.6;
+    
+    const theta1 = (bisector - angle / 2) * Math.PI / 180;
+    const theta2 = (bisector + angle / 2) * Math.PI / 180;
+    const bisRad = bisector * Math.PI / 180;
+
+    let minR = 8;
+
+    for (let r = 6; r <= 100; r += 0.2) {
+        const cx = r * Math.cos(bisRad);
+        const cy = r * Math.sin(bisRad);
+
+        const corners = [
+            {x: cx + w, y: cy + h},
+            {x: cx + w, y: cy - h},
+            {x: cx - w, y: cy + h},
+            {x: cx - w, y: cy - h}
+        ];
+
+        let fits = true;
+        for (const p of corners) {
+            const d1 = -p.x * Math.sin(theta1) + p.y * Math.cos(theta1);
+            if (d1 < padding) { fits = false; break; }
+            const d2 = p.x * Math.sin(theta2) - p.y * Math.cos(theta2);
+            if (d2 < padding) { fits = false; break; }
+        }
+
+        if (fits) {
+            minR = r;
+            break;
+        }
+    }
+
+    const cx = minR * Math.cos(bisRad);
+    const cy = minR * Math.sin(bisRad);
+    const maxCornerDist = Math.max(
+        Math.sqrt((cx+w)**2 + (cy+h)**2),
+        Math.sqrt((cx+w)**2 + (cy-h)**2),
+        Math.sqrt((cx-w)**2 + (cy+h)**2),
+        Math.sqrt((cx-w)**2 + (cy-h)**2)
+    );
+
+    const arcR = maxCornerDist + padding;
+
+    return {
+        arcR: arcR,
+        labelR: minR,
+        outside: false,
+        angle: bisector
+    };
+  }
+
+  /* ============================================================
+     THE GENERATOR
+     ============================================================ */
+  const UNKNOWN_LETTERS = 'abcdefghjkmnpqrstuvwxyz'.split('');
+
+  /* ---------- 1) THREE ANGLES ON A STRAIGHT LINE ---------- */
+  function genThreeAnglesOnLine() {
+    const MIN = 30;
+    const S   = 180 - 3 * MIN;
+
+    const unknown = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)];
+
+    let a, b, c;
+    let rightIdx = -1;
+
+    if (rng() < 1 / 6) {
+      rightIdx = rng() < 0.5 ? 1 : 2;
+      const split = ri(MIN, 90 - MIN);
+      if (rightIdx === 1) {
+        b = 90;  a = split;  c = 90 - split;
+      } else {
+        c = 90;  a = split;  b = 90 - split;
+      }
+    } else {
+      let x, y;
+      do {
+        x = ri(0, S);
+        y = ri(0, S);
+      } while (x + y > S);
+      a = MIN + x;
+      b = MIN + y;
+      c = MIN + (S - x - y);
+    }
+
+    const thetaR = c;
+    const thetaL = c + b;
+    const lineLen = 90;
+    const rayLen  = 80;
+
+    const rayL = getPt(0, 0, rayLen, thetaL);
+    const rayR = getPt(0, 0, rayLen, thetaR);
+
+    const items = [
+      { t: 'line', x1: -lineLen, y1: 0, x2: lineLen, y2: 0, w: 1.4 },
+      { t: 'line', x1: 0, y1: 0, x2: rayL.x, y2: rayL.y, w: 1.4 },
+      { t: 'line', x1: 0, y1: 0, x2: rayR.x, y2: rayR.y, w: 1.4 }
+    ];
+
+    const sectors = [
+      { angle: a, t1: thetaL, t2: 180,    label: unknown,       italic: true,  isRight: false },
+      { angle: b, t1: thetaR, t2: thetaL, label: b + '\u00B0',  italic: false, isRight: (rightIdx === 1) || (b === 90) },
+      { angle: c, t1: 0,      t2: thetaR, label: c + '\u00B0',  italic: false, isRight: (rightIdx === 2) || (c === 90) }
+    ];
+
+    for (const s of sectors) {
+      if (s.isRight) {
+        const sz = 12;
+        const A = getPt(0, 0, sz, s.t1);
+        const B = getPt(0, 0, sz, s.t2);
+        const C = { x: A.x + B.x, y: A.y + B.y };
+        items.push({ t: 'line', x1: A.x, y1: A.y, x2: C.x, y2: C.y, w: 0.9 });
+        items.push({ t: 'line', x1: B.x, y1: B.y, x2: C.x, y2: C.y, w: 0.9 });
+      } else {
+        const bis = (s.t1 + s.t2) / 2;
+        const style = getAngleStyle(s.angle, bis, s.label, s.italic, 10);
+        items.push({ t: 'arc', cx: 0, cy: 0, r: style.arcR, a1: s.t1, a2: s.t2, w: 0.9 });
+        items.push(textAt(0, 0, style.labelR, bis, s.label, s.italic, 10));
+      }
+    }
+
+    return {
+      q:   'Work out angle ' + unknown + '.',
+      ans: unknown + ' = ' + a + '\u00B0',
+      items: items
+    };
+  }
+
+  /* ============================================================
+     ANGLES ROUND A POINT
+     ============================================================ */
+  function genAnglesRoundPoint() {
+    const MIN = 30;
+    const MAX = 170;
+    const TOTAL = 360;
+
+    const n = ri(3, 4);
+    const unknown = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)];
+    const uk = ri(0, n - 1);
+
+    const known = [];
+    for (let i = 0; i < n; i++) if (i !== uk) known.push(i);
+
+    let rightIdx = -1;
+    if (rng() < 1 / 6) rightIdx = known[ri(0, known.length - 1)];
+
+    const angles = new Array(n);
+    let sumFixed = 0;
+    if (rightIdx >= 0) { angles[rightIdx] = 90; sumFixed = 90; }
+
+    const free = [];
+    for (let i = 0; i < n; i++) if (i !== rightIdx) free.push(i);
+    const nFree = free.length;
+    const S = TOTAL - sumFixed - nFree * MIN;
+    const cap = MAX - MIN;
+
+    let xs;
+    while (true) {
+      xs = [];
+      let sum = 0;
+      for (let j = 0; j < nFree - 1; j++) {
+        const x = ri(0, cap);
+        xs.push(x); sum += x;
+      }
+      const last = S - sum;
+      if (last >= 0 && last <= cap) { xs.push(last); break; }
+    }
+    for (let j = 0; j < nFree; j++) angles[free[j]] = MIN + xs[j];
+
+    const rayAngles = [0];
+    for (let i = 0; i < n - 1; i++) rayAngles.push(rayAngles[i] + angles[i]);
+
+    const rayLen = 50;
+    const items = [];
+    for (let i = 0; i < n; i++) {
+      const p = getPt(0, 0, rayLen, rayAngles[i]);
+      items.push({ t: 'line', x1: 0, y1: 0, x2: p.x, y2: p.y, w: 1.4 });
+    }
+
+    for (let i = 0; i < n; i++) {
+      const t1 = rayAngles[i];
+      const t2 = (i + 1 < n) ? rayAngles[i + 1] : 360;
+      const bis = (t1 + t2) / 2;
+      const isUnknown = i === uk;
+      const isRight = (i === rightIdx) || (!isUnknown && angles[i] === 90);
+
+      if (isRight) {
+        const sz = 12;
+        const A = getPt(0, 0, sz, t1);
+        const B = getPt(0, 0, sz, t2);
+        const C = { x: A.x + B.x, y: A.y + B.y };
+        items.push({ t: 'line', x1: A.x, y1: A.y, x2: C.x, y2: C.y, w: 0.9 });
+        items.push({ t: 'line', x1: B.x, y1: B.y, x2: C.x, y2: C.y, w: 0.9 });
+      } else {
+        const label = isUnknown ? unknown : (angles[i] + '\u00B0');
+        const style = getAngleStyle(angles[i], bis, label, isUnknown, 10);
+        items.push({ t: 'arc', cx: 0, cy: 0, r: style.arcR, a1: t1, a2: t2, w: 0.9 });
+        items.push(textAt(0, 0, style.labelR, bis, label, isUnknown, 10));
+      }
+    }
+
+    return {
+      q: 'Work out angle ' + unknown + '.',
+      ans: unknown + ' = ' + angles[uk] + '\u00B0',
+      items: items,
+      dcy: 75
+    };
+  }
+
+  /* ============================================================
+     SCALENE TRIANGLE (rotated randomly, fitted to box)
+     ============================================================ */
+  function genTriangle() {
+    const MIN = 35, MAX = 80;
+    let angs;
+    let rightIdx = -1;
+
+    if (rng() < 1 / 6) {
+      rightIdx = ri(0, 2);
+      let x;
+      do { x = ri(30, 60); } while (Math.abs(x - 45) < 5);
+      angs = [0, 0, 0];
+      angs[rightIdx] = 90;
+      const others = [0, 1, 2].filter(function (i) { return i !== rightIdx; });
+      angs[others[0]] = x;
+      angs[others[1]] = 90 - x;
+    } else {
+      while (true) {
+        const A = ri(MIN, MAX);
+        const B = ri(MIN, MAX);
+        const C = 180 - A - B;
+        if (C < MIN || C > MAX) continue;
+        const s = [A, B, C].sort(function (p, q) { return p - q; });
+        if (s[1] - s[0] < 6 || s[2] - s[1] < 6) continue;
+        if (s[2] - s[0] > 35) continue;
+        angs = [A, B, C];
+        break;
+      }
+    }
+
+    const unknown = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)];
+
+    let uk;
+    if (rightIdx >= 0) {
+      const opts = [0, 1, 2].filter(function (i) { return i !== rightIdx; });
+      uk = opts[ri(0, opts.length - 1)];
+    } else {
+      uk = ri(0, 2);
+    }
+
+    const D = Math.PI / 180;
+    const sa = 2 * Math.sin(angs[0] * D);
+    const sb = 2 * Math.sin(angs[1] * D);
+    const sc = 2 * Math.sin(angs[2] * D);
+
+    const Bm = { x: 0, y: 0 };
+    const Cm = { x: sa, y: 0 };
+    const xA = (sa * sa + sc * sc - sb * sb) / (2 * sa);
+    const yA = Math.sqrt(Math.max(0, sc * sc - xA * xA));
+    const Am = { x: xA, y: yA };
+
+    const cx0 = (Am.x + Bm.x + Cm.x) / 3;
+    const cy0 = (Am.y + Bm.y + Cm.y) / 3;
+
+    const availW = 210;
+    const availH = 105;
+
+    let best = null;
+    const trials = 16;
+    for (let t = 0; t < trials; t++) {
+      const theta = rng() * Math.PI * 2;
+      const cos = Math.cos(theta), sin = Math.sin(theta);
+      const rot = function (p) {
+        const dx = p.x - cx0, dy = p.y - cy0;
+        return {
+          x: cx0 + dx * cos - dy * sin,
+          y: cy0 + dx * sin + dy * cos
+        };
+      };
+      const Ar = rot(Am), Br = rot(Bm), Cr = rot(Cm);
+      const minX = Math.min(Ar.x, Br.x, Cr.x);
+      const maxX = Math.max(Ar.x, Br.x, Cr.x);
+      const minY = Math.min(Ar.y, Br.y, Cr.y);
+      const maxY = Math.max(Ar.y, Br.y, Cr.y);
+      const bw = maxX - minX, bh = maxY - minY;
+      const scale = Math.min(availW / bw, availH / bh);
+      if (!best || scale > best.scale) {
+        best = { scale, Ar, Br, Cr, minX, maxX, minY, maxY };
+      }
+    }
+
+    const scale = best.scale;
+    const Ar = best.Ar, Br = best.Br, Cr = best.Cr;
+    const minX = best.minX, maxX = best.maxX, minY = best.minY, maxY = best.maxY;
+    const bcx = (minX + maxX) / 2;
+    const bcy = (minY + maxY) / 2;
+
+    function toLocal(p) {
+      return {
+        x: (p.x - bcx) * scale,
+        y: -(p.y - bcy) * scale
+      };
+    }
+
+    const VA = toLocal(Ar), VB = toLocal(Br), VC = toLocal(Cr);
+    const verts = [VA, VB, VC];
+    const neigh = [[VB, VC], [VA, VC], [VA, VB]];
+
+    const items = [
+      { t: 'line', x1: VA.x, y1: VA.y, x2: VB.x, y2: VB.y, w: 1.4 },
+      { t: 'line', x1: VB.x, y1: VB.y, x2: VC.x, y2: VC.y, w: 1.4 },
+      { t: 'line', x1: VC.x, y1: VC.y, x2: VA.x, y2: VA.y, w: 1.4 }
+    ];
+
+    const centroid = {
+      x: (VA.x + VB.x + VC.x) / 3,
+      y: (VA.y + VB.y + VC.y) / 3
+    };
+
+    const edgeList = [
+      { A: VA, B: VB },
+      { A: VB, B: VC },
+      { A: VC, B: VA }
+    ].map(function (e) {
+      const dx = e.B.x - e.A.x, dy = e.B.y - e.A.y;
+      const len = Math.hypot(dx, dy);
+      const crossI = dx * (centroid.y - e.A.y) - dy * (centroid.x - e.A.x);
+      return { A: e.A, dx: dx, dy: dy, len: len, sign: crossI >= 0 ? 1 : -1 };
+    });
+
+    function sd(e, P) {
+      const crossP = e.dx * (P.y - e.A.y) - e.dy * (P.x - e.A.x);
+      return (crossP * e.sign >= 0 ? 1 : -1) * Math.abs(crossP) / e.len;
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const V = verts[i];
+      const P = neigh[i][0];
+      const Q = neigh[i][1];
+
+      const ux = P.x - V.x, uy = P.y - V.y, lu = Math.hypot(ux, uy);
+      const vx = Q.x - V.x, vy = Q.y - V.y, lv = Math.hypot(vx, vy);
+      const u = { x: ux / lu, y: uy / lu };
+      const v = { x: vx / lv, y: vy / lv };
+
+      if (i === rightIdx) {
+        const sz = 13;
+        const c1 = { x: V.x + sz * u.x, y: V.y + sz * u.y };
+        const c3 = { x: V.x + sz * v.x, y: V.y + sz * v.y };
+        const c2 = { x: c1.x + sz * v.x, y: c1.y + sz * v.y };
+        items.push({ t: 'line', x1: c1.x, y1: c1.y, x2: c2.x, y2: c2.y, w: 0.9 });
+        items.push({ t: 'line', x1: c3.x, y1: c3.y, x2: c2.x, y2: c2.y, w: 0.9 });
+        continue;
+      }
+
+      const isUnknown = (i === uk);
+      const label = isUnknown ? unknown : (angs[i] + '\u00B0');
+
+      let bx = u.x + v.x, by = u.y + v.y;
+      const lb = Math.hypot(bx, by);
+      bx /= lb; by /= lb;
+
+      const fs = 10;
+      const tw = textWidth(label, fs, false) / 2;
+      const th = fs * 0.5;
+      const padding = 2;
+
+      let labelR = 22;
+      for (let r = 8; r <= 200; r += 0.25) {
+        const cxp = V.x + bx * r, cyp = V.y + by * r;
+        let ok = true;
+        const corners = [
+          { x: cxp + tw, y: cyp + th },
+          { x: cxp + tw, y: cyp - th },
+          { x: cxp - tw, y: cyp + th },
+          { x: cxp - tw, y: cyp - th }
+        ];
+        for (let k = 0; k < 4; k++) {
+          for (let e = 0; e < 3; e++) {
+            if (sd(edgeList[e], corners[k]) < padding) { ok = false; break; }
+          }
+          if (!ok) break;
+        }
+        if (ok) { labelR = r; break; }
+      }
+
+      const cxp = V.x + bx * labelR, cyp = V.y + by * labelR;
+      let maxCornerDist = 0;
+      [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (s) {
+        const d = Math.hypot(cxp + s[0] * tw - V.x, cyp + s[1] * th - V.y);
+        if (d > maxCornerDist) maxCornerDist = d;
+      });
+
+      const dxe = Q.x - P.x, dye = Q.y - P.y;
+      const le2 = dxe * dxe + dye * dye;
+      const tFoot = ((V.x - P.x) * dxe + (V.y - P.y) * dye) / le2;
+      let Rmax;
+      if (tFoot >= 0 && tFoot <= 1) {
+        Rmax = Math.abs(dxe * (V.y - P.y) - dye * (V.x - P.x)) / Math.sqrt(le2);
+      } else {
+        Rmax = Math.min(lu, lv);
+      }
+
+      const arcR = Math.min(maxCornerDist + 1.5, Rmax - 2);
+
+      const thU = Math.atan2(-u.y, u.x) * 180 / Math.PI;
+      const thV = Math.atan2(-v.y, v.x) * 180 / Math.PI;
+      let dd = thV - thU;
+      while (dd > 180) dd -= 360;
+      while (dd <= -180) dd += 360;
+      let a1, a2;
+      if (dd > 0) { a1 = thU; a2 = thU + dd; }
+      else { a1 = thV; a2 = thV - dd; }
+
+      items.push({ t: 'arc', cx: V.x, cy: V.y, r: arcR, a1: a1, a2: a2, w: 0.9 });
+      items.push({
+        t: 'text',
+        x: cxp, y: cyp,
+        s: label,
+        size: fs,
+        italic: isUnknown,
+        centered: true
+      });
+    }
+
+    return {
+      q: 'Work out angle ' + unknown + '.',
+      ans: unknown + ' = ' + angs[uk] + '\u00B0',
+      items: items,
+      dcy: 88
+    };
+  }
+
+  /* ============================================================
+     EXTERIOR ANGLE TRIANGLE (only subtypes that genuinely
+     require the exterior angle theorem)
+     ============================================================ */
+  function genExteriorAngleTriangle() {
+    // Generate a scalene triangle
+    let A_ang, B_ang, C_ang;
+    while (true) {
+      A_ang = ri(30, 80);
+      B_ang = ri(30, 80);
+      C_ang = 180 - A_ang - B_ang;
+      if (C_ang < 30 || C_ang > 80) continue;
+      const s = [A_ang, B_ang, C_ang].sort(function (p, q) { return p - q; });
+      if (s[1] - s[0] < 5 || s[2] - s[1] < 5) continue;
+      if (s[2] - s[0] > 40) continue;
+      break;
+    }
+
+    const ext = 180 - B_ang;
+    const unknownLetter = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)];
+
+    // Two sub-types, both of which genuinely need the exterior angle.
+    //
+    //   0: exterior + one non-adjacent shown → find the other non-adjacent
+    //   1: both non-adjacent shown → find the exterior angle
+    const subtype = (rng() < 0.5) ? 0 : 1;
+
+    const showC = rng() < 0.5;
+    const unknownNonAdj = showC ? A_ang : C_ang;
+    const answer = (subtype === 0) ? unknownNonAdj : ext;
+
+    // Geometry
+    const D = Math.PI / 180;
+    const sa = 2 * Math.sin(A_ang * D);
+    const sb = 2 * Math.sin(B_ang * D);
+    const sc = 2 * Math.sin(C_ang * D);
+
+    const Bm = { x: 0, y: 0 };
+    const Cm = { x: sa, y: 0 };
+    const xA = (sa * sa + sc * sc - sb * sb) / (2 * sa);
+    const yA = Math.sqrt(Math.max(0, sc * sc - xA * xA));
+    const Am = { x: xA, y: yA };
+
+    const L = sa * 0.45;
+    const Dm = { x: -L, y: 0 };
+
+    const cx0 = (Am.x + Bm.x + Cm.x + Dm.x) / 4;
+    const cy0 = (Am.y + Bm.y + Cm.y + Dm.y) / 4;
+
+    const availW = 210;
+    const availH = 105;
+
+    let best = null;
+    const trials = 16;
+    for (let t = 0; t < trials; t++) {
+      const theta = rng() * Math.PI * 2;
+      const cos = Math.cos(theta), sin = Math.sin(theta);
+      const rot = function (p) {
+        const dx = p.x - cx0, dy = p.y - cy0;
+        return {
+          x: cx0 + dx * cos - dy * sin,
+          y: cy0 + dx * sin + dy * cos
+        };
+      };
+      const Ar = rot(Am), Br = rot(Bm), Cr = rot(Cm), Dr = rot(Dm);
+      const minX = Math.min(Ar.x, Br.x, Cr.x, Dr.x);
+      const maxX = Math.max(Ar.x, Br.x, Cr.x, Dr.x);
+      const minY = Math.min(Ar.y, Br.y, Cr.y, Dr.y);
+      const maxY = Math.max(Ar.y, Br.y, Cr.y, Dr.y);
+      const bw = maxX - minX, bh = maxY - minY;
+      const scale = Math.min(availW / bw, availH / bh);
+      if (!best || scale > best.scale) {
+        best = { scale, Ar, Br, Cr, Dr, minX, maxX, minY, maxY };
+      }
+    }
+
+    const scale = best.scale;
+    const Ar = best.Ar, Br = best.Br, Cr = best.Cr, Dr = best.Dr;
+    const minX = best.minX, maxX = best.maxX, minY = best.minY, maxY = best.maxY;
+    const bcx = (minX + maxX) / 2;
+    const bcy = (minY + maxY) / 2;
+
+    function toLocal(p) {
+      return {
+        x: (p.x - bcx) * scale,
+        y: -(p.y - bcy) * scale
+      };
+    }
+
+    const VA = toLocal(Ar), VB = toLocal(Br), VC = toLocal(Cr), VD = toLocal(Dr);
+
+    const items = [
+      { t: 'line', x1: VD.x, y1: VD.y, x2: VC.x, y2: VC.y, w: 1.4 },
+      { t: 'line', x1: VA.x, y1: VA.y, x2: VB.x, y2: VB.y, w: 1.4 },
+      { t: 'line', x1: VA.x, y1: VA.y, x2: VC.x, y2: VC.y, w: 1.4 }
+    ];
+
+    const centroid = {
+      x: (VA.x + VB.x + VC.x + VD.x) / 4,
+      y: (VA.y + VB.y + VC.y + VD.y) / 4
+    };
+
+    const edgeList = [
+      { A: VA, B: VB },
+      { A: VB, B: VC },
+      { A: VC, B: VA },
+      { A: VB, B: VD }
+    ].map(function (e) {
+      const dx = e.B.x - e.A.x, dy = e.B.y - e.A.y;
+      const len = Math.hypot(dx, dy);
+      const crossI = dx * (centroid.y - e.A.y) - dy * (centroid.x - e.A.x);
+      return { A: e.A, dx: dx, dy: dy, len: len, sign: crossI >= 0 ? 1 : -1 };
+    });
+
+    function sd(e, P) {
+      const crossP = e.dx * (P.y - e.A.y) - e.dy * (P.x - e.A.x);
+      return (crossP * e.sign >= 0 ? 1 : -1) * Math.abs(crossP) / e.len;
+    }
+
+        function addAngle(V, P, Q, label, isUnknown, isExterior) {
+      const ux = P.x - V.x, uy = P.y - V.y, lu = Math.hypot(ux, uy);
+      const vx = Q.x - V.x, vy = Q.y - V.y, lv = Math.hypot(vx, vy);
+      const u = { x: ux / lu, y: uy / lu };
+      const v = { x: vx / lv, y: vy / lv };
+
+      let bx = u.x + v.x, by = u.y + v.y;
+      const lb = Math.hypot(bx, by);
+      bx /= lb; by /= lb;
+
+      const fs = 10;
+      const tw = textWidth(label, fs, false) / 2;
+      const th = fs * 0.5;
+      const padding = 2;
+
+      let labelR;
+      if (isExterior) {
+        // Exterior region is outside the triangle, so no triangle edges
+        // are relevant — only the two rays that form the exterior angle.
+        // Find the smallest r where the label box fits cleanly between them.
+        const uvCross = u.x * v.y - u.y * v.x;
+        const uvSign = uvCross >= 0 ? 1 : -1;
+        labelR = 8;
+        for (let r = 8; r <= 100; r += 0.25) {
+          const cxp = V.x + bx * r, cyp = V.y + by * r;
+          const corners = [
+            { x: cxp + tw, y: cyp + th },
+            { x: cxp + tw, y: cyp - th },
+            { x: cxp - tw, y: cyp + th },
+            { x: cxp - tw, y: cyp - th }
+          ];
+          let ok = true;
+          for (let k = 0; k < 4; k++) {
+            const px = corners[k].x - V.x, py = corners[k].y - V.y;
+            const upCross = u.x * py - u.y * px;
+            const vpCross = v.x * py - v.y * px;
+            if (upCross * uvSign < padding) { ok = false; break; }
+            if (vpCross * uvSign > -padding) { ok = false; break; }
+          }
+          if (ok) { labelR = r; break; }
+        }
+      } else {
+        labelR = 22;
+        for (let r = 8; r <= 200; r += 0.25) {
+          const cxp = V.x + bx * r, cyp = V.y + by * r;
+          let ok = true;
+          const corners = [
+            { x: cxp + tw, y: cyp + th },
+            { x: cxp + tw, y: cyp - th },
+            { x: cxp - tw, y: cyp + th },
+            { x: cxp - tw, y: cyp - th }
+          ];
+          for (let k = 0; k < 4; k++) {
+            for (let e = 0; e < 4; e++) {
+              if (sd(edgeList[e], corners[k]) < padding) { ok = false; break; }
+            }
+            if (!ok) break;
+          }
+          if (ok) { labelR = r; break; }
+        }
+      }
+
+      const cxp = V.x + bx * labelR, cyp = V.y + by * labelR;
+      let maxCornerDist = 0;
+      [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (s) {
+        const d = Math.hypot(cxp + s[0] * tw - V.x, cyp + s[1] * th - V.y);
+        if (d > maxCornerDist) maxCornerDist = d;
+      });
+
+      let arcR;
+      if (isExterior) {
+        arcR = maxCornerDist + 1.5;
+      } else {
+        const dxe = Q.x - P.x, dye = Q.y - P.y;
+        const le2 = dxe * dxe + dye * dye;
+        const tFoot = ((V.x - P.x) * dxe + (V.y - P.y) * dye) / le2;
+        let Rmax;
+        if (tFoot >= 0 && tFoot <= 1) {
+          Rmax = Math.abs(dxe * (V.y - P.y) - dye * (V.x - P.x)) / Math.sqrt(le2);
+        } else {
+          Rmax = Math.min(lu, lv);
+        }
+        arcR = Math.min(maxCornerDist + 1.5, Rmax - 2);
+      }
+
+      const thU = Math.atan2(-u.y, u.x) * 180 / Math.PI;
+      const thV = Math.atan2(-v.y, v.x) * 180 / Math.PI;
+      let dd = thV - thU;
+      while (dd > 180) dd -= 360;
+      while (dd <= -180) dd += 360;
+      let a1, a2;
+      if (dd > 0) { a1 = thU; a2 = thU + dd; }
+      else { a1 = thV; a2 = thV - dd; }
+
+      items.push({ t: 'arc', cx: V.x, cy: V.y, r: arcR, a1: a1, a2: a2, w: 0.9 });
+      items.push({
+        t: 'text',
+        x: cxp, y: cyp,
+        s: label,
+        size: fs,
+        italic: isUnknown,
+        centered: true
+      });
+    }
+
+    if (subtype === 0) {
+      // Exterior + one non-adjacent shown → find the other non-adjacent
+      addAngle(VB, VD, VA, ext + '\u00B0', false, true);
+      if (showC) {
+        addAngle(VC, VA, VB, C_ang + '\u00B0', false);
+        addAngle(VA, VB, VC, unknownLetter, true);
+      } else {
+        addAngle(VA, VB, VC, A_ang + '\u00B0', false);
+        addAngle(VC, VA, VB, unknownLetter, true);
+      }
+    } else {
+      // Both non-adjacent shown → find the exterior angle
+      if (showC) {
+        addAngle(VC, VA, VB, C_ang + '\u00B0', false);
+        addAngle(VA, VB, VC, A_ang + '\u00B0', false);
+      } else {
+        addAngle(VA, VB, VC, A_ang + '\u00B0', false);
+        addAngle(VC, VA, VB, C_ang + '\u00B0', false);
+      }
+      addAngle(VB, VD, VA, unknownLetter, true, true);
+    }
+
+    return {
+      q: 'Work out angle ' + unknownLetter + '.',
+      ans: unknownLetter + ' = ' + answer + '\u00B0',
+      items: items,
+      dcy: 88
+    };
+  }
+
+        /* ============================================================
+     PARALLEL LINES WITH TRANSVERSAL (variety generator)
+     ============================================================ */
+  function genParallelLines() {
+    const theta = ri(50, 70); // acute angle of transversal
+    const rot = [0, 0, 0, 10, -10, 15, -15, 20, -20][ri(0, 8)]; // rotation in degrees
+
+    const H = 24;
+    const extTop = 36;
+    const extBot = 28;
+    const parLeftX = -46;
+    const parRightX = 54;
+    const ah = 7;
+
+    const tr = theta * Math.PI / 180;
+    const tanP = Math.tan(tr);
+
+    const topX = -H / tanP;
+    const botX =  H / tanP;
+
+    const transTopX = topX - extTop / tanP;
+    const transTopY = -H - extTop;
+    const transBotX = botX + extBot / tanP;
+    const transBotY =  H + extBot;
+
+    const angles = {
+      TR: 180 - theta,
+      TL: theta,
+      BL: 180 - theta,
+      BR: theta
+    };
+    const arcs = {
+      TR: { a1: 0, a2: 180 - theta, bis: (180 - theta) / 2 },
+      TL: { a1: 180 - theta, a2: 180, bis: 180 - theta / 2 },
+      BL: { a1: 180, a2: 360 - theta, bis: 270 - theta / 2 },
+      BR: { a1: 360 - theta, a2: 360, bis: 360 - theta / 2 }
+    };
+
+    const unknowns = [];
+    const items = [];
+
+    // Helper to add an angle
+    function addAngle(intersection, reg, isUnknown) {
+      const pt = intersection === 1 ? { x: topX, y: -H } : { x: botX, y: H };
+      const arc = arcs[reg];
+      const val = angles[reg];
+      
+      let label;
+      if (isUnknown) {
+        let l;
+        // Pick a unique letter for each unknown angle
+        do { l = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)]; } while (unknowns.some(u => u.letter === l));
+        unknowns.push({ letter: l, value: val });
+        label = l;
+      } else {
+        label = val + '\u00B0';
+      }
+
+      // Use getAngleStyle with font size 9 and padding 1.2 for a safe but tight fit
+      const style = getAngleStyle(val, arc.bis, label, isUnknown, 9, 1.2);
+      
+      items.push({ t: 'arc', cx: pt.x, cy: pt.y, r: style.arcR, a1: arc.a1, a2: arc.a2, w: 1.0 });
+      
+      const rad = arc.bis * Math.PI / 180;
+      items.push({
+        t: 'text',
+        x: pt.x + style.labelR * Math.cos(rad),
+        y: pt.y - style.labelR * Math.sin(rad),
+        s: label,
+        size: 9,
+        italic: isUnknown,
+        centered: true
+      });
+      
+      return val;
+    }
+
+    let answer = 0;
+    const type = rng();
+
+    if (type < 0.4) {
+      // Type 1: Simple pair (Corresponding, Alternate, or Co-interior)
+      const relations = [
+        ['TL', 'TL'], ['TR', 'TR'], ['BL', 'BL'], ['BR', 'BR'], // Corresponding
+        ['TL', 'BR'], ['BR', 'TL'], ['TR', 'BL'], ['BL', 'TR'], // Alternate
+        ['TL', 'BL'], ['BL', 'TL'], ['TR', 'BR'], ['BR', 'TR']  // Co-interior
+      ];
+      const [reg1, reg2] = relations[Math.floor(rng() * relations.length)];
+      const knownIs1 = rng() < 0.5;
+
+      if (knownIs1) {
+        addAngle(1, reg1, false);
+        answer = addAngle(2, reg2, true);
+      } else {
+        addAngle(2, reg2, false);
+        answer = addAngle(1, reg1, true);
+      }
+    } else if (type < 0.7) {
+      // Type 2: Vertically opposite pair on one intersection, corresponding on the other
+      const isTop = rng() < 0.5;
+      const regs = isTop ? ['TL', 'TR'] : ['BL', 'BR'];
+      const knownIntersection = isTop ? 2 : 1;
+      const unknownIntersection = isTop ? 1 : 2;
+      
+      const knownReg = regs[ri(0, 1)];
+      const otherReg = regs[0] === knownReg ? regs[1] : regs[0];
+
+      addAngle(knownIntersection, knownReg, false);
+      answer = addAngle(unknownIntersection, knownReg, true);
+      addAngle(unknownIntersection, otherReg, true);
+    } else {
+      // Type 3: Alternate interior + vertically opposite
+      const isTop = rng() < 0.5;
+      const regs = isTop ? ['TL', 'TR'] : ['BL', 'BR'];
+      const knownIntersection = isTop ? 2 : 1;
+      const unknownIntersection = isTop ? 1 : 2;
+      
+      // Pick an alternate pair
+      const pairs = isTop ? [['TR', 'BL'], ['TL', 'BR']] : [['BR', 'TL'], ['BL', 'TR']];
+      const [regKnown, regUnknown] = pairs[ri(0, 1)];
+      
+      // The vertically opposite is the other region on the unknown intersection
+      const otherReg = regs[0] === regUnknown ? regs[1] : regs[0];
+
+      addAngle(knownIntersection, regKnown, false);
+      answer = addAngle(unknownIntersection, regUnknown, true);
+      addAngle(unknownIntersection, otherReg, true);
+    }
+
+    // Apply rotation to all items
+    const radRot = rot * Math.PI / 180;
+    const cosR = Math.cos(radRot), sinR = Math.sin(radRot);
+    function rotPt(x, y) {
+      return { x: x * cosR - y * sinR, y: x * sinR + y * cosR };
+    }
+
+    // Build final item list with rotated points
+    const finalItems = [];
+    
+    // Lines
+    const lines = [
+      { x1: parLeftX, y1: -H, x2: parRightX, y2: -H, w: 1.4 },
+      { x1: parRightX, y1: -H, x2: parRightX - ah, y2: -H - ah * 0.55, w: 1.4 },
+      { x1: parRightX, y1: -H, x2: parRightX - ah, y2: -H + ah * 0.55, w: 1.4 },
+      { x1: parLeftX, y1: H, x2: parRightX, y2: H, w: 1.4 },
+      { x1: parRightX, y1: H, x2: parRightX - ah, y2: H - ah * 0.55, w: 1.4 },
+      { x1: parRightX, y1: H, x2: parRightX - ah, y2: H + ah * 0.55, w: 1.4 },
+      { x1: transTopX, y1: transTopY, x2: transBotX, y2: transBotY, w: 1.4 }
+    ];
+
+    for (const l of lines) {
+      const p1 = rotPt(l.x1, l.y1);
+      const p2 = rotPt(l.x2, l.y2);
+      finalItems.push({ t: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, w: l.w });
+    }
+
+    // Arcs and Texts
+    for (const it of items) {
+      if (it.t === 'arc') {
+        const c = rotPt(it.cx, it.cy);
+        finalItems.push({ t: 'arc', cx: c.x, cy: c.y, r: it.r, a1: it.a1 - rot, a2: it.a2 - rot, w: it.w });
+      } else if (it.t === 'text') {
+        const c = rotPt(it.x, it.y);
+        finalItems.push({ t: 'text', x: c.x, y: c.y, s: it.s, size: it.size, italic: it.italic, centered: true });
+      }
+    }
+
+    let qStr = 'Work out angle ' + unknowns[0].letter + '.';
+    if (unknowns.length > 1) {
+      qStr = 'Work out angles ' + unknowns.map(u => u.letter).join(' and ') + '.';
+    }
+    const ansStr = unknowns.map(u => u.letter + ' = ' + u.value + '\u00B0').join(', ');
+
+    return {
+      q:   qStr,
+      ans: ansStr,
+      items: finalItems,
+      dcy: 88
+    };
+  }
+
+  /* ============================================================
+     ISOSCELES TRIANGLE (two equal sides ticked)
+     ============================================================ */
+  function genIsoscelesTriangle() {
+    // 1 in 50 isosceles triangles is right-angled.
+    // For those, no numeric angle values are given:
+    // the right-angle marker tells the pupil the apex is 90°,
+    // and the tick marks tell them the two base angles are equal.
+    const rightIso = rng() < 1 / 50;
+    const easy = !rightIso && isoCount < 2;
+    isoCount++;
+
+    let apex, base;
+    if (rightIso) {
+      apex = 90;
+      base = 45;
+    } else if (easy) {
+      const cleanApexes = [30, 40, 50, 70, 80, 90, 100, 110];
+      apex = cleanApexes[ri(0, cleanApexes.length - 1)];
+      base = (180 - apex) / 2;
+    } else {
+      do {
+        apex = 2 * ri(15, 55);
+        base = (180 - apex) / 2;
+      } while (base < 32 || base > 78 || Math.abs(base - apex) < 8);
+    }
+
+    // If the apex is 90° it must be shown with a square marker and cannot
+    // be the unknown — so the unknown is always a base angle, regardless of
+    // whether the 90° came from the rightIso path or from the clean/random
+    // apex pool above.
+    const apexIsRight = (apex === 90);
+    const findApex = apexIsRight ? false : (rng() < 0.5);
+    const unknown = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)];
+
+    // Standard position: apex up, base horizontal, equal sides length 1
+    const D = Math.PI / 180;
+    const halfBase = Math.sin(apex / 2 * D);
+    const height   = Math.cos(apex / 2 * D);
+    const A = { x: 0, y: height };
+    const B = { x: -halfBase, y: 0 };
+    const C = { x:  halfBase, y: 0 };
+
+    const cx0 = (A.x + B.x + C.x) / 3;
+    const cy0 = (A.y + B.y + C.y) / 3;
+
+    const availW = 210;
+    const availH = 105;
+
+    const rotations = [];
+    const trials = 24;
+    for (let t = 0; t < trials; t++) {
+      const theta = rng() * Math.PI * 2;
+      const cos = Math.cos(theta), sin = Math.sin(theta);
+      const rot = function (p) {
+        const dx = p.x - cx0, dy = p.y - cy0;
+        return {
+          x: cx0 + dx * cos - dy * sin,
+          y: cy0 + dx * sin + dy * cos
+        };
+      };
+      const Ar = rot(A), Br = rot(B), Cr = rot(C);
+      const minX = Math.min(Ar.x, Br.x, Cr.x);
+      const maxX = Math.max(Ar.x, Br.x, Cr.x);
+      const minY = Math.min(Ar.y, Br.y, Cr.y);
+      const maxY = Math.max(Ar.y, Br.y, Cr.y);
+      const bw = maxX - minX, bh = maxY - minY;
+      const scale = Math.min(availW / bw, availH / bh);
+      rotations.push({ theta, scale, Ar, Br, Cr, minX, maxX, minY, maxY });
+    }
+    let maxScale = 0;
+    for (const r of rotations) if (r.scale > maxScale) maxScale = r.scale;
+    const acceptable = rotations.filter(function (r) { return r.scale >= 0.65 * maxScale; });
+    const chosen = acceptable[ri(0, acceptable.length - 1)];
+
+    const scale = chosen.scale;
+    const Ar = chosen.Ar, Br = chosen.Br, Cr = chosen.Cr;
+    const minX = chosen.minX, maxX = chosen.maxX;
+    const minY = chosen.minY, maxY = chosen.maxY;
+    const bcx = (minX + maxX) / 2;
+    const bcy = (minY + maxY) / 2;
+
+    function toLocal(p) {
+      return { x: (p.x - bcx) * scale, y: -(p.y - bcy) * scale };
+    }
+
+    const VA = toLocal(Ar), VB = toLocal(Br), VC = toLocal(Cr);
+    const verts = [VA, VB, VC];
+    const neigh = [[VB, VC], [VA, VC], [VA, VB]];
+
+    const items = [
+      { t: 'line', x1: VA.x, y1: VA.y, x2: VB.x, y2: VB.y, w: 1.4 },
+      { t: 'line', x1: VB.x, y1: VB.y, x2: VC.x, y2: VC.y, w: 1.4 },
+      { t: 'line', x1: VC.x, y1: VC.y, x2: VA.x, y2: VA.y, w: 1.4 }
+    ];
+
+    // Tick marks at the midpoints of the two equal sides AB and AC
+    function addTick(P1, P2) {
+      const mx = (P1.x + P2.x) / 2, my = (P1.y + P2.y) / 2;
+      const dx = P2.x - P1.x, dy = P2.y - P1.y;
+      const len = Math.hypot(dx, dy);
+      const nx = -dy / len, ny = dx / len;
+      const sz = 4.5;
+      items.push({
+        t: 'line',
+        x1: mx - nx * sz, y1: my - ny * sz,
+        x2: mx + nx * sz, y2: my + ny * sz,
+        w: 1.0
+      });
+    }
+    addTick(VA, VB);
+    addTick(VA, VC);
+
+    const anglesShown = [apex, base, base];
+    const uk = findApex ? 0 : 1;
+    const knownIdx = findApex ? 1 : 0;
+
+    const centroid = {
+      x: (VA.x + VB.x + VC.x) / 3,
+      y: (VA.y + VB.y + VC.y) / 3
+    };
+
+    const edgeList = [
+      { A: VA, B: VB },
+      { A: VB, B: VC },
+      { A: VC, B: VA }
+    ].map(function (e) {
+      const dx = e.B.x - e.A.x, dy = e.B.y - e.A.y;
+      const len = Math.hypot(dx, dy);
+      const crossI = dx * (centroid.y - e.A.y) - dy * (centroid.x - e.A.x);
+      return { A: e.A, dx: dx, dy: dy, len: len, sign: crossI >= 0 ? 1 : -1 };
+    });
+
+    function sd(e, P) {
+      const crossP = e.dx * (P.y - e.A.y) - e.dy * (P.x - e.A.x);
+      return (crossP * e.sign >= 0 ? 1 : -1) * Math.abs(crossP) / e.len;
+    }
+
+    const shownIndices = [uk, knownIdx];
+
+    for (const i of shownIndices) {
+      const V = verts[i];
+      const P = neigh[i][0];
+      const Q = neigh[i][1];
+
+      // Right-angled isosceles: draw a square marker at the apex
+      // instead of an arc, and no label there.
+      if (apexIsRight && i === 0) {
+        const ux = P.x - V.x, uy = P.y - V.y, lu = Math.hypot(ux, uy);
+        const vx = Q.x - V.x, vy = Q.y - V.y, lv = Math.hypot(vx, vy);
+        const u = { x: ux / lu, y: uy / lu };
+        const v = { x: vx / lv, y: vy / lv };
+        const sz = 13;
+        const c1 = { x: V.x + sz * u.x, y: V.y + sz * u.y };
+        const c3 = { x: V.x + sz * v.x, y: V.y + sz * v.y };
+        const c2 = { x: c1.x + sz * v.x, y: c1.y + sz * v.y };
+        items.push({ t: 'line', x1: c1.x, y1: c1.y, x2: c2.x, y2: c2.y, w: 0.9 });
+        items.push({ t: 'line', x1: c3.x, y1: c3.y, x2: c2.x, y2: c2.y, w: 0.9 });
+        continue;
+      }
+
+      const ux = P.x - V.x, uy = P.y - V.y, lu = Math.hypot(ux, uy);
+      const vx = Q.x - V.x, vy = Q.y - V.y, lv = Math.hypot(vx, vy);
+      const u = { x: ux / lu, y: uy / lu };
+      const v = { x: vx / lv, y: vy / lv };
+
+      const isUnknown = (i === uk);
+      const label = isUnknown ? unknown : (anglesShown[i] + '\u00B0');
+
+      let bx = u.x + v.x, by = u.y + v.y;
+      const lb = Math.hypot(bx, by);
+      bx /= lb; by /= lb;
+
+      const fs = 10;
+      const tw = textWidth(label, fs, false) / 2;
+      const th = fs * 0.5;
+      const padding = 2;
+
+      let labelR = 22;
+      for (let r = 8; r <= 200; r += 0.25) {
+        const cxp = V.x + bx * r, cyp = V.y + by * r;
+        let ok = true;
+        const corners = [
+          { x: cxp + tw, y: cyp + th },
+          { x: cxp + tw, y: cyp - th },
+          { x: cxp - tw, y: cyp + th },
+          { x: cxp - tw, y: cyp - th }
+        ];
+        for (let k = 0; k < 4; k++) {
+          for (let e = 0; e < 3; e++) {
+            if (sd(edgeList[e], corners[k]) < padding) { ok = false; break; }
+          }
+          if (!ok) break;
+        }
+        if (ok) { labelR = r; break; }
+      }
+
+      const cxp = V.x + bx * labelR, cyp = V.y + by * labelR;
+      let maxCornerDist = 0;
+      [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function (s) {
+        const d = Math.hypot(cxp + s[0] * tw - V.x, cyp + s[1] * th - V.y);
+        if (d > maxCornerDist) maxCornerDist = d;
+      });
+
+      const dxe = Q.x - P.x, dye = Q.y - P.y;
+      const le2 = dxe * dxe + dye * dye;
+      const tFoot = ((V.x - P.x) * dxe + (V.y - P.y) * dye) / le2;
+      let Rmax;
+      if (tFoot >= 0 && tFoot <= 1) {
+        Rmax = Math.abs(dxe * (V.y - P.y) - dye * (V.x - P.x)) / Math.sqrt(le2);
+      } else {
+        Rmax = Math.min(lu, lv);
+      }
+
+      const arcR = Math.min(maxCornerDist + 1.5, Rmax - 2);
+
+      const thU = Math.atan2(-u.y, u.x) * 180 / Math.PI;
+      const thV = Math.atan2(-v.y, v.x) * 180 / Math.PI;
+      let dd = thV - thU;
+      while (dd > 180) dd -= 360;
+      while (dd <= -180) dd += 360;
+      let a1, a2;
+      if (dd > 0) { a1 = thU; a2 = thU + dd; }
+      else { a1 = thV; a2 = thV - dd; }
+
+      items.push({ t: 'arc', cx: V.x, cy: V.y, r: arcR, a1: a1, a2: a2, w: 0.9 });
+      items.push({
+        t: 'text',
+        x: cxp, y: cyp,
+        s: label,
+        size: fs,
+        italic: isUnknown,
+        centered: true
+      });
+    }
+
+    const answerValue = findApex ? apex : base;
+
+    return {
+      q: 'Work out angle ' + unknown + '.',
+      ans: unknown + ' = ' + answerValue + '\u00B0',
+      items: items,
+      dcy: 88
+    };
+  }
+
+  /* ============================================================
+     LAYOUT ENGINE
+     ============================================================ */
+  const PW = 595.276;
+  const PH = 841.890;
+  const MG = 42.52;
+
+  function layoutSheet(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const qPerPage = 8;
+    const cols = 2;
+    const rows = 4;
+
+    const pages = [];
+    const nPages = Math.ceil(questions.length / qPerPage);
+
+    for (let p = 0; p < nPages; p++) {
+      const items = [];
+      const innerW = PW - 2 * MG;
+      let top = MG;
+
+      const ts = 19;
+      const tw = textWidth(title, ts, true);
+      let bl = top + ts * 0.78;
+      items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                   size: ts, bold: true, s: title });
+      top = bl + ts * 0.32 + 6;
+      items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+      top += 17;
+
+      const ns = 10.5;
+      bl = top + ns * 0.78;
+      items.push({ t: 'text', x: MG, y: bl, size: ns, bold: false, s: 'Name:' });
+      items.push({ t: 'line', x1: MG + 35, y1: bl + 2.2,
+                   x2: MG + innerW * 0.46, y2: bl + 2.2, w: 0.6 });
+      items.push({ t: 'text', x: MG + innerW * 0.60, y: bl, size: ns,
+                   bold: false, s: 'Date:' });
+      items.push({ t: 'line', x1: MG + innerW * 0.60 + 30, y1: bl + 2.2,
+                   x2: PW - MG, y2: bl + 2.2, w: 0.6 });
+      top = bl + 22;
+
+      const insSize = 10.5;
+      const instruction = 'Calculate the angles marked with letters in these diagrams.';
+      const iw = textWidth(instruction, insSize, false);
+      bl = top + insSize * 0.78;
+      items.push({ t: 'text', x: MG + Math.max(0, (innerW - iw) / 2), y: bl,
+                   size: insSize, bold: false, s: instruction });
+      top = bl + 22;
+
+      const gridTop = top;
+      const gridH = PH - MG - gridTop;
+      const colW = innerW / cols;
+      const rowH = gridH / rows;
+
+      for (let i = 0; i < qPerPage; i++) {
+        const idx = p * qPerPage + i;
+        if (idx >= questions.length) break;
+        const q = questions[idx];
+        const r = Math.floor(i / cols);
+        const c = i % cols;
+        const cx = MG + c * colW;
+        const cy = gridTop + r * rowH;
+
+        items.push({ t: 'rrect', x: cx + 2, y: cy + 2,
+                     w: colW - 4, h: rowH - 4, r: 6, lw: 0.8 });
+
+        const fs = 11;
+        const base = cy + 14;
+        items.push({ t: 'text', x: cx + 10, y: base, size: fs, bold: true,
+                     s: (idx + 1) + '.' });
+        items.push({ t: 'text', x: cx + 28, y: base, size: fs, bold: false,
+                     s: q.q });
+
+        const dcx = cx + colW / 2;
+        const dcy = cy + (q.dcy || 110);
+
+        for (const it of q.items) {
+          if (it.t === 'text') {
+            items.push({
+              t: 'text',
+              x: dcx + it.x,
+              y: dcy + it.y,
+              s: it.s,
+              size: it.size,
+              bold: false,
+              italic: it.italic,
+              centered: it.centered
+            });
+          } else if (it.t === 'line') {
+            items.push({ t: 'line',
+                         x1: dcx + it.x1, y1: dcy + it.y1,
+                         x2: dcx + it.x2, y2: dcy + it.y2,
+                         w: it.w || 1 });
+          } else if (it.t === 'arc') {
+            items.push({ t: 'arc',
+                         cx: dcx + it.cx, cy: dcy + it.cy,
+                         r: it.r, a1: it.a1, a2: it.a2,
+                         w: it.w || 1 });
+          }
+        }
+
+        items.push({ t: 'answer',
+                     x: cx + colW - 78, y: cy + rowH - 18,
+                     size: fs, bold: true, s: q.ans });
+      }
+      pages.push(items);
+    }
+    return pages;
+  }
+
+  function layoutAnswerKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' \u2014 Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t: 'text', x: MG + Math.max(0, (innerW - tw) / 2), y: bl,
+                 size: ts, bold: true, s: heading });
+    top = bl + ts * 0.32 + 6;
+    items.push({ t: 'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 40;
+
+    const cols = 2;
+    const fs = 12;
+    const rowH = 24;
+    const colW = innerW / cols;
+
+    questions.forEach(function (q, i) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const x0 = MG + c * colW;
+      const y  = top + r * rowH;
+      items.push({ t: 'text', x: x0, y: y, size: fs, bold: true, s: (i + 1) + '.' });
+      items.push({ t: 'text', x: x0 + 25, y: y, size: fs, bold: false, s: q.ans });
+    });
+
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    items.push({ t: 'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false, s: note });
+    return [items];
+  }
+
+  /* ============================================================
+     HTML RENDERER
+     ============================================================ */
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  function drawHTML(pagesItems) {
+    const viewport = document.getElementById('viewport');
+    viewport.innerHTML = '';
+
+    pagesItems.forEach(function (items) {
+      const pg = document.createElement('div');
+      pg.className = 'page';
+
+      let svgContent = '';
+      let htmlContent = '';
+
+      items.forEach(function (it) {
+        if (it.t === 'text') {
+          let left = it.x;
+          let topOff = 0.755;
+          if (it.centered) {
+            left -= textWidth(it.s, it.size, it.bold) / 2;
+            topOff = 0.4;
+          }
+          const top = it.y - it.size * topOff;
+          const weight = it.bold ? 'font-weight:700;' : '';
+          const style = it.italic ? 'font-style:italic;' : '';
+          htmlContent += '<span class="tx" style="left:' + left.toFixed(2) +
+            'pt;top:' + top.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) +
+            'pt;' + weight + style + '">' + esc(it.s) + '</span>';
+        } else if (it.t === 'answer') {
+          const top = it.y - it.size * 0.755;
+          htmlContent += '<span class="tx ans" style="left:' + it.x.toFixed(2) +
+            'pt;top:' + top.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) +
+            'pt;font-weight:700;">' + esc(it.s) + '</span>';
+        } else if (it.t === 'line') {
+          svgContent += '<line x1="' + it.x1.toFixed(2) + '" y1="' + it.y1.toFixed(2) +
+            '" x2="' + it.x2.toFixed(2) + '" y2="' + it.y2.toFixed(2) +
+            '" stroke="#000" stroke-width="' + (it.w || 1) +
+            '" stroke-linecap="round"/>';
+        } else if (it.t === 'arc') {
+          const pts = [];
+          const steps = 24;
+          const dA = (it.a2 - it.a1) / steps;
+          for (let k = 0; k <= steps; k++) {
+            const a = it.a1 + dA * k;
+            const rad = a * Math.PI / 180;
+            pts.push((it.cx + it.r * Math.cos(rad)).toFixed(2) + ',' +
+                     (it.cy - it.r * Math.sin(rad)).toFixed(2));
+          }
+          svgContent += '<polyline points="' + pts.join(' ') +
+            '" fill="none" stroke="#000" stroke-width="' + (it.w || 1) +
+            '" stroke-linecap="round"/>';
+        } else if (it.t === 'rrect') {
+          svgContent += '<rect x="' + it.x.toFixed(2) + '" y="' + it.y.toFixed(2) +
+            '" width="' + it.w.toFixed(2) + '" height="' + it.h.toFixed(2) +
+            '" rx="' + it.r + '" ry="' + it.r + '" fill="none" stroke="#000" stroke-width="' +
+            it.lw + '"/>';
+        }
+      });
+
+      pg.innerHTML = '<svg viewBox="0 0 ' + PW + ' ' + PH +
+        '" xmlns="http://www.w3.org/2000/svg">' + svgContent + '</svg>' + htmlContent;
+      viewport.appendChild(pg);
+    });
+  }
+
+  /* ============================================================
+     PDF WRITER
+     ============================================================ */
+  function pdfEsc(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const code = ch.charCodeAt(0);
+      if (code > 126 || code < 32) { out += '?'; continue; }
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '(') out += '\\(';
+      else if (ch === ')') out += '\\)';
+      else out += ch;
+    }
+    return out;
+  }
+
+  function contentStream(items) {
+    const ops = [];
+    const f = function (v) { return v.toFixed(2); };
+
+    items.forEach(function (it) {
+      if (it.t === 'answer') return;
+
+      if (it.t === 'text') {
+        let x = it.x;
+        let pageY = it.y;
+        if (it.centered) {
+          x -= textWidth(it.s, it.size, it.bold) / 2;
+          pageY += it.size * 0.35;
+        }
+        const font = it.bold && it.italic ? 'F4'
+          : it.bold ? 'F2'
+          : it.italic ? 'F3'
+          : 'F1';
+        ops.push('BT /' + font + ' ' + it.size.toFixed(2) + ' Tf ' +
+          x.toFixed(2) + ' ' + (PH - pageY).toFixed(2) + ' Td (' +
+          pdfEsc(it.s) + ') Tj ET');
+      } else if (it.t === 'line') {
+        ops.push((it.w || 1).toFixed(2) + ' w ' +
+          it.x1.toFixed(2) + ' ' + (PH - it.y1).toFixed(2) + ' m ' +
+          it.x2.toFixed(2) + ' ' + (PH - it.y2).toFixed(2) + ' l S');
+      } else if (it.t === 'arc') {
+        const steps = 24;
+        const dA = (it.a2 - it.a1) / steps;
+        const a0 = it.a1 * Math.PI / 180;
+        const startX = it.cx + it.r * Math.cos(a0);
+        const startY = it.cy - it.r * Math.sin(a0);
+        ops.push((it.w || 1).toFixed(2) + ' w ' +
+          startX.toFixed(2) + ' ' + (PH - startY).toFixed(2) + ' m');
+        for (let k = 1; k <= steps; k++) {
+          const a = (it.a1 + dA * k) * Math.PI / 180;
+          const px = it.cx + it.r * Math.cos(a);
+          const py = it.cy - it.r * Math.sin(a);
+          ops.push(px.toFixed(2) + ' ' + (PH - py).toFixed(2) + ' l');
+        }
+        ops.push('S');
+      } else if (it.t === 'rrect') {
+        const X = it.x, Y = PH - it.y - it.h, W = it.w, H = it.h, R = it.r;
+        const k = R * 0.5522847498;
+        ops.push(it.lw + ' w');
+        ops.push(f(X + R) + ' ' + f(Y) + ' m');
+        ops.push(f(X + W - R) + ' ' + f(Y) + ' l');
+        ops.push(f(X + W - R + k) + ' ' + f(Y) + ' ' +
+                 f(X + W) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + W) + ' ' + f(Y + R) + ' c');
+        ops.push(f(X + W) + ' ' + f(Y + H - R) + ' l');
+        ops.push(f(X + W) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X + W - R + k) + ' ' + f(Y + H) + ' ' +
+                 f(X + W - R) + ' ' + f(Y + H) + ' c');
+        ops.push(f(X + R) + ' ' + f(Y + H) + ' l');
+        ops.push(f(X + R - k) + ' ' + f(Y + H) + ' ' +
+                 f(X) + ' ' + f(Y + H - R + k) + ' ' +
+                 f(X) + ' ' + f(Y + H - R) + ' c');
+        ops.push(f(X) + ' ' + f(Y + R) + ' l');
+        ops.push(f(X) + ' ' + f(Y + R - k) + ' ' +
+                 f(X + R - k) + ' ' + f(Y) + ' ' +
+                 f(X + R) + ' ' + f(Y) + ' c');
+        ops.push('S');
+      }
+    });
+    return ops.join('\n');
+  }
+
+  function assemblePDF(pages) {
+    const N = pages.length;
+    const objects = [];
+    const kids = [];
+    for (let i = 0; i < N; i++) kids.push((8 + 2 * i) + ' 0 R');
+
+    objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objects[2] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + N + ' >>';
+    objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
+    objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
+
+    for (let i = 0; i < N; i++) {
+      const stream = contentStream(pages[i]);
+      const sObj = 7 + 2 * i;
+      const pObj = 8 + 2 * i;
+      objects[sObj] = '<< /Length ' + stream.length + ' >>\nstream\n' +
+        stream + '\nendstream';
+      objects[pObj] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+        '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+        '/Contents ' + sObj + ' 0 R >>';
+    }
+
+    let out = '%PDF-1.4\n';
+    const offsets = [];
+    for (let i = 1; i <= 6 + 2 * N; i++) {
+      offsets[i] = out.length;
+      out += i + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xref = out.length;
+    out += 'xref\n0 ' + (6 + 2 * N + 1) + '\n0000000000 65535 f \n';
+    for (let i = 1; i <= 6 + 2 * N; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += 'trailer\n<< /Size ' + (6 + 2 * N + 1) + ' /Root 1 0 R >>\n' +
+           'startxref\n' + xref + '\n%%EOF\n';
+    return out;
+  }
+
+  function downloadPDF(pages, filename) {
+    const pdfStr = assemblePDF(pages);
+    const bytes = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+  }
+
+  /* ============================================================
+     STATE + UI
+     ============================================================ */
+  const titleInput = document.getElementById('titleInput');
+  const seedInput  = document.getElementById('seedInput');
+  const pageSel    = document.getElementById('pageSel');
+  const revealBtn  = document.getElementById('revealBtn');
+
+  let currentQuestions = [];
+  let lastSheetPages = [];
+  let lastAnswerPages = [];
+  let isoCount = 0;
+
+  function sheetTitle() {
+    return titleInput.value.trim() || 'Calculating Angles';
+  }
+
+  function renderSheet() {
+    const nPages = parseInt(pageSel.value, 10);
+    const total = nPages * 8;
+    
+  const gens = [genThreeAnglesOnLine, genAnglesRoundPoint, genTriangle, genIsoscelesTriangle, genParallelLines];
+
+  isoCount = 0;
+  currentQuestions = [];
+  for (let i = 0; i < total; i++) {
+    const t = Math.min(4, Math.floor(i * 5 / total));
+  if (t === 2 && rng() < 0.5) {
+    currentQuestions.push(genExteriorAngleTriangle());
+  } else {
+    currentQuestions.push(gens[t]());
+  }
+}
+
+    lastSheetPages = layoutSheet({ title: sheetTitle(), questions: currentQuestions });
+    lastAnswerPages = layoutAnswerKey({ title: sheetTitle(), questions: currentQuestions, seed: seedInput.value });
+
+    drawHTML(lastSheetPages);
+    fitPage();
+  }
+
+  function fitPage() {
+    const vp = document.getElementById('viewport');
+    const pw = 210 * 96 / 25.4;
+    const avail = vp.clientWidth - 40;
+    const z = Math.max(0.4, Math.min(1, avail / pw));
+    document.querySelectorAll('.page').forEach(function (pg) {
+      pg.style.transform = 'scale(' + z + ')';
+      pg.style.marginBottom =
+        ((297 * 96 / 25.4) * z - 297 * 96 / 25.4) + 'px';
+    });
+  }
+
+  function setRevealed(on) {
+    document.querySelectorAll('.page').forEach(function (pg) {
+      pg.classList.toggle('reveal', !!on);
+    });
+    revealBtn.textContent = on ? '\uD83D\uDE48 Hide answers' : '\uD83D\uDC41 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', function () {
+    const d = new Date();
+    seedInput.value = parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'), 10);
+    applySeed();
+    renderSheet();
+  });
+
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    downloadPDF(lastSheetPages, 'angles-' + seedInput.value + '.pdf');
+  });
+
+  document.getElementById('dlAnsBtn').addEventListener('click', function () {
+    downloadPDF(lastAnswerPages, 'angles-ANSWERS-' + seedInput.value + '.pdf');
+  });
+
+  document.getElementById('printBtn').addEventListener('click', function () {
+    window.print();
+  });
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!revealBtn.classList.contains('reveal-on'));
+  });
+
+  seedInput.addEventListener('change', function () { applySeed(); renderSheet(); });
+  pageSel.addEventListener('change', function () { applySeed(); renderSheet(); });
+  titleInput.addEventListener('input', renderSheet);
+  window.addEventListener('resize', fitPage);
+
+  function boot() {
+    seedInput.value = Date.now() % 100000;
+    applySeed();
+    renderSheet();
+  }
+
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
