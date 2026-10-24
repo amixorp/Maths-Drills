@@ -71,9 +71,8 @@
     position:absolute; white-space:pre; line-height:1;
     font-family:Helvetica,Arial,sans-serif;
   }
-  .page .ln{position:absolute; height:0; border-top-style:solid;}
-  .page .ans{display:none; color:var(--accent); font-weight:700;}
-  .pages.revealed .ans{display:block;}
+  .page .ans{visibility:hidden; color:var(--accent); font-weight:700;}
+  .pages.revealed .ans{visibility:visible;}
 
   .hint{
     text-align:center; color:var(--muted);
@@ -103,7 +102,7 @@
       height:296.9mm !important;
       box-shadow:none !important;
     }
-    .pages .ans{ display: none !important; }
+    .pages .ans{ visibility: hidden !important; }
   }
 </style>
 </head>
@@ -150,15 +149,6 @@
 (function(){
   'use strict';
 
-  /* ============================================================
-     PROPORTION BANK (starter copy if banks.js lacks it)
-     ------------------------------------------------------------
-     Markup inside stems:
-       `x`         → x renders in italic
-       \frac{a}{b} → a/b renders as a stacked fraction
-     fracAllowed: true  → the generator may occasionally use a
-                          fractional constant for this context.
-     ============================================================ */
   if (!window.BANKS) window.BANKS = {};
   if (!window.BANKS.proportion) {
     window.BANKS.proportion = {
@@ -200,9 +190,6 @@
   const CONTEXTS = PROP.contexts || [];
   const RATES    = PROP.rates || [];
 
-  /* ============================================================
-     SEEDED RANDOM
-     ============================================================ */
   let rng = Math.random;
   function mulberry32(a) {
     return function () {
@@ -225,9 +212,6 @@
     return pairs[pairs.length - 1][0];
   }
 
-  /* ============================================================
-     FONT METRICS
-     ============================================================ */
   const W_REG = [
     278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
     556,556,556,556,556,556,556,556,556,556,
@@ -257,9 +241,6 @@
     return w * size / 1000;
   }
 
-  /* ============================================================
-     RUN / TOKEN MODEL
-     ============================================================ */
   function parseRuns(text) {
     const runs = [];
     let i = 0;
@@ -417,6 +398,12 @@
      ============================================================ */
   const ital = s => '`' + s + '`';
 
+  const VAR_PAIRS = [
+    ['A','B'], ['C','D'], ['E','F'], ['P','Q'], ['R','S'],
+    ['G','H'], ['K','L'], ['M','N'], ['T','U'], ['V','W'],
+    ['x','y'], ['p','q'], ['u','v'], ['m','n'], ['a','b']
+  ];
+
   const FRAC_KS = [
     { n:1, d:2 }, { n:1, d:3 }, { n:2, d:3 }, { n:1, d:4 },
     { n:3, d:4 }, { n:1, d:5 }, { n:3, d:5 }, { n:4, d:5 },
@@ -478,22 +465,26 @@
     const data = (rng() < 0.25 ? coreFrac() : null) ||
                  coreInt({ kMin:2, kMax:12, B0Min:2, B0Max:9,
                            B1Min:2, B1Max:12, B2Min:2, B2Max:12 });
+    const [vA, vB] = pick(VAR_PAIRS);
+    const As = ital(vA), Bs = ital(vB);
     const formula = data.isFrac
-      ? '`A` = \\frac{' + data.n + '}{' + data.d + '}`B`'
-      : '`A` = ' + data.k + '`B`';
+      ? As + ' = \\frac{' + data.n + '}{' + data.d + '}' + Bs
+      : As + ' = ' + data.k + Bs;
     return {
-      key: 'bare|' + (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      key: 'bare|' + vA + vB + '|' +
+           (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      theme: 'bare:' + vA + vB,
       blocks: [
-        { type:'text', text:'`A` is directly proportional to `B`.' },
-        { type:'text', text:'When `A` = ' + data.A0 + ', `B` = ' + data.B0 + '.' },
-        { type:'text', text:'(a)  Find a formula for `A` in terms of `B`.' },
-        { type:'text', text:'(b)  Find the value of `A` when `B` = ' + data.B1 + '.' },
-        { type:'text', text:'(c)  Find the value of `B` when `A` = ' + data.A2 + '.' }
+        { type:'text', text: As + ' is directly proportional to ' + Bs + '.' },
+        { type:'text', text:'When ' + As + ' = ' + data.A0 + ', ' + Bs + ' = ' + data.B0 + '.' },
+        { type:'text', text:'(a)  Find a formula for ' + As + ' in terms of ' + Bs + '.' },
+        { type:'text', text:'(b)  Find the value of ' + As + ' when ' + Bs + ' = ' + data.B1 + '.' },
+        { type:'text', text:'(c)  Find the value of ' + Bs + ' when ' + As + ' = ' + data.A2 + '.' }
       ],
       answers: [
         { blockIndex:2, text: formula },
-        { blockIndex:3, text: '`A` = ' + data.A1 },
-        { blockIndex:4, text: '`B` = ' + data.B2 }
+        { blockIndex:3, text: As + ' = ' + data.A1 },
+        { blockIndex:4, text: Bs + ' = ' + data.B2 }
       ]
     };
   }
@@ -524,6 +515,7 @@
     return {
       key: 'ctx|' + ctx.id + '|' +
            (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      theme: 'ctx:' + ctx.id,
       blocks: [
         { type:'text', text: ctx.stem },
         { type:'text', text: 'When ' + As + ' = ' + data.A0 + ', ' + Bs + ' = ' + data.B0 + '.' },
@@ -539,6 +531,12 @@
     };
   }
 
+  /* A "standard" is either the bare or the contextual version of the
+     (a)/(b)/(c) directly-proportional exercise. */
+  function genStandard() {
+    return (rng() < 0.55) ? genBare() : genContext();
+  }
+
   function genTable() {
     const k = pick([2,3,4,5,6,7,8,9,10]);
     const pool = [2,3,4,5,6,7,8,9,10,11,12];
@@ -548,188 +546,266 @@
       if (!xs.includes(v)) xs.push(v);
     }
     const ys = xs.map(x => k * x);
-    const shownIdx = ri(0, 2);
-    const yRow = ['`y`'];
-    for (let i = 0; i < 3; i++) {
-      yRow.push(i === shownIdx ? String(ys[i]) : '');
+
+    const xRow = ['`x`', String(xs[0]), String(xs[1]), String(xs[2])];
+    const yRow = ['`y`', String(ys[0]), String(ys[1]), String(ys[2])];
+
+    function shuffled() {
+      const a = [0, 1, 2];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        const t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
     }
+
+    if (rng() < 0.5) {
+      const cols = shuffled().slice(0, 2);
+      for (const i of cols) yRow[i+1] = '';
+    } else {
+      const xcol = ri(0, 2);
+      let ycol;
+      do { ycol = ri(0, 2); } while (ycol === xcol);
+      xRow[xcol+1] = '';
+      yRow[ycol+1] = '';
+    }
+
+    const missing = [];
+    for (let i = 0; i < 3; i++) {
+      if (xRow[i+1] === '') missing.push('`x` = ' + xs[i]);
+      if (yRow[i+1] === '') missing.push('`y` = ' + ys[i]);
+    }
+
+    const key = 'tbl|' + k + '|' + xs.join(',') + '|' +
+                xRow.map(v => v === '' ? '_' : v).join(',') + '|' +
+                yRow.map(v => v === '' ? '_' : v).join(',');
+
     return {
-      key: 'tbl|' + k + '|' + xs.join(','),
+      key: key,
       blocks: [
         { type:'text', text:'`y` is directly proportional to `x`.' },
         { type:'text', text:'Complete the table.' },
-        { type:'table', cols:4, rows: [
-          ['`x`', String(xs[0]), String(xs[1]), String(xs[2])],
-          yRow
-        ]}
+        { type:'table', cols:4, rows: [ xRow, yRow ]}
       ],
       answers: [
-        { blockIndex:2, text: '`y` = ' + ys.join(', ') }
+        { blockIndex:2, text: missing.join(', ') }
       ]
     };
   }
 
-  function penceToPounds(p) {
-    const pounds = Math.floor(p / 100);
-    const pence  = p % 100;
-    return pounds + '.' + String(pence).padStart(2, '0');
+  /* ---- Flagpole figure data ----------------------------------------- */
+  const FP_K_POOL = [
+    { p:1, q:1 }, { p:3, q:2 }, { p:2, q:1 }, { p:5, q:2 },
+    { p:1, q:2 }, { p:5, q:4 }, { p:7, q:4 }, { p:3, q:4 },
+    { p:4, q:3 }, { p:3, q:5 }, { p:4, q:5 }, { p:7, q:5 },
+    { p:8, q:5 }
+  ];
+  function fpStepFor(q) {
+    if (q === 1 || q === 2) return 0.2;
+    if (q === 3) return 0.3;
+    if (q === 4) return 0.4;
+    if (q === 5) return 0.5;
+    return 0.1;
   }
-  function genRate() {
-    if (!RATES.length) return genBare();
-    const rate = pick(RATES);
-    const qA = 50 * ri(4, 16);
-    let qB; do { qB = 50 * ri(4, 16); } while (qB === qA);
-    const pPer50 = pick([15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 70, 75]);
-    const costA = (qA / 50) * pPer50;
-    const costB = (qB / 50) * pPer50;
-    const cur = currencySymbol();
-    return {
-      key: 'rate|' + rate.noun + '|' + qA + '|' + qB + '|' + pPer50,
-      blocks: [
-        { type:'text', text: qA + ' ' + rate.unit + ' of ' + rate.noun + ' costs ' + cur + penceToPounds(costA) + '.' },
-        { type:'text', text: 'Calculate the cost of ' + qB + ' ' + rate.unit + ' of the same ' + rate.noun + '.' }
-      ],
-      answers: [
-        { blockIndex:1, text: cur + penceToPounds(costB) }
-      ]
-    };
-  }
+  function fpRound2(x) { return Math.round(x * 100) / 100; }
+  function fpFmt(x) { return String(fpRound2(x)); }
+  function genFlagpole() {
+    const kObj = pick(FP_K_POOL);
+    const { p, q } = kObj;
+    const step = fpStepFor(q);
 
-  /* ---- Best-value comparison ---------------------------------------
-     Two pack sizes of the same product, with prices that imply
-     different unit prices.  Approximately 70% of the time the
-     larger pack is better value; the rest of the time the smaller
-     pack wins, so the question can't be answered by assumption.
-     Appears only in the tail of the sheet, and only with a low
-     weight in the stage plan.
-     ------------------------------------------------------------------- */
-  function genBestValue() {
-    if (!RATES.length) return genBare();
-    const cur = currencySymbol();
-    for (let attempt = 0; attempt < 60; attempt++) {
-      const rate = pick(RATES);
+    const minH = Math.ceil(1.2 / step) * step;
+    const maxH = Math.floor(6.0 / step) * step;
+    const nSteps = Math.round((maxH - minH) / step) + 1;
 
-      /* pack amounts, in the rate's own unit */
-      const X1 = 100 * ri(2, 5);       // 200, 300, 400, 500
-      let X2; do { X2 = 100 * ri(6, 12); } while (X2 === X1);  // 600–1200
-
-      /* base rate in pence per unit — 1..5p keeps totals realistic */
-      const r = 1 + ri(0, 4);
-
-      /* which pack is the better deal, and by how much */
-      const largeBetter = rng() < 0.70;
-      const spread = 0.10 + rng() * 0.15;   // 10–25%
-
-      /* prices, rounded to 5p */
-      const P1 = Math.round(X1 * r / 5) * 5;
-      const P2 = Math.round(X2 * r * (largeBetter ? 1 - spread : 1 + spread) / 5) * 5;
-
-      /* reject silly totals */
-      if (P1 < 100 || P2 < 200) continue;
-      if (P1 > 3000 || P2 > 6000) continue;
-
-      /* unit prices in pence per unit */
-      const u1 = P1 / X1;
-      const u2 = P2 / X2;
-
-      /* confirm the intended winner actually wins after rounding */
-      if (largeBetter && u2 >= u1 - 0.02) continue;
-      if (!largeBetter && u1 >= u2 - 0.02) continue;
-
-      /* per-100-unit prices for the answer */
-      const per100a = 100 * P1 / X1;
-      const per100b = 100 * P2 / X2;
-      const fmtPer100 = p => {
-        const pounds = Math.floor(p / 100);
-        const pence  = Math.round(p % 100);
-        return cur + pounds + '.' + String(pence).padStart(2, '0');
-      };
-
-      const p1 = cur + (P1 / 100).toFixed(2);
-      const p2 = cur + (P2 / 100).toFixed(2);
-
-      const winnerLabel = largeBetter ? 'Super' : 'Regular';
-      const loserLabel  = largeBetter ? 'Regular' : 'Super';
-      const winnerPrice = largeBetter ? per100b : per100a;
-      const loserPrice  = largeBetter ? per100a : per100b;
-
-      return {
-        key: 'bv|' + rate.noun + '|' + X1 + '|' + X2 + '|' + P1 + '|' + P2,
-        blocks: [
-          { type:'text', text:'A shop sells the same kind of ' + rate.noun + ' in two sizes.' },
-          { type:'table', cols:2,
-            boldFirstCol: false, boldRows: [0],
-            rows: [
-              ['Regular', 'Super'],
-              [X1 + ' ' + rate.unit, X2 + ' ' + rate.unit],
-              [p1, p2]
-            ]
-          },
-          { type:'text', text:'Which size gives the better value for money?' },
-          { type:'text', text:'You must show all your working.' }
-        ],
-        answers: [
-          { blockIndex:2, text: winnerLabel + ' — ' + fmtPer100(winnerPrice) + ' per 100 ' + rate.unit },
-          { blockIndex:3, text: loserLabel  + ' — ' + fmtPer100(loserPrice)  + ' per 100 ' + rate.unit }
-        ]
-      };
+    const heights = [];
+    let guard = 0;
+    while (heights.length < 3 && guard++ < 200) {
+      const idx = Math.floor(rng() * nSteps);
+      const h = fpRound2(minH + idx * step);
+      if (h > 0 && !heights.includes(h)) heights.push(h);
     }
-    return genBare();
+    while (heights.length < 3) heights.push(fpRound2(heights[heights.length-1] + step));
+
+    const shadows = heights.map(h => fpRound2(p * h / q));
+
+    const fullIdx = ri(0, 2);
+    const others = [0, 1, 2].filter(i => i !== fullIdx);
+    if (rng() < 0.5) others.reverse();
+    const hMissingIdx = others[0];
+    const sMissingIdx = others[1];
+
+    const poles = [];
+    for (let i = 0; i < 3; i++) {
+      const hUnknown = (i === hMissingIdx);
+      const sUnknown = (i === sMissingIdx);
+      poles.push({
+        label: ['A','B','C'][i],
+        height: heights[i],
+        heightLabel: hUnknown ? '?' : fpFmt(heights[i]) + ' m',
+        shadow: shadows[i],
+        shadowLabel: sUnknown ? '?' : fpFmt(shadows[i]) + ' m',
+        heightUnknown: hUnknown,
+        shadowUnknown: sUnknown
+      });
+    }
+
+    const hLabel = poles[hMissingIdx].label;
+    const sLabel = poles[sMissingIdx].label;
+
+    return {
+      key: 'fp|' + p + '/' + q + '|' + heights.join(',') + '|' + hMissingIdx + sMissingIdx,
+      theme: 'flagpole',
+      blocks: [
+        { type:'text', text:'The diagram shows three flagpoles and their shadows. The length of each shadow is directly proportional to the height of the flagpole.' },
+        { type:'flagpole', poles: poles },
+        { type:'text', text:'(a)  Find the height of flagpole ' + hLabel + '.' },
+        { type:'text', text:'(b)  Find the length of the shadow of flagpole ' + sLabel + '.' }
+      ],
+      answers: [
+        { blockIndex: 2, text: fpFmt(heights[hMissingIdx]) + ' m' },
+        { blockIndex: 3, text: fpFmt(shadows[sMissingIdx]) + ' m' }
+      ]
+    };
   }
 
-  const GENS = { bare: genBare, context: genContext, table: genTable,
-                 rate: genRate, bestvalue: genBestValue };
+  /* ---- Graph reading questions ------------------------------------- */
+  const GRAPH_VAR_PAIRS = [
+    ['y','x'], ['y','x'], ['y','x'], ['y','x'],
+    ['P','Q'], ['A','B'], ['M','N'], ['R','S'],
+    ['T','V'], ['p','q'], ['u','v'], ['m','n'],
+    ['C','D'], ['E','F'], ['G','H'], ['K','L']
+  ];
+  const GRAPH_INT_KS  = [2, 3, 4, 5, 6];
+  const GRAPH_FRAC_KS = [
+    { n:1, d:3 }, { n:2, d:3 }, { n:1, d:4 }, { n:3, d:4 },
+    { n:1, d:5 }, { n:2, d:5 }, { n:3, d:5 }, { n:4, d:5 },
+    { n:1, d:2 }, { n:3, d:2 }, { n:5, d:2 }, { n:5, d:3 },
+    { n:5, d:4 }, { n:4, d:3 }, { n:7, d:4 }, { n:7, d:5 }
+  ];
 
-  /* ---- Stage plan ----------------------------------------------------
-     Position-based, unbounded.  Q1 is always a bare `A ∝ B`.  The
-     remaining questions follow a nominal 16-question difficulty
-     curve: earlier slots favour short/easy stages, later slots
-     favour longer contextual and rate questions.  Best-value
-     comparison appears only in the tail, and with a low weight, so
-     it shows up on roughly half of sheets. */
-  function pickStage(index) {
-    const NOMINAL = 16;
-    if (index === 0) return 'bare';
-    const t = (index - 1) / (NOMINAL - 1);
-    if (t < 0.34) return weightedPick([['bare',1],['context',3],['table',2]]);
-    if (t < 0.70) return weightedPick([['context',3],['table',2],['rate',2]]);
-    return weightedPick([['context',2],['rate',3],['table',1],['bestvalue',1]]);
+  function genGraph(index) {
+    const pair = pick(GRAPH_VAR_PAIRS);
+    const vA = pair[0], vB = pair[1];          /* vA on y-axis, vB on x-axis */
+
+    const pFrac = Math.max(0.12, Math.min(0.70, (index - 2) * 0.07 + 0.10));
+
+    let kObj, pointX, pointY, isInt;
+    if (rng() < pFrac) {
+      const f = pick(GRAPH_FRAC_KS);
+      const n = f.n, d = f.d;
+      const mLo = Math.max(1, Math.ceil(2 / d));
+      const mHi = Math.max(mLo, Math.min(Math.floor(10 / d),
+                                         Math.floor(20 / n)));
+      const m   = ri(mLo, mHi);
+      pointX = d * m;          /* so pointY = (n/d) * pointX is an integer */
+      pointY = n * m;
+      kObj = { n: n, d: d };
+      isInt = false;
+    } else {
+      const k = pick(GRAPH_INT_KS);
+      pointX = ri(2, 4);
+      pointY = k * pointX;
+      kObj = { n: k, d: 1 };
+      isInt = true;
+    }
+
+    const As = ital(vA), Bs = ital(vB);
+    const formula = isInt
+      ? As + ' = ' + kObj.n + Bs
+      : As + ' = \\frac{' + kObj.n + '}{' + kObj.d + '}' + Bs;
+
+    return {
+      key: 'graph|' + vA + vB + '|' + kObj.n + '/' + kObj.d + '|' + pointX,
+      theme: 'graph:' + vA + vB,
+      blocks: [
+        { type:'graph', labelY: vA, labelX: vB, k: kObj,
+          pointX: pointX, pointY: pointY },
+        { type:'text', text: 'Write down an equation for ' + As +
+                             ' in terms of ' + Bs + '.' }
+      ],
+      answers: [
+        { blockIndex: 1, text: formula }
+      ]
+    };
   }
 
-  /* ----------------------------------------------------------------
-     Fill two pages at a fixed font size.
-     ---------------------------------------------------------------- */
+  const GENS = {
+    bare: genBare, context: genContext, table: genTable,
+    flagpole: genFlagpole, graph: genGraph, standard: genStandard
+  };
+
+  /* ============================================================
+     SHEET COMPOSITION
+     ------------------------------------------------------------
+     Sections, in order:
+       1. 2–3 graph questions
+       2. At least 5 "standard" questions (bare or context)
+       3. Exactly 3 table questions
+       4. 20 % chance of a flagpole at the end
+       5. Extra standards inserted into slot 2 until the sheet
+          would overflow onto a third page.
+     ============================================================ */
   function generateSetToFillTwoPages(fs) {
-    const out  = [];
-    const seen = new Set();
-    let page = 1;
-    let y = MG + HEADER_H;
-    const BOTTOM    = PH - MG;
-    const PAGE2_TOP = MG + CONT_HEADER_H;
+    const out    = [];
+    const seen   = new Set();
+    const themes = new Set();
 
-    for (let slot = 0; slot < 60; slot++) {
-      const stage = pickStage(out.length);
-      let q = null;
-      for (let tries = 0; tries < 400; tries++) {
-        const cand = GENS[stage]();
-        if (!seen.has(cand.key)) { seen.add(cand.key); q = cand; break; }
+    function tryGen(kind) {
+      for (let tries = 0; tries < 500; tries++) {
+        const cand = GENS[kind](out.length);
+        if (seen.has(cand.key)) continue;
+        if (cand.theme && themes.has(cand.theme)) continue;
+        seen.add(cand.key);
+        if (cand.theme) themes.add(cand.theme);
+        return cand;
       }
-      if (!q) q = GENS[stage]();
+      return null;
+    }
 
-      const h = measureQuestion(q, fs);
+    /* 1. Graphs */
+    const nGraphs = ri(2, 3);
+    for (let i = 0; i < nGraphs; i++) {
+      const q = tryGen('graph');
+      if (q) out.push(q);
+    }
 
-      if (page === 1 && y + h > BOTTOM) {
-        page = 2;
-        y = PAGE2_TOP;
-      }
+    /* 2. Standards — remember where the filler block will start */
+    const N_STD_MIN = 5;
+    for (let i = 0; i < N_STD_MIN; i++) {
+      const q = tryGen('standard');
+      if (q) out.push(q);
+    }
+    const stdEnd = out.length;
 
-      if (y + h <= BOTTOM) {
-        out.push(q);
-        y += h + QUESTION_GAP;
-      } else {
+    /* 3. Tables */
+    for (let i = 0; i < 3; i++) {
+      const q = tryGen('table');
+      if (q) out.push(q);
+    }
+
+    /* 4. Optional flagpole at the end */
+    if (rng() < 0.20) {
+      const q = tryGen('flagpole');
+      if (q) out.push(q);
+    }
+
+    /* 5. Extra standards to fill the two pages, inserted just
+          before the tables. Re-layout each time to check fit. */
+    let insertPos = stdEnd;
+    let safety = 0;
+    while (safety++ < 40) {
+      const q = tryGen('standard');
+      if (!q) break;
+      out.splice(insertPos, 0, q);
+      insertPos++;
+      const testPages = layoutSheet({ title: 'Test', questions: out });
+      if (testPages.length > 2) {
+        out.splice(insertPos - 1, 1);
         break;
       }
     }
+
     return out;
   }
 
@@ -759,7 +835,6 @@
     const totalW = colW * cols;
     const totalH = cellH * rows.length;
 
-    /* bold policy: first column by default; override for header rows */
     const boldFirstCol = block.boldFirstCol !== false;
     const boldRowSet = new Set(block.boldRows || []);
 
@@ -819,6 +894,294 @@
     return { items, height: totalH };
   }
 
+  /* ---- emitLabel -----------------------------------------------
+     Emits a text label with a white-out rectangle behind it.
+     --------------------------------------------------------------- */
+  function emitLabel(x, y, size, text, items) {
+    const padX = 2.5;
+    const padY = 1.4;
+    const w = textWidth(text, size, false);
+    const boxTop = y - size * 0.72 - padY;
+    const boxBot = y + size * 0.21 + padY;
+    items.push({
+      t: 'rect',
+      x: x - padX,
+      y: boxTop,
+      w: w + padX * 2,
+      h: boxBot - boxTop,
+      grey: 1.0
+    });
+    items.push({
+      t: 'run',
+      x: x,
+      y: y,
+      size: size,
+      bold: false,
+      italic: false,
+      s: text
+    });
+  }
+
+  /* ---- Flagpole figure --------------------------------------------- */
+  const FP_POLE_W          = 2.4;
+  const FP_POLE_HIGHLIGHT  = 0.7;
+  const FP_CAP_W           = 5.5;
+  const FP_CAP_H           = 3.0;
+  const FP_FLAG_W          = 12.0;
+  const FP_FLAG_H          = 8.0;
+  const FP_POLE_VIS_MAX    = 85;
+  const FP_SHADOW_VIS_MAX  = 100;
+  const FP_SHADOW_ANGLE    = 14 * Math.PI / 180;
+  const FP_SHADOW_THICK_B  = 3.2;
+  const FP_SHADOW_THICK_T  = 1.6;
+  const FP_SHADOW_HOOK_L   = 6;
+  const FP_SHADOW_HOOK_W   = 2.2;
+  const FP_BASE_Y_STEP     = 8;
+  const FP_FIG_W_MAX       = 300;
+  const FP_HLABEL_GAP      = 4;
+  const FP_SLABEL_GAP      = 1.3;
+  const FP_LABEL_PADX      = 2.5;
+  const FP_LABEL_PADY      = 1.4;
+
+  function layoutFlagpole(x, y, block, fs, maxW) {
+    const poles = block.poles;
+    const labelFs = fs * 0.95;
+    const items = [];
+
+    const maxH = Math.max.apply(null, poles.map(p => p.height || 0));
+    const maxS = Math.max.apply(null, poles.map(p => p.shadowUnknown ? 0 : (p.shadow || 0)));
+    if (maxH <= 0) return { items: [], height: 0 };
+
+    const FIG_W = Math.min(maxW, FP_FIG_W_MAX);
+    const baseXfracs = [0.24, 0.52, 0.80];
+
+    const cosA  = Math.cos(FP_SHADOW_ANGLE);
+    const sinA  = Math.sin(FP_SHADOW_ANGLE);
+    const perpX = sinA;
+    const perpY = cosA;
+
+    const scaleH = FP_POLE_VIS_MAX / maxH;
+    const scaleS = maxS > 0 ? FP_SHADOW_VIS_MAX / maxS : 0;
+
+    /* Pass 1 — local geometry and label positions. */
+    const geom = [];
+    let minY =  Infinity, maxY = -Infinity;
+    let minX =  Infinity, maxX = -Infinity;
+
+    for (let i = 0; i < 3; i++) {
+      const pole = poles[i];
+      const visH = pole.height * scaleH;
+      const visS = pole.shadowUnknown
+        ? FP_SHADOW_VIS_MAX * 0.65
+        : pole.shadow * scaleS;
+
+      const baseX = baseXfracs[i] * FIG_W;
+      const baseY = FP_POLE_VIS_MAX + i * FP_BASE_Y_STEP;
+      const topY  = baseY - visH;
+      const tipX  = baseX - visS * cosA;
+      const tipY  = baseY + visS * sinA;
+
+      const hText = pole.label + ': ' + pole.heightLabel;
+      const hW    = textWidth(hText, labelFs, false);
+      const hLabelX = baseX - hW / 2;
+      const hLabelY = topY - FP_CAP_H - FP_HLABEL_GAP - labelFs * 0.25;
+
+      const sText = pole.shadowLabel;
+      const sW    = textWidth(sText, labelFs, false);
+      const sMidX = (baseX + tipX) / 2;
+      const sMidY = (baseY + tipY) / 2;
+      const sLabelX = sMidX - sW / 2;
+      const sLabelY = sMidY + labelFs * FP_SLABEL_GAP;
+
+      geom.push({
+        pole, visH, visS, baseX, baseY, topY, tipX, tipY,
+        hText, hLabelX, hLabelY,
+        sText, sLabelX, sLabelY
+      });
+
+      const hTop   = hLabelY - labelFs * 0.72 - FP_LABEL_PADY;
+      const hLeft  = hLabelX - FP_LABEL_PADX;
+      const hRight = hLabelX + hW + FP_LABEL_PADX;
+      const sBot   = sLabelY + labelFs * 0.21 + FP_LABEL_PADY;
+      const sLeft  = sLabelX - FP_LABEL_PADX;
+      const sRight = sLabelX + sW + FP_LABEL_PADX;
+
+      if (hTop    < minY) minY = hTop;
+      if (sBot    > maxY) maxY = sBot;
+      if (tipY    > maxY) maxY = tipY + 4;
+      if (hLeft   < minX) minX = hLeft;
+      if (sLeft   < minX) minX = sLeft;
+      if (tipX - 6 < minX) minX = tipX - 6;
+      if (hRight  > maxX) maxX = hRight;
+      if (sRight  > maxX) maxX = sRight;
+    }
+
+    const figH = maxY - minY;
+    const offX = x - minX;
+    const offY = y - minY;
+
+    /* Pass 2a — all shadow bands. */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      const baseX = g.baseX + offX;
+      const baseY = g.baseY + offY;
+      const tipX  = g.tipX  + offX;
+      const tipY  = g.tipY  + offY;
+
+      const bh = FP_SHADOW_THICK_B / 2;
+      const th = FP_SHADOW_THICK_T / 2;
+      const hx = tipX - cosA * FP_SHADOW_HOOK_L;
+      const hy = tipY + sinA * FP_SHADOW_HOOK_L;
+
+      items.push({ t:'poly', grey: 0.62, pts: [
+        [baseX + perpX * bh, baseY + perpY * bh],
+        [tipX  + perpX * th, tipY  + perpY * th],
+        [hx    + perpX * FP_SHADOW_HOOK_W, hy + perpY * FP_SHADOW_HOOK_W],
+        [hx    - perpX * FP_SHADOW_HOOK_W, hy - perpY * FP_SHADOW_HOOK_W],
+        [tipX  - perpX * th, tipY  - perpY * th],
+        [baseX - perpX * bh, baseY - perpY * bh]
+      ]});
+    }
+
+    /* Pass 2b — all poles (body, highlight, cap, flag). */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      const baseX = g.baseX + offX;
+      const topY  = g.topY  + offY;
+      const visH  = g.visH;
+
+      items.push({ t:'rect',
+                   x: baseX - FP_POLE_W / 2, y: topY,
+                   w: FP_POLE_W, h: visH,
+                   grey: 0.18 });
+
+      items.push({ t:'rect',
+                   x: baseX - FP_POLE_W / 2, y: topY,
+                   w: FP_POLE_HIGHLIGHT, h: visH,
+                   grey: 0.72 });
+
+      items.push({ t:'rect',
+                   x: baseX - FP_CAP_W / 2, y: topY - FP_CAP_H,
+                   w: FP_CAP_W, h: FP_CAP_H,
+                   grey: 0.05 });
+
+      items.push({ t:'poly', grey: 0.10, pts: [
+        [baseX + FP_POLE_W / 2,                     topY - FP_CAP_H - 1],
+        [baseX + FP_POLE_W / 2 + FP_FLAG_W,         topY - FP_CAP_H + 1],
+        [baseX + FP_POLE_W / 2 + FP_FLAG_W,         topY - FP_CAP_H + 1 + FP_FLAG_H],
+        [baseX + FP_POLE_W / 2,                     topY - FP_CAP_H - 1 + FP_FLAG_H]
+      ]});
+    }
+
+    /* Pass 2c — all labels, on top of everything. */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      emitLabel(g.hLabelX + offX, g.hLabelY + offY, labelFs, g.hText, items);
+      emitLabel(g.sLabelX + offX, g.sLabelY + offY, labelFs, g.sText, items);
+    }
+
+    return { items, height: figH };
+  }
+
+  /* ---- Graph (read off the gradient) figure ------------------------ */
+  const G_ARROW_L   = 6.0;
+  const G_ARROW_W   = 2.5;
+  const G_AXIS_W    = 1.0;
+  const G_LINE_W    = 1.8;
+  const G_DOT_R     = 2.2;
+  const G_PLOT_H    = 116;
+  const G_MAX_PLOTW = 200;
+  const G_TOP_PAD   = 18;
+  const G_BOT_PAD   = 14;
+  const G_RIGHT_PAD = 24;
+  const G_LEFT_PAD  = 4;
+
+  /* Mapping so k = 1/3 looks shallow and k = 6 looks steep.
+     Visual slope = 1 when k = 1, so k > 1 is visibly steep and
+     k < 1 is visibly shallow. */
+  function graphVisualSlope(k) {
+    return Math.pow(k, 0.85);
+  }
+
+  function layoutGraph(x, y, block, fs, maxW) {
+    const items   = [];
+    const labelFs = fs * 0.95;
+
+    const plotW = Math.max(110, Math.min(maxW - G_LEFT_PAD - G_RIGHT_PAD,
+                                         G_MAX_PLOTW));
+    const plotH = G_PLOT_H;
+    const figH  = G_TOP_PAD + plotH + G_BOT_PAD;
+
+    const ox = x + G_LEFT_PAD;
+    const oy = y + G_TOP_PAD + plotH;
+
+    const axisTopX   = ox,          axisTopY   = oy - plotH;
+    const axisRightX = ox + plotW,  axisRightY = oy;
+
+    const AXIS_COL = [0, 0, 0];
+    const LINE_COL = [214, 26, 26];
+
+    /* axes */
+    items.push({ t:'line', x1:ox, y1:oy, x2:axisTopX, y2:axisTopY,
+                 w:G_AXIS_W, col:AXIS_COL });
+    items.push({ t:'line', x1:ox, y1:oy, x2:axisRightX, y2:axisRightY,
+                 w:G_AXIS_W, col:AXIS_COL });
+
+    /* arrow heads */
+    items.push({ t:'poly', col:AXIS_COL, pts:[
+      [axisTopX, axisTopY],
+      [axisTopX - G_ARROW_W, axisTopY + G_ARROW_L],
+      [axisTopX + G_ARROW_W, axisTopY + G_ARROW_L]
+    ]});
+    items.push({ t:'poly', col:AXIS_COL, pts:[
+      [axisRightX, axisRightY],
+      [axisRightX - G_ARROW_L, axisRightY - G_ARROW_W],
+      [axisRightX - G_ARROW_L, axisRightY + G_ARROW_W]
+    ]});
+
+    /* axis labels */
+    const yLabW = textWidth(block.labelY, labelFs, false);
+    items.push({ t:'run', x: ox - yLabW / 2, y: axisTopY - 6,
+                 size: labelFs, italic: true, s: block.labelY });
+    items.push({ t:'run', x: axisRightX + 5, y: axisRightY + 6,
+                 size: labelFs, italic: true, s: block.labelX });
+
+    /* the red line */
+    const k    = block.k.n / block.k.d;
+    const m    = graphVisualSlope(k);
+    const xLim = plotW * 0.95;
+    const yLim = plotH * 0.92;
+    let ex, ey;
+    if (m * xLim <= yLim) { ex = xLim;           ey = m * xLim; }
+    else                  { ey = yLim;           ex = yLim / m;  }
+
+    items.push({ t:'line', x1:ox, y1:oy, x2:ox + ex, y2:oy - ey,
+                 w:G_LINE_W, col:LINE_COL });
+
+    /* the marked point */
+    const tt = 0.52;
+    const px = ox + ex * tt;
+    const py = oy - ey * tt;
+
+    const dotPts = [];
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * Math.PI * 2;
+      dotPts.push([px + G_DOT_R * Math.cos(a), py + G_DOT_R * Math.sin(a)]);
+    }
+    items.push({ t:'poly', col:[0,0,0], pts:dotPts });
+
+    /* coordinate label, pushed clear of the line along the perpendicular */
+    const nrm = Math.sqrt(1 + m * m);
+    const d   = G_DOT_R + 7;
+    items.push({ t:'run',
+                 x: px + (m / nrm) * d + 3,
+                 y: py + (1 / nrm) * d,
+                 size: labelFs, bold: false,
+                 s: '(' + block.pointX + ', ' + block.pointY + ')' });
+
+    return { items: items, height: figH };
+  }
+
   function measureQuestion(q, fs) {
     const lineH = fs * 1.42;
     const maxW  = promptWidth(fs);
@@ -830,6 +1193,12 @@
         h += lines.length * lineH;
       } else if (b.type === 'table') {
         h += b.rows.length * fs * 1.8 + fs * 0.6;
+      } else if (b.type === 'flagpole') {
+        const fl = layoutFlagpole(0, 0, b, fs, maxW);
+        h += fl.height;
+      } else if (b.type === 'graph') {
+        const gl = layoutGraph(0, 0, b, fs, maxW);
+        h += gl.height + fs * 0.6;
       }
     }
     return h;
@@ -895,6 +1264,18 @@
         const tl = layoutTable(textX, tableTop, block, fs, maxW);
         for (const it of tl.items) items.push(it);
         cursor = tableTop + tl.height + fs * 1.0;
+      } else if (block.type === 'flagpole') {
+        baselines.push(cursor);
+        const figTop = cursor - fs * 0.4;
+        const fl = layoutFlagpole(textX, figTop, block, fs, maxW);
+        for (const it of fl.items) items.push(it);
+        cursor = figTop + fl.height + fs * 1.0;
+      } else if (block.type === 'graph') {
+        baselines.push(cursor);
+        const figTop = cursor - fs * 0.4;
+        const gl = layoutGraph(textX, figTop, block, fs, maxW);
+        for (const it of gl.items) items.push(it);
+        cursor = figTop + gl.height + fs * 1.0;
       }
     }
 
@@ -964,7 +1345,6 @@
     return pages;
   }
 
-  /* ---------- answer key ---------- */
   function layoutAnswerKey(opts) {
     const title = opts.title;
     const questions = opts.questions;
@@ -1012,13 +1392,17 @@
     return [items];
   }
 
-  /* ============================================================
-     HTML RENDERER
-     ============================================================ */
   function esc(s) {
     return String(s).replace(/[&<>"]/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
     });
+  }
+  function greyToColour(g) {
+    const shade = Math.round(g * 255);
+    return 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+  }
+  function rgbColour(c) {
+    return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
   }
 
   function drawHTML(pagesItems) {
@@ -1040,11 +1424,31 @@
             (it.bold ? 'font-weight:700;' : '') +
             (it.italic ? 'font-style:italic;' : '') + '">' + esc(it.s) + '</span>');
         } else if (it.t === 'line' || it.t === 'answer-line') {
-          const color = it.grey ? '#94a3b8' : '#000';
-          const cls = it.t === 'answer-line' ? 'ln ans' : 'ln';
-          parts.push('<span class="' + cls + '" style="left:' + it.x1.toFixed(2) +
-            'pt;top:' + it.y1.toFixed(2) + 'pt;width:' + (it.x2 - it.x1).toFixed(2) +
-            'pt;border-top-width:' + it.w.toFixed(2) + 'pt;border-color:' + color + ';"></span>');
+          const color = it.col ? rgbColour(it.col) : (it.grey ? '#94a3b8' : '#000');
+          const cls = it.t === 'answer-line' ? 'ans' : '';
+          parts.push(
+            '<svg class="' + cls + '" ' +
+            'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+            'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+            '<line x1="' + it.x1.toFixed(2) + '" y1="' + it.y1.toFixed(2) +
+            '" x2="' + it.x2.toFixed(2) + '" y2="' + it.y2.toFixed(2) +
+            '" stroke="' + color + '" stroke-width="' + it.w.toFixed(2) +
+            '" stroke-linecap="butt"/>' +
+            '</svg>');
+        } else if (it.t === 'rect') {
+          const g = it.grey !== undefined ? it.grey : 0;
+          const bg = it.col ? rgbColour(it.col) : greyToColour(g);
+          parts.push('<span style="position:absolute;left:' + it.x.toFixed(2) +
+            'pt;top:' + it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) +
+            'pt;height:' + it.h.toFixed(2) + 'pt;background:' + bg +
+            ';"></span>');
+        } else if (it.t === 'poly') {
+          const g = it.grey !== undefined ? it.grey : 0;
+          const fill = it.col ? rgbColour(it.col) : greyToColour(g);
+          const ptsStr = it.pts.map(function (p) {
+            return p[0].toFixed(2) + ',' + p[1].toFixed(2);
+          }).join(' ');
+          parts.push('<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg"><polygon points="' + ptsStr + '" fill="' + fill + '"/></svg>');
         }
       }
       pg.innerHTML = parts.join('');
@@ -1053,9 +1457,6 @@
     }
   }
 
-  /* ============================================================
-     PDF WRITER
-     ============================================================ */
   const WINANSI = {
     0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84,
     0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88,
@@ -1081,6 +1482,23 @@
     return out;
   }
 
+  function pdfStrokeColourOp(it) {
+    if (it.col) {
+      return (it.col[0] / 255).toFixed(3) + ' ' +
+             (it.col[1] / 255).toFixed(3) + ' ' +
+             (it.col[2] / 255).toFixed(3) + ' RG';
+    }
+    return (it.grey ? '0.58' : '0') + ' G';
+  }
+  function pdfFillColourOp(it) {
+    if (it.col) {
+      return (it.col[0] / 255).toFixed(3) + ' ' +
+             (it.col[1] / 255).toFixed(3) + ' ' +
+             (it.col[2] / 255).toFixed(3) + ' rg';
+    }
+    return (it.grey !== undefined ? it.grey : 0) + ' g';
+  }
+
   function contentStream(items) {
     const ops = [];
     for (let i = 0; i < items.length; i++) {
@@ -1095,10 +1513,22 @@
           ' Tf ' + it.x.toFixed(2) + ' ' + (PH - it.y).toFixed(2) +
           ' Td (' + pdfEsc(it.s) + ') Tj ET');
       } else if (it.t === 'line') {
-        const g = it.grey ? '0.58 G' : '0 G';
-        ops.push(g + ' ' + it.w.toFixed(2) + ' w ' + it.x1.toFixed(2) + ' ' +
-          (PH - it.y1).toFixed(2) + ' m ' + it.x2.toFixed(2) + ' ' +
-          (PH - it.y2).toFixed(2) + ' l S');
+        ops.push(pdfStrokeColourOp(it) + ' ' + it.w.toFixed(2) + ' w ' +
+          it.x1.toFixed(2) + ' ' + (PH - it.y1).toFixed(2) + ' m ' +
+          it.x2.toFixed(2) + ' ' + (PH - it.y2).toFixed(2) + ' l S');
+      } else if (it.t === 'rect') {
+        ops.push(pdfFillColourOp(it) + ' ' + it.x.toFixed(2) + ' ' +
+          (PH - it.y - it.h).toFixed(2) + ' ' + it.w.toFixed(2) + ' ' +
+          it.h.toFixed(2) + ' re f');
+      } else if (it.t === 'poly') {
+        const pts = it.pts;
+        let s = pdfFillColourOp(it);
+        s += ' ' + pts[0][0].toFixed(2) + ' ' + (PH - pts[0][1]).toFixed(2) + ' m';
+        for (let k = 1; k < pts.length; k++) {
+          s += ' ' + pts[k][0].toFixed(2) + ' ' + (PH - pts[k][1]).toFixed(2) + ' l';
+        }
+        s += ' h f';
+        ops.push(s);
       }
     }
     return ops.join('\n');
@@ -1161,9 +1591,6 @@
     setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
   }
 
-  /* ============================================================
-     STATE + RENDER
-     ============================================================ */
   const titleInput = document.getElementById('titleInput');
   const seedInput  = document.getElementById('seedInput');
   const curSel     = document.getElementById('curSel');
@@ -1222,7 +1649,6 @@
     setRevealed(!pagesEl.classList.contains('revealed'));
   });
 
-  /* ---------- seed / URL ---------- */
   function applySeed() {
     const s = parseInt(seedInput.value, 10);
     rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
@@ -1260,7 +1686,6 @@
     return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
-  /* ---------- events ---------- */
   document.getElementById('regenBtn').addEventListener('click', function () {
     seedInput.value = dateSeed();
     applySeed(); regenerate(); setSeedInURL(seedInput.value);
@@ -1281,10 +1706,9 @@
   titleInput.addEventListener('input', renderSheet);
   window.addEventListener('resize', fitPage);
 
-  /* ---------- boot ---------- */
   function boot() {
     const urlSeed = getSeedFromURL();
-    seedInput.value = (urlSeed !== null) ? urlSeed : dateSeed();
+    seedInput.value = (urlSeed !== null) ? urlSeed : Date.now() % 100000;
     applySeed();
     regenerate();
     setSeedInURL(seedInput.value);
