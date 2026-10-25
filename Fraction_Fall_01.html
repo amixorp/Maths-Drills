@@ -192,7 +192,7 @@
     width: var(--tile);
     height: var(--tile);
     padding: 2px;
-    will-change: left, top;
+    will-change: transform;
   }
 
   .tile-inner {
@@ -261,6 +261,54 @@
   .popping .tile-inner {
     border-color: var(--good);
     background: #ecfdf5;
+  }
+
+  /* ---------- cascade drops & landings ---------- */
+  .tile.dropping .tile-inner {
+    animation: dropStretch var(--drop-dur, 260ms) cubic-bezier(.4, 0, .7, 1) both;
+    box-shadow: 0 10px 20px rgba(99, 102, 241, .16);
+  }
+  @keyframes dropStretch {
+    0%   { transform: scale(1, 1); }
+    35%  { transform: scale(.97, 1.07); }
+    100% { transform: scale(1, 1.06); }
+  }
+
+  .tile.landed .tile-inner {
+    transform-origin: 50% 100%;
+    animation: landJolt .36s cubic-bezier(.2, .8, .3, 1);
+  }
+  @keyframes landJolt {
+    0%   { transform: scale(1, 1.06); border-color: rgba(99, 102, 241, .85); }
+    20%  { transform: scale(1.15, .76); }
+    46%  { transform: scale(.93, 1.09); }
+    68%  { transform: scale(1.04, .97); }
+    85%  { transform: scale(.99, 1.01); }
+    100% { transform: scale(1, 1); border-color: var(--ink); }
+  }
+
+  .placed-layer.impact { animation: layerJolt .26s cubic-bezier(.2, .8, .3, 1); }
+  @keyframes layerJolt {
+    0%, 100% { transform: translateY(0); }
+    30%      { transform: translateY(3px); }
+    60%      { transform: translateY(-1.5px); }
+    80%      { transform: translateY(.5px); }
+  }
+
+  .impact-ring {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(99, 102, 241, .55);
+    transform: translate(-50%, -50%) scale(.3);
+    pointer-events: none;
+  }
+  .dust {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(100, 116, 139, .5);
+    pointer-events: none;
   }
 
   @keyframes gainFloat {
@@ -549,6 +597,12 @@
   const ghostEl     = document.getElementById('ghost');
   const fallingEl   = document.getElementById('falling');
   const effectsEl   = document.getElementById('effects');
+
+  const placedEls = new Map();
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let impactTimer = 0;
+  let lastImpactAt = 0;
+
   const scoreEl     = document.getElementById('score');
   const bestEl      = document.getElementById('best');
   const levelEl     = document.getElementById('level');
@@ -575,6 +629,7 @@
     tileSize: 56,
     started: false,
     unmatchedStreak: 0,
+    nextTileId: 1,
   };
 
   let audioCtx = null;
@@ -627,6 +682,14 @@
     }
   }
   function playLand() { beep(180, 0.07, 'triangle'); }
+  function playImpact(dropRows) {
+    if (!soundOn || reduceMotion) return;
+    const now = performance.now();
+    if (now - lastImpactAt < 90) return;
+    lastImpactAt = now;
+    const freq = Math.max(90, 165 - dropRows * 10);
+    beep(freq, 0.06, 'triangle');
+  }
   function playLevelUp() {
     beep(659.25, 0.1);
     setTimeout(function () { beep(783.99, 0.1); }, 80);
@@ -703,25 +766,183 @@
         if (c === 0) break;
         if (!fracEq(state.board[c - 1][ROWS - 1], f)) break;
       }
-      state.board[c][ROWS - 1] = f;
+      state.board[c][ROWS - 1] = { id: state.nextTileId++, n: f.n, d: f.d };
       state.heights[c] = 1;
     }
   }
 
-  function renderPlaced() {
-    while (placedEl.firstChild) placedEl.removeChild(placedEl.firstChild);
+  function renderPlaced(animateDrops) {
     const T = state.tileSize;
+    const live = new Set();
+    let maxDropRows = 0;
+    let maxDropDur = 0;
+
+    if (!animateDrops) {
+      clearTimeout(impactTimer);
+      impactTimer = 0;
+      placedEl.classList.remove('impact');
+      placedEls.forEach(function (t) {
+        if (t._dropAnim) { try { t._dropAnim.cancel(); } catch (e) {} t._dropAnim = null; }
+        if (t._landTimer) { clearTimeout(t._landTimer); t._landTimer = 0; }
+        t.classList.remove('dropping');
+      });
+    }
+
     for (let c = 0; c < COLS; c++) {
       for (let r = 0; r < ROWS; r++) {
         const f = state.board[c][r];
         if (!f) continue;
-        const t = makeTileEl(f);
-        t.style.left = (c * T) + 'px';
-        t.style.top = (r * T) + 'px';
-        placedEl.appendChild(t);
+        live.add(f.id);
+
+        const left = c * T;
+        const top = r * T;
+        let t = placedEls.get(f.id);
+
+        if (!t) {
+          t = makeTileEl(f);
+          t.style.left = left + 'px';
+          t.style.top = top + 'px';
+          placedEl.appendChild(t);
+          placedEls.set(f.id, t);
+          continue;
+        }
+
+        const oldLeft = parseFloat(t.style.left) || 0;
+        const oldTop = parseFloat(t.style.top) || 0;
+        if (oldLeft === left && oldTop === top) continue;
+
+        if (t._dropAnim) { try { t._dropAnim.cancel(); } catch (e) {} t._dropAnim = null; }
+        if (t._landTimer) { clearTimeout(t._landTimer); t._landTimer = 0; }
+        if (t._landedTimer) { clearTimeout(t._landedTimer); t._landedTimer = 0; }
+        t.classList.remove('dropping');
+        t.classList.remove('landed');
+
+        const dropPx = Math.max(0, top - oldTop);
+        const dropRows = dropPx / T;
+
+        t.style.left = left + 'px';
+        t.style.top = top + 'px';
+
+        if (!animateDrops || reduceMotion || dropPx < 1) continue;
+
+        const dur = dropDuration(dropRows);
+        t.style.setProperty('--drop-dur', dur + 'ms');
+        t.classList.add('dropping');
+
+        const anim = t.animate([
+          { transform: 'translateY(' + (-dropPx) + 'px)' },
+          { transform: 'translateY(0)' }
+        ], {
+          duration: dur,
+          easing: 'cubic-bezier(.4, .02, .7, 1)',
+          fill: 'both'
+        });
+        t._dropAnim = anim;
+
+        const finalCol = c;
+        const finalRow = r;
+        const land = function () { landTile(t, finalCol, finalRow, dropRows); };
+        t._landTimer = setTimeout(land, dur + 60);
+        anim.onfinish = function () {
+          if (t._dropAnim !== anim) return;
+          t._dropAnim = null;
+          land();
+        };
+
+        if (dropRows > maxDropRows) {
+          maxDropRows = dropRows;
+          maxDropDur = dur;
+        }
       }
     }
+
+    placedEls.forEach(function (t, id) {
+      if (live.has(id)) return;
+      if (t._dropAnim) { try { t._dropAnim.cancel(); } catch (e) {} }
+      if (t._landTimer) clearTimeout(t._landTimer);
+      if (t._landedTimer) clearTimeout(t._landedTimer);
+      t.remove();
+      placedEls.delete(id);
+    });
+
+    if (animateDrops && !reduceMotion && maxDropRows >= 2) {
+      clearTimeout(impactTimer);
+      impactTimer = setTimeout(function () {
+        impactTimer = 0;
+        placedEl.classList.remove('impact');
+        void placedEl.offsetWidth;
+        placedEl.classList.add('impact');
+        setTimeout(function () { placedEl.classList.remove('impact'); }, 300);
+      }, maxDropDur);
+    }
+
     updateDangerState();
+  }
+
+  function dropDuration(dropRows) {
+    return Math.round(150 + Math.sqrt(Math.max(1, dropRows)) * 95);
+  }
+
+  function landTile(t, c, r, dropRows) {
+    if (!t.parentNode) return;
+    if (t._landTimer) { clearTimeout(t._landTimer); t._landTimer = 0; }
+    if (t._dropAnim) {
+      try { t._dropAnim.cancel(); } catch (e) {}
+      t._dropAnim = null;
+    }
+    t.classList.remove('dropping');
+    t.classList.remove('landed');
+    void t.offsetWidth;
+    t.classList.add('landed');
+    if (t._landedTimer) clearTimeout(t._landedTimer);
+    t._landedTimer = setTimeout(function () { t.classList.remove('landed'); }, 420);
+
+    const T = state.tileSize;
+    dustPuff(c * T + T / 2, r * T + T - 3, dropRows);
+    playImpact(dropRows);
+  }
+
+  function dustPuff(cx, cy, strength) {
+    if (reduceMotion) return;
+
+    const ring = document.createElement('div');
+    ring.className = 'impact-ring';
+    ring.style.left = cx + 'px';
+    ring.style.top = cy + 'px';
+    effectsEl.appendChild(ring);
+    const ringAnim = ring.animate([
+      { opacity: .8, transform: 'translate(-50%, -50%) scale(.3)' },
+      { opacity: 0, transform: 'translate(-50%, -50%) scale(2.2)' }
+    ], { duration: 520, easing: 'ease-out', fill: 'forwards' });
+    ringAnim.onfinish = function () { ring.remove(); };
+    setTimeout(function () { ring.remove(); }, 800);
+
+    const count = Math.min(9, 3 + Math.round(strength * 2));
+    for (let i = 0; i < count; i++) {
+      const p = document.createElement('div');
+      p.className = 'dust';
+      const size = 2 + Math.random() * 3;
+      p.style.width = size + 'px';
+      p.style.height = size + 'px';
+      p.style.left = cx + 'px';
+      p.style.top = cy + 'px';
+      effectsEl.appendChild(p);
+
+      const angle = Math.PI + Math.random() * Math.PI;
+      const dist = 8 + Math.random() * 20;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist;
+
+      const dustAnim = p.animate([
+        { opacity: .62, transform: 'translate(-50%, -50%) scale(1)' },
+        { opacity: 0, transform: 'translate(-50%, -50%) translate(' + dx + 'px,' + dy + 'px) scale(.2)' }
+      ], {
+        duration: 380 + Math.random() * 260,
+        easing: 'cubic-bezier(.2, .6, .3, 1)',
+        fill: 'forwards'
+      });
+      dustAnim.onfinish = function () { p.remove(); };
+    }
   }
 
   function updateDangerState() {
@@ -1155,7 +1376,7 @@
     if (h >= ROWS) { gameOver(); return; }
 
     const row = ROWS - h - 1;
-    state.board[col][row] = { n: f.n, d: f.d };
+    state.board[col][row] = { id: state.nextTileId++, n: f.n, d: f.d };
     state.heights[col] = h + 1;
     state.falling = null;
     fallingEl.style.display = 'none';
@@ -1173,8 +1394,10 @@
     /* Always re-render the placed layer, whether or not a cascade
        happened. Previously this was only called inside the loop, so a
        non-matching placement added the tile to state.board but never
-       drew it — visually the tile "disappeared" the moment it landed. */
-    renderPlaced();
+       drew it — visually the tile "disappeared" the moment it landed.
+       Passing true lets surviving tiles animate from their previous
+       cells to their new ones when gravity compacts a column. */
+    renderPlaced(true);
 
     if (chain === 0) playLand();
 
@@ -1322,6 +1545,18 @@
     state.over = false;
     state.keys = { left: false, right: false, down: false };
     state.unmatchedStreak = 0;
+    state.nextTileId = 1;
+    clearTimeout(impactTimer);
+    impactTimer = 0;
+    placedEl.classList.remove('impact');
+    placedEls.forEach(function (t) {
+      if (t._dropAnim) { try { t._dropAnim.cancel(); } catch (e) {} }
+      if (t._landTimer) clearTimeout(t._landTimer);
+      if (t._landedTimer) clearTimeout(t._landedTimer);
+      t.remove();
+    });
+    placedEls.clear();
+    placedEl.innerHTML = '';
     btnLeft.classList.remove('active');
     btnRight.classList.remove('active');
     btnDown.classList.remove('active');
