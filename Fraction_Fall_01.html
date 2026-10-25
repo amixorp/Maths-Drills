@@ -44,9 +44,7 @@
     gap: 10px;
   }
 
-  /* -------- HUD -------- */
   .hud { display: flex; flex-direction: column; gap: 10px; }
-
   .hud-top { display: flex; align-items: center; gap: 10px; }
 
   .title {
@@ -136,7 +134,6 @@
     overflow: hidden;
   }
 
-  /* -------- Board -------- */
   .board-wrap {
     flex: 1;
     display: flex;
@@ -165,6 +162,14 @@
       inset 0 0 0 1.5px var(--bad),
       0 10px 30px -12px rgba(239, 68, 68, 0.35);
   }
+  .board.chain-shake { animation: chainShake .45s ease; }
+  @keyframes chainShake {
+    0%, 100% { transform: translate(0, 0); }
+    20% { transform: translate(-4px, 3px); }
+    45% { transform: translate(4px, -3px); }
+    70% { transform: translate(-3px, 2px); }
+    90% { transform: translate(3px, -1px); }
+  }
 
   .placed-layer, .effects {
     position: absolute;
@@ -182,7 +187,6 @@
     pointer-events: none;
   }
 
-  /* -------- Tiles -------- */
   .tile {
     position: absolute;
     width: var(--tile);
@@ -205,6 +209,12 @@
     overflow: hidden;
   }
 
+  /* Fraction typography.
+     The linear form 0.5*T - 7px is the largest size that fits in the
+     tile's interior without clipping the numerator or denominator at
+     any tile size. The clamp keeps it readable on very small phones
+     (min 10px) and prevents it from growing past 26px on big screens
+     where two-digit fractions would look cartoonishly large.          */
   .frac {
     display: flex;
     flex-direction: column;
@@ -213,7 +223,7 @@
     line-height: 1;
     color: var(--ink);
     font-weight: 700;
-    font-size: calc(var(--tile) * 0.31);
+    font-size: clamp(10px, calc(var(--tile) * 0.5 - 7px), 26px);
     letter-spacing: -0.02em;
   }
   .frac .bar {
@@ -221,10 +231,10 @@
     height: 2px;
     background: currentColor;
     border-radius: 1px;
-    margin: 2px 0;
+    margin: 1px 0;
   }
 
-  .next-tile .frac { font-size: calc(var(--tile) * 0.25); }
+  .next-tile .frac { font-size: clamp(8px, calc(var(--tile) * 0.3), 14px); }
 
   .falling .tile-inner {
     border-color: var(--accent);
@@ -268,6 +278,32 @@
     text-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
     animation: gainFloat 1.1s ease-out forwards;
     white-space: nowrap;
+    text-align: center;
+  }
+
+  .gain.chain {
+    color: #f59e0b;
+    font-size: calc(var(--tile) * 0.42);
+    text-shadow: 0 2px 14px rgba(245, 158, 11, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    animation: gainFloat 1.5s ease-out forwards;
+  }
+  .gain.chain .chain-label {
+    font-size: calc(var(--tile) * 0.22);
+    color: #fbbf24;
+    letter-spacing: 0.18em;
+    font-weight: 900;
+    text-shadow: 0 0 14px rgba(251, 191, 36, 0.9);
+    line-height: 1;
+  }
+  .gain.chain .chain-amount {
+    font-size: calc(var(--tile) * 0.42);
+    color: #ea580c;
+    line-height: 1;
+    letter-spacing: -0.02em;
   }
 
   .confetti {
@@ -276,7 +312,6 @@
     pointer-events: none;
   }
 
-  /* -------- Controls -------- */
   .controls {
     display: flex;
     justify-content: center;
@@ -310,7 +345,6 @@
     color: var(--accent);
   }
 
-  /* -------- Overlay -------- */
   .overlay {
     position: fixed;
     inset: 0;
@@ -447,9 +481,6 @@
 (function () {
   'use strict';
 
-  /* ============================================================
-     CONSTANTS
-     ============================================================ */
   const COLS = 8;
   const ROWS = 10;
   const BASE_FALL = 1.0;
@@ -459,22 +490,10 @@
   const MATCHES_PER_LEVEL = 10;
   const SPAWN_HOLD = 0.15;
 
-  /* Difficulty knobs. */
-  const SPAWN_MATCH_PROB = 0.6;  //  the probability that a spwaning tile has a
-                                  //  match available
+  const SPAWN_MATCH_PROB = 0.6;
   const MAX_UNMATCHED_STREAK = 3;
-
-  /* Fraction of a tile's width that may overhang a taller neighbour
-     without counting as "over" that neighbour. This is what makes a
-     1-column gap a realistic target under free-floating lateral
-     movement: the player just needs to be within ~20% of the gap
-     centre, instead of pixel-perfect. Larger = more forgiving to aim
-     but more visible overhang at landing. */
   const OVERLAP_TOL = 0.20;
 
-  /* ============================================================
-     FRACTIONS
-     ============================================================ */
   function gcd(a, b) {
     a = Math.abs(a); b = Math.abs(b);
     while (b) { const t = b; b = a % b; a = t; }
@@ -525,9 +544,6 @@
     return cls[Math.floor(Math.random() * cls.length)];
   }
 
-  /* ============================================================
-     DOM
-     ============================================================ */
   const boardEl     = document.getElementById('board');
   const placedEl    = document.getElementById('placedLayer');
   const ghostEl     = document.getElementById('ghost');
@@ -543,9 +559,6 @@
   const btnRight    = document.getElementById('btnRight');
   const btnDown     = document.getElementById('btnDown');
 
-  /* ============================================================
-     STATE
-     ============================================================ */
   const state = {
     board: [],
     heights: [],
@@ -564,9 +577,6 @@
     unmatchedStreak: 0,
   };
 
-  /* ============================================================
-     SOUND
-     ============================================================ */
   let audioCtx = null;
   let soundOn = true;
   try { soundOn = localStorage.getItem('fractionFall.sound') !== '0'; } catch (e) {}
@@ -599,10 +609,22 @@
     o.start(t);
     o.stop(t + dur + 0.05);
   }
-  function playMatch() {
-    beep(523.25, 0.14);
-    setTimeout(function () { beep(659.25, 0.14); }, 70);
-    setTimeout(function () { beep(783.99, 0.24); }, 140);
+  function playMatchSound(chain) {
+    if (chain <= 1) {
+      beep(523.25, 0.14);
+      setTimeout(function () { beep(659.25, 0.14); }, 70);
+      setTimeout(function () { beep(783.99, 0.24); }, 140);
+    } else if (chain === 2) {
+      beep(1046.5, 0.1);
+      setTimeout(function () { beep(1318.5, 0.1); }, 60);
+      setTimeout(function () { beep(1567.98, 0.1); }, 120);
+      setTimeout(function () { beep(2093.0, 0.3); }, 180);
+    } else {
+      beep(1318.5, 0.1);
+      setTimeout(function () { beep(1567.98, 0.1); }, 50);
+      setTimeout(function () { beep(2093.0, 0.1); }, 100);
+      setTimeout(function () { beep(2637.0, 0.4); }, 150);
+    }
   }
   function playLand() { beep(180, 0.07, 'triangle'); }
   function playLevelUp() {
@@ -611,9 +633,6 @@
     setTimeout(function () { beep(1046.5, 0.2); }, 160);
   }
 
-  /* ============================================================
-     TILE ELEMENTS
-     ============================================================ */
   function tileInner(f) {
     const wrap = document.createElement('div');
     wrap.className = 'tile-inner';
@@ -640,9 +659,6 @@
     return t;
   }
 
-  /* ============================================================
-     LAYOUT
-     ============================================================ */
   function computeTileSize() {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
@@ -666,9 +682,13 @@
     positionFalling();
   }
 
-  /* ============================================================
-     BOARD STATE
-     ============================================================ */
+  /* Seed the initial row so that no two adjacent tiles are equivalent.
+     Previously the row was random, and with ~11 equivalence classes
+     spread over 7 adjacent pairs, the starting board very often
+     contained a matching pair. Those pairs would lie dormant until the
+     player's first cascade triggered getHorizontalCells(), at which
+     point they'd vanish "unexpectedly". Avoiding them at seed time
+     means every horizontal match the player sees is one they caused. */
   function initBoard() {
     state.board = [];
     state.heights = [];
@@ -677,7 +697,13 @@
       state.heights.push(0);
     }
     for (let c = 0; c < COLS; c++) {
-      state.board[c][ROWS - 1] = randomFraction();
+      let f;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        f = randomFraction();
+        if (c === 0) break;
+        if (!fracEq(state.board[c - 1][ROWS - 1], f)) break;
+      }
+      state.board[c][ROWS - 1] = f;
       state.heights[c] = 1;
     }
   }
@@ -703,15 +729,11 @@
     boardEl.classList.toggle('danger', danger);
   }
 
-  /* ============================================================
-     GEOMETRY / COLLISION
-     ============================================================ */
   function colAt(x) {
     const T = state.tileSize;
     return Math.max(0, Math.min(COLS - 1, Math.floor((x + T / 2) / T)));
   }
 
-  /* How many pixels of a tile placed at x overlap column j. */
   function overlapWith(x, j) {
     const T = state.tileSize;
     const jL = j * T;
@@ -719,14 +741,6 @@
     return Math.max(0, Math.min(x + T, jR) - Math.max(x, jL));
   }
 
-  /* Lateral movement is permitted unless it would push the tile
-     FURTHER into a column whose top is already above the tile's
-     bottom edge. Equal or decreasing overlap is always allowed, so a
-     tile that has drifted over a tower can always be slid back
-     towards the gap even after its bottom edge has dropped below the
-     tower's top. Before this change, `isValidX` blocked any target
-     that overlapped the tower at all — which made escape impossible
-     and produced the "locks onto the tower" symptom. */
   function canMoveTo(newX) {
     const f = state.falling;
     if (!f) return true;
@@ -735,20 +749,15 @@
     for (let j = 0; j < COLS; j++) {
       if (state.heights[j] === 0) continue;
       const stackTop = (ROWS - state.heights[j]) * T;
-      if (f.y + T <= stackTop) continue;   /* still above this stack */
+      if (f.y + T <= stackTop) continue;
       const newO = overlapWith(newX, j);
-      if (newO <= tol) continue;           /* negligible overhang */
+      if (newO <= tol) continue;
       const curO = overlapWith(f.x, j);
       if (newO > curO + 0.001) return false;
     }
     return true;
   }
 
-  /* The column the tile will rest on. Overhangs of up to OVERLAP_TOL
-     of a tile's width are ignored — so a tile roughly centred over a
-     gap lands in the gap rather than on the adjacent tower. Among
-     columns the tile genuinely covers, the tallest wins (tie-break:
-     closest to the tile's centre). */
   function computeLandingCol(x) {
     const T = state.tileSize;
     const tol = T * OVERLAP_TOL;
@@ -775,9 +784,6 @@
     return (ROWS - state.heights[col] - 1) * T;
   }
 
-  /* ============================================================
-     SPAWNING
-     ============================================================ */
   function topFractions() {
     const out = [];
     for (let c = 0; c < COLS; c++) {
@@ -864,9 +870,6 @@
     renderHUD();
   }
 
-  /* ============================================================
-     FALLING TILE RENDER
-     ============================================================ */
   function setFallingContent(f) {
     fallingEl.innerHTML = '';
     fallingEl.appendChild(tileInner(f));
@@ -898,9 +901,6 @@
     }
   }
 
-  /* ============================================================
-     UPDATE / LOOP
-     ============================================================ */
   function getFallSpeed() {
     return BASE_FALL + (state.level - 1) * FALL_PER_LEVEL;
   }
@@ -931,9 +931,6 @@
     const targetY = computeLandingY(f.x);
     if (f.y >= targetY) {
       f.y = targetY;
-      /* Snap x onto the landed column so the visual jump is zero —
-         placeTile() reads the landing column anyway, so the placed
-         tile appears exactly where the ghost was. */
       f.x = computeLandingCol(f.x) * T;
       f.col = colAt(f.x);
       placeTile();
@@ -952,114 +949,185 @@
     update(dt);
   }
 
-  /* ============================================================
-     PLACEMENT & MATCH
-     ============================================================ */
-  function placeTile() {
-    const f = state.falling;
-    if (!f) return;
-    const T = state.tileSize;
-    const col = computeLandingCol(f.x);
-    const h = state.heights[col];
+  function getPlacementMatches(col, row) {
+    const cells = new Set();
+    const f = state.board[col][row];
+    if (!f) return cells;
 
-    if (h >= ROWS) { gameOver(); return; }
-
-    const row = ROWS - h - 1;
-    state.board[col][row] = { n: f.n, d: f.d };
-    state.heights[col] = h + 1;
-    state.falling = null;
-    fallingEl.style.display = 'none';
-    ghostEl.style.display = 'none';
-
-    let matched = false;
     if (row + 1 < ROWS) {
       const below = state.board[col][row + 1];
       if (below && fracEq(below, f)) {
-        matched = true;
-        const gain = fracAdd(f, below);
-        state.score = fracAdd(state.score, gain);
-        state.matches++;
-
-        popTiles(col, row, f, below);
-        showGain(col, row, gain);
-        burstConfetti((col + 0.5) * T, (row + 0.5) * T);
-        playMatch();
-
-        state.board[col][row] = null;
-        state.board[col][row + 1] = null;
-        state.heights[col] -= 2;
-
-        const targetLevel = 1 + Math.floor(state.matches / MATCHES_PER_LEVEL);
-        if (targetLevel > state.level) {
-          state.level = targetLevel;
-          playLevelUp();
-          levelEl.classList.remove('flash');
-          void levelEl.offsetWidth;
-          levelEl.classList.add('flash');
-        }
-
-        if (fracCmp(state.score, state.best) > 0) {
-          state.best = { n: state.score.n, d: state.score.d };
-          saveBest(state.best);
-        }
-        scoreEl.classList.remove('flash');
-        void scoreEl.offsetWidth;
-        scoreEl.classList.add('flash');
+        cells.add(col + ',' + row);
+        cells.add(col + ',' + (row + 1));
       }
     }
-
-    if (!matched) playLand();
-
-    renderPlaced();
-    renderHUD();
-    spawnTile();
+    if (col > 0) {
+      const left = state.board[col - 1][row];
+      if (left && fracEq(left, f)) {
+        cells.add(col + ',' + row);
+        cells.add((col - 1) + ',' + row);
+      }
+    }
+    if (col + 1 < COLS) {
+      const right = state.board[col + 1][row];
+      if (right && fracEq(right, f)) {
+        cells.add(col + ',' + row);
+        cells.add((col + 1) + ',' + row);
+      }
+    }
+    return cells;
   }
 
-  /* ============================================================
-     EFFECTS
-     ============================================================ */
-  function popTiles(col, row, f1, f2) {
-    const T = state.tileSize;
-    [[row, f1], [row + 1, f2]].forEach(function (pair) {
-      const t = makeTileEl(pair[1]);
-      t.classList.add('popping');
-      t.style.left = (col * T) + 'px';
-      t.style.top = (pair[0] * T) + 'px';
-      effectsEl.appendChild(t);
-      setTimeout(function () { t.remove(); }, 500);
+  function getHorizontalCells() {
+    const cells = new Set();
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS - 1; c++) {
+        const a = state.board[c][r];
+        const b = state.board[c + 1][r];
+        if (a && b && fracEq(a, b)) {
+          cells.add(c + ',' + r);
+          cells.add((c + 1) + ',' + r);
+        }
+      }
+    }
+    return cells;
+  }
+
+  function applyGravity() {
+    for (let c = 0; c < COLS; c++) {
+      const stack = [];
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (state.board[c][r]) stack.push(state.board[c][r]);
+      }
+      for (let r = 0; r < ROWS; r++) state.board[c][r] = null;
+      for (let i = 0; i < stack.length; i++) {
+        state.board[c][ROWS - 1 - i] = stack[i];
+      }
+      state.heights[c] = stack.length;
+    }
+  }
+
+  function processVanish(cells, chain) {
+    let totalGain = { n: 0, d: 1 };
+    const cellArr = [];
+
+    cells.forEach(function (key) {
+      const parts = key.split(',');
+      const c = parseInt(parts[0], 10);
+      const r = parseInt(parts[1], 10);
+      const f = state.board[c][r];
+      if (!f) return;
+      cellArr.push({ c: c, r: r, f: f });
+      totalGain = fracAdd(totalGain, f);
+      popTileAt(c, r, f, chain);
     });
-  }
 
-  function showGain(col, row, gain) {
+    if (cellArr.length === 0) return;
+
+    const multipliedGain = { n: totalGain.n * chain, d: totalGain.d };
+    state.score = fracAdd(state.score, multipliedGain);
+
+    cells.forEach(function (key) {
+      const parts = key.split(',');
+      const c = parseInt(parts[0], 10);
+      const r = parseInt(parts[1], 10);
+      state.board[c][r] = null;
+    });
+
     const T = state.tileSize;
-    const el = document.createElement('div');
-    el.className = 'gain';
-    el.textContent = '+' + fracDisplay(gain);
-    el.style.left = ((col + 0.5) * T) + 'px';
-    el.style.top = ((row + 0.5) * T) + 'px';
-    effectsEl.appendChild(el);
-    setTimeout(function () { el.remove(); }, 1200);
+    let sumC = 0, sumR = 0;
+    cellArr.forEach(function (o) { sumC += o.c + 0.5; sumR += o.r + 0.5; });
+    const cx = (sumC / cellArr.length) * T;
+    const cy = (sumR / cellArr.length) * T;
+
+    showGainAt(cx, cy, multipliedGain, chain);
+    burstConfetti(cx, cy, chain > 1 ? 20 + 15 * chain : 20, chain > 1);
+    playMatchSound(chain);
+
+    if (chain > 1) {
+      boardEl.classList.remove('chain-shake');
+      void boardEl.offsetWidth;
+      boardEl.classList.add('chain-shake');
+      setTimeout(function () { boardEl.classList.remove('chain-shake'); }, 600);
+    }
+
+    state.matches++;
+    const targetLevel = 1 + Math.floor(state.matches / MATCHES_PER_LEVEL);
+    if (targetLevel > state.level) {
+      state.level = targetLevel;
+      playLevelUp();
+      levelEl.classList.remove('flash');
+      void levelEl.offsetWidth;
+      levelEl.classList.add('flash');
+    }
+
+    if (fracCmp(state.score, state.best) > 0) {
+      state.best = { n: state.score.n, d: state.score.d };
+      saveBest(state.best);
+    }
+    scoreEl.classList.remove('flash');
+    void scoreEl.offsetWidth;
+    scoreEl.classList.add('flash');
   }
 
-  function burstConfetti(cx, cy) {
+  function popTileAt(c, r, f, chain) {
+    const T = state.tileSize;
+    const t = makeTileEl(f);
+    t.classList.add('popping');
+    t.style.left = (c * T) + 'px';
+    t.style.top = (r * T) + 'px';
+    if (chain > 1) {
+      t.style.animationDelay = ((chain - 1) * 90) + 'ms';
+    }
+    effectsEl.appendChild(t);
+    setTimeout(function () { t.remove(); }, 600 + (chain - 1) * 90);
+  }
+
+  function showGainAt(cx, cy, gain, chain) {
+    const el = document.createElement('div');
+    if (chain > 1) {
+      el.className = 'gain chain';
+      const label = document.createElement('span');
+      label.className = 'chain-label';
+      label.textContent = 'CHAIN \u00D7' + chain;
+      const amount = document.createElement('span');
+      amount.className = 'chain-amount';
+      amount.textContent = '+' + fracDisplay(gain);
+      el.appendChild(label);
+      el.appendChild(amount);
+      el.style.animationDelay = ((chain - 1) * 90) + 'ms';
+    } else {
+      el.className = 'gain';
+      el.textContent = '+' + fracDisplay(gain);
+    }
+    el.style.left = cx + 'px';
+    el.style.top = cy + 'px';
+    effectsEl.appendChild(el);
+    setTimeout(function () { el.remove(); }, chain > 1 ? 2200 : 1200);
+  }
+
+  function burstConfetti(cx, cy, count, big) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
-    const COUNT = 20;
+    const colours = big
+      ? ['#fbbf24', '#f59e0b', '#fb923c', '#f97316', '#fde047', '#fef08a']
+      : ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
+    const COUNT = count || 20;
+    const speed = big ? 1.4 : 1.0;
     for (let i = 0; i < COUNT; i++) {
       const p = document.createElement('div');
       p.className = 'confetti';
       p.style.background = colours[i % colours.length];
       p.style.left = cx + 'px';
       p.style.top = cy + 'px';
-      const w = 4 + Math.random() * 6;
-      const h = 6 + Math.random() * 8;
+      const w = (4 + Math.random() * 6) * speed;
+      const h = (6 + Math.random() * 8) * speed;
       p.style.width = w + 'px';
       p.style.height = h + 'px';
       if (Math.random() < 0.4) p.style.borderRadius = '50%';
       effectsEl.appendChild(p);
 
       const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
-      const dist = 40 + Math.random() * 90;
+      const dist = (40 + Math.random() * 90) * speed;
       const dx = Math.cos(angle) * dist;
       const dy = Math.sin(angle) * dist - 30;
       const rot = (Math.random() - 0.5) * 720;
@@ -1077,9 +1145,43 @@
     }
   }
 
-  /* ============================================================
-     HUD
-     ============================================================ */
+  function placeTile() {
+    const f = state.falling;
+    if (!f) return;
+    const T = state.tileSize;
+    const col = computeLandingCol(f.x);
+    const h = state.heights[col];
+
+    if (h >= ROWS) { gameOver(); return; }
+
+    const row = ROWS - h - 1;
+    state.board[col][row] = { n: f.n, d: f.d };
+    state.heights[col] = h + 1;
+    state.falling = null;
+    fallingEl.style.display = 'none';
+    ghostEl.style.display = 'none';
+
+    let chain = 0;
+    let pending = getPlacementMatches(col, row);
+    while (pending.size > 0) {
+      chain++;
+      processVanish(pending, chain);
+      applyGravity();
+      pending = getHorizontalCells();
+    }
+
+    /* Always re-render the placed layer, whether or not a cascade
+       happened. Previously this was only called inside the loop, so a
+       non-matching placement added the tile to state.board but never
+       drew it — visually the tile "disappeared" the moment it landed. */
+    renderPlaced();
+
+    if (chain === 0) playLand();
+
+    renderHUD();
+    spawnTile();
+  }
+
   function renderHUD() {
     scoreEl.textContent = fracDisplay(state.score);
     bestEl.textContent = fracDisplay(state.best);
@@ -1088,9 +1190,6 @@
     if (state.next) nextEl.appendChild(tileInner(state.next));
   }
 
-  /* ============================================================
-     PERSISTENCE
-     ============================================================ */
   function loadBest() {
     try {
       const raw = localStorage.getItem('fractionFall.best');
@@ -1106,9 +1205,6 @@
     try { localStorage.setItem('fractionFall.best', JSON.stringify(b)); } catch (e) {}
   }
 
-  /* ============================================================
-     OVERLAYS
-     ============================================================ */
   function showOverlay(title, msg, scoreText, btnLabel, onClick) {
     overlayEl.innerHTML = '';
     const card = document.createElement('div');
@@ -1164,7 +1260,7 @@
     if (state.over || !state.started) return;
     state.paused = !state.paused;
     if (state.paused) {
-      showOverlay('Paused', 'Take a breath — the game is on hold.', null, 'Resume', function () {
+      showOverlay('Paused', 'Take a breath \u2014 the game is on hold.', null, 'Resume', function () {
         state.paused = false;
         hideOverlay();
         state.lastT = performance.now();
@@ -1175,9 +1271,6 @@
     }
   }
 
-  /* ============================================================
-     CONTROLS
-     ============================================================ */
   function bindHold(btn, key) {
     function set(v) {
       state.keys[key] = v;
@@ -1216,9 +1309,6 @@
     else if (k === 'ArrowDown' || k === 's' || k === 'S') state.keys.down = false;
   });
 
-  /* ============================================================
-     GAME LIFECYCLE
-     ============================================================ */
   function resetState() {
     state.board = [];
     state.heights = [];
@@ -1235,6 +1325,7 @@
     btnLeft.classList.remove('active');
     btnRight.classList.remove('active');
     btnDown.classList.remove('active');
+    boardEl.classList.remove('chain-shake');
   }
 
   function restartGame() {
