@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- ============================================================================
+     🚨 CRITICAL REMINDER FOR AI/DEVELOPERS 🚨
+     
+     DO NOT blindly overwrite the angle arc and textbox positioning logic.
+     There is a specific algorithm designed to make text fit snugly INSIDE the arc.
+     
+     The algorithm works by:
+     1. Iteratively finding the smallest distance (`labelR`) from the vertex 
+        where the entire bounding box of the text fits cleanly between the 
+        two rays of the angle.
+     2. Placing the text at that calculated `labelR`.
+     3. Calculating the arc radius (`arcR`) as the distance to the furthest 
+        corner of the text box PLUS a small padding, so the arc neatly 
+        wraps around the outside of the text.
+        
+     If you change `arcR` to be smaller than `labelR`, the arc will cross 
+     through the text, creating an overlap. 
+     
+     ALWAYS reuse `getAngleStyle()` or strictly copy its logic if a local 
+     `addAngle`/`addAngleAt` helper is required for custom bounding checks.
+     ============================================================================ -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Angles — Worksheet Generator</title>
@@ -189,6 +210,7 @@
     };
   }
   const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  const pick = a => a[Math.floor(rng() * a.length)];
 
   /* ============================================================
      FONT METRICS
@@ -800,7 +822,7 @@
       return (crossP * e.sign >= 0 ? 1 : -1) * Math.abs(crossP) / e.len;
     }
 
-        function addAngle(V, P, Q, label, isUnknown, isExterior) {
+    function addAngle(V, P, Q, label, isUnknown, isExterior) {
       const ux = P.x - V.x, uy = P.y - V.y, lu = Math.hypot(ux, uy);
       const vx = Q.x - V.x, vy = Q.y - V.y, lv = Math.hypot(vx, vy);
       const u = { x: ux / lu, y: uy / lu };
@@ -935,185 +957,149 @@
     };
   }
 
-        /* ============================================================
-     PARALLEL LINES WITH TRANSVERSAL (variety generator)
-     ============================================================ */
-  function genParallelLines() {
-    const theta = ri(50, 70); // acute angle of transversal
-    const rot = [0, 0, 0, 10, -10, 15, -15, 20, -20][ri(0, 8)]; // rotation in degrees
+      function genParallelTriangle() {
+    const B = 55; // angle at top left
+    const C = 35; // angle at top right
+    const H = 80; // height of the triangle
+    const DY = 0.5 * H; // separation between parallel lines equals distance from bottom line to vertex
+    const d2r = Math.PI / 180;
 
-    const H = 24;
-    const extTop = 36;
-    const extBot = 28;
-    const parLeftX = -46;
-    const parRightX = 54;
-    const ah = 7;
+    // Triangle vertices (reflected vertically)
+    const L = { x: -H * Math.tan(C * d2r), y: 0 }; // Top left
+    const R = { x: H * Math.tan(B * d2r), y: 0 };  // Top right
+    const V = { x: 0, y: H };                      // Bottom vertex
 
-    const tr = theta * Math.PI / 180;
-    const tanP = Math.tan(tr);
+    // Parallel line at y = DY
+    const y_par = DY;
 
-    const topX = -H / tanP;
-    const botX =  H / tanP;
+    // Intersections of parallel line with legs
+    const T1 = { x: L.x * (1 - DY / H), y: y_par };
+    const T2 = { x: R.x * (1 - DY / H), y: y_par };
 
-    const transTopX = topX - extTop / tanP;
-    const transTopY = -H - extTop;
-    const transBotX = botX + extBot / tanP;
-    const transBotY =  H + extBot;
-
-    const angles = {
-      TR: 180 - theta,
-      TL: theta,
-      BL: 180 - theta,
-      BR: theta
-    };
-    const arcs = {
-      TR: { a1: 0, a2: 180 - theta, bis: (180 - theta) / 2 },
-      TL: { a1: 180 - theta, a2: 180, bis: 180 - theta / 2 },
-      BL: { a1: 180, a2: 360 - theta, bis: 270 - theta / 2 },
-      BR: { a1: 360 - theta, a2: 360, bis: 360 - theta / 2 }
-    };
-
-    const unknowns = [];
     const items = [];
+    const ext = 30; // extension of parallel lines
 
-    // Helper to add an angle
-    function addAngle(intersection, reg, isUnknown) {
-      const pt = intersection === 1 ? { x: topX, y: -H } : { x: botX, y: H };
-      const arc = arcs[reg];
-      const val = angles[reg];
-      
-      let label;
-      if (isUnknown) {
-        let l;
-        // Pick a unique letter for each unknown angle
-        do { l = UNKNOWN_LETTERS[ri(0, UNKNOWN_LETTERS.length - 1)]; } while (unknowns.some(u => u.letter === l));
-        unknowns.push({ letter: l, value: val });
-        label = l;
-      } else {
-        label = val + '\u00B0';
+    // Make both parallel lines the same length
+    const x_start = L.x - ext;
+    const x_end = R.x + ext;
+
+    items.push({ t: 'line', x1: x_start, y1: 0, x2: x_end, y2: 0, w: 1.4 });
+    items.push({ t: 'line', x1: x_start, y1: y_par, x2: x_end, y2: y_par, w: 1.4 });
+
+    // Left leg
+    items.push({ t: 'line', x1: L.x, y1: L.y, x2: V.x, y2: V.y, w: 1.4 });
+    // Right leg
+    items.push({ t: 'line', x1: R.x, y1: R.y, x2: V.x, y2: V.y, w: 1.4 });
+
+    // Arrows on parallel lines
+    function drawArrow(p) {
+      items.push({ t: 'line', x1: p.x, y1: p.y, x2: p.x - 8, y2: p.y + 5, w: 1.2 });
+      items.push({ t: 'line', x1: p.x, y1: p.y, x2: p.x - 8, y2: p.y - 5, w: 1.2 });
+    }
+    drawArrow({ x: x_end - 5, y: 0 });
+    drawArrow({ x: x_end - 5, y: y_par });
+
+    // Right angle marker at V
+    const sz = 14;
+    const vL = { x: L.x - V.x, y: L.y - V.y };
+    const lenL = Math.hypot(vL.x, vL.y);
+    const p1 = { x: V.x + sz * vL.x / lenL, y: V.y + sz * vL.y / lenL };
+    
+    const vR = { x: R.x - V.x, y: R.y - V.y };
+    const lenR = Math.hypot(vR.x, vR.y);
+    const p2 = { x: V.x + sz * vR.x / lenR, y: V.y + sz * vR.y / lenR };
+    
+    const p3 = { x: p1.x + p2.x - V.x, y: p1.y + p2.y - V.y };
+    items.push({ t: 'line', x1: p1.x, y1: p1.y, x2: p3.x, y2: p3.y, w: 0.9 });
+    items.push({ t: 'line', x1: p2.x, y1: p2.y, x2: p3.x, y2: p3.y, w: 0.9 });
+
+    function addAngleAt(cx, cy, a1, a2, label, isUnknown) {
+      let bis = (a1 + a2) / 2;
+      if (Math.abs(a2 - a1) > 180) bis += 180;
+      const bisRad = bis * Math.PI / 180;
+      const w = textWidth(label, 10, false) / 2;
+      const h = 10 * 0.6;
+      const theta1 = a1 * Math.PI / 180;
+      const theta2 = a2 * Math.PI / 180;
+
+      // Tighter minimum distance for the text label
+      let labelR = 12;
+      for (let r = 10; r <= 100; r += 0.2) {
+        const px = r * Math.cos(bisRad);
+        const py = r * Math.sin(bisRad);
+        const corners = [
+          { x: px + w, y: py + h },
+          { x: px + w, y: py - h },
+          { x: px - w, y: py + h },
+          { x: px - w, y: py - h }
+        ];
+        let fits = true;
+        for (const p of corners) {
+          const d1 = -p.x * Math.sin(theta1) + p.y * Math.cos(theta1);
+          if (d1 < 1.5) { fits = false; break; }
+          const d2 = p.x * Math.sin(theta2) - p.y * Math.cos(theta2);
+          if (d2 < 1.5) { fits = false; break; }
+        }
+        if (fits) { labelR = r; break; }
       }
 
-      // Use getAngleStyle with font size 9 and padding 1.2 for a safe but tight fit
-      const style = getAngleStyle(val, arc.bis, label, isUnknown, 9, 1.2);
-      
-      items.push({ t: 'arc', cx: pt.x, cy: pt.y, r: style.arcR, a1: arc.a1, a2: arc.a2, w: 1.0 });
-      
-      const rad = arc.bis * Math.PI / 180;
+      // Calculate arc radius to neatly wrap around the outside of the text
+      const cx0 = labelR * Math.cos(bisRad);
+      const cy0 = labelR * Math.sin(bisRad);
+      const maxCornerDist = Math.max(
+          Math.sqrt((cx0 + w)**2 + (cy0 + h)**2),
+          Math.sqrt((cx0 + w)**2 + (cy0 - h)**2),
+          Math.sqrt((cx0 - w)**2 + (cy0 + h)**2),
+          Math.sqrt((cx0 - w)**2 + (cy0 - h)**2)
+      );
+      const arcR = maxCornerDist + 1.5;
+
+      items.push({ t: 'arc', cx: cx, cy: cy, r: arcR, a1: Math.min(a1, a2), a2: Math.max(a1, a2), w: 0.9 });
       items.push({
         t: 'text',
-        x: pt.x + style.labelR * Math.cos(rad),
-        y: pt.y - style.labelR * Math.sin(rad),
+        x: cx + labelR * Math.cos(bisRad),
+        y: cy - labelR * Math.sin(bisRad),
         s: label,
-        size: 9,
+        size: 10,
         italic: isUnknown,
         centered: true
       });
-      
-      return val;
     }
 
-    let answer = 0;
-    const type = rng();
+    addAngleAt(L.x, L.y, 0, -B, 's', true);
+    addAngleAt(R.x, R.y, 180, 180 + C, '35\u00B0', false);
+    addAngleAt(T1.x, T1.y, -B, 0, 'r', true);
+    addAngleAt(T2.x, T2.y, 180, 180 + C, 'q', true);
 
-    if (type < 0.4) {
-      // Type 1: Simple pair (Corresponding, Alternate, or Co-interior)
-      const relations = [
-        ['TL', 'TL'], ['TR', 'TR'], ['BL', 'BL'], ['BR', 'BR'], // Corresponding
-        ['TL', 'BR'], ['BR', 'TL'], ['TR', 'BL'], ['BL', 'TR'], // Alternate
-        ['TL', 'BL'], ['BL', 'TL'], ['TR', 'BR'], ['BR', 'TR']  // Co-interior
-      ];
-      const [reg1, reg2] = relations[Math.floor(rng() * relations.length)];
-      const knownIs1 = rng() < 0.5;
+    const minX = x_start;
+    const maxX = x_end;
+    const minY = 0;
+    const maxY = V.y;
+    const cx0 = (minX + maxX) / 2;
+    const cy0 = (minY + maxY) / 2;
 
-      if (knownIs1) {
-        addAngle(1, reg1, false);
-        answer = addAngle(2, reg2, true);
-      } else {
-        addAngle(2, reg2, false);
-        answer = addAngle(1, reg1, true);
-      }
-    } else if (type < 0.7) {
-      // Type 2: Vertically opposite pair on one intersection, corresponding on the other
-      const isTop = rng() < 0.5;
-      const regs = isTop ? ['TL', 'TR'] : ['BL', 'BR'];
-      const knownIntersection = isTop ? 2 : 1;
-      const unknownIntersection = isTop ? 1 : 2;
-      
-      const knownReg = regs[ri(0, 1)];
-      const otherReg = regs[0] === knownReg ? regs[1] : regs[0];
-
-      addAngle(knownIntersection, knownReg, false);
-      answer = addAngle(unknownIntersection, knownReg, true);
-      addAngle(unknownIntersection, otherReg, true);
-    } else {
-      // Type 3: Alternate interior + vertically opposite
-      const isTop = rng() < 0.5;
-      const regs = isTop ? ['TL', 'TR'] : ['BL', 'BR'];
-      const knownIntersection = isTop ? 2 : 1;
-      const unknownIntersection = isTop ? 1 : 2;
-      
-      // Pick an alternate pair
-      const pairs = isTop ? [['TR', 'BL'], ['TL', 'BR']] : [['BR', 'TL'], ['BL', 'TR']];
-      const [regKnown, regUnknown] = pairs[ri(0, 1)];
-      
-      // The vertically opposite is the other region on the unknown intersection
-      const otherReg = regs[0] === regUnknown ? regs[1] : regs[0];
-
-      addAngle(knownIntersection, regKnown, false);
-      answer = addAngle(unknownIntersection, regUnknown, true);
-      addAngle(unknownIntersection, otherReg, true);
-    }
-
-    // Apply rotation to all items
-    const radRot = rot * Math.PI / 180;
-    const cosR = Math.cos(radRot), sinR = Math.sin(radRot);
-    function rotPt(x, y) {
-      return { x: x * cosR - y * sinR, y: x * sinR + y * cosR };
-    }
-
-    // Build final item list with rotated points
-    const finalItems = [];
-    
-    // Lines
-    const lines = [
-      { x1: parLeftX, y1: -H, x2: parRightX, y2: -H, w: 1.4 },
-      { x1: parRightX, y1: -H, x2: parRightX - ah, y2: -H - ah * 0.55, w: 1.4 },
-      { x1: parRightX, y1: -H, x2: parRightX - ah, y2: -H + ah * 0.55, w: 1.4 },
-      { x1: parLeftX, y1: H, x2: parRightX, y2: H, w: 1.4 },
-      { x1: parRightX, y1: H, x2: parRightX - ah, y2: H - ah * 0.55, w: 1.4 },
-      { x1: parRightX, y1: H, x2: parRightX - ah, y2: H + ah * 0.55, w: 1.4 },
-      { x1: transTopX, y1: transTopY, x2: transBotX, y2: transBotY, w: 1.4 }
-    ];
-
-    for (const l of lines) {
-      const p1 = rotPt(l.x1, l.y1);
-      const p2 = rotPt(l.x2, l.y2);
-      finalItems.push({ t: 'line', x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, w: l.w });
-    }
-
-    // Arcs and Texts
     for (const it of items) {
-      if (it.t === 'arc') {
-        const c = rotPt(it.cx, it.cy);
-        finalItems.push({ t: 'arc', cx: c.x, cy: c.y, r: it.r, a1: it.a1 - rot, a2: it.a2 - rot, w: it.w });
+      if (it.t === 'line') {
+        it.x1 -= cx0; it.y1 -= cy0;
+        it.x2 -= cx0; it.y2 -= cy0;
+      } else if (it.t === 'arc') {
+        it.cx -= cx0; it.cy -= cy0;
       } else if (it.t === 'text') {
-        const c = rotPt(it.x, it.y);
-        finalItems.push({ t: 'text', x: c.x, y: c.y, s: it.s, size: it.size, italic: it.italic, centered: true });
+        it.x -= cx0; it.y -= cy0;
       }
     }
-
-    let qStr = 'Work out angle ' + unknowns[0].letter + '.';
-    if (unknowns.length > 1) {
-      qStr = 'Work out angles ' + unknowns.map(u => u.letter).join(' and ') + '.';
-    }
-    const ansStr = unknowns.map(u => u.letter + ' = ' + u.value + '\u00B0').join(', ');
 
     return {
-      q:   qStr,
-      ans: ansStr,
-      items: finalItems,
-      dcy: 88
+      q: 'Work out angles r, q, s.',
+      ans: 'r = 55\u00B0, q = 35\u00B0, s = 55\u00B0',
+      items: items,
+      dcy: 85
     };
+  }
+
+  function genParallelLines() {
+    // Temporarily returns the exact target diagram for verification
+    return genParallelTriangle();
   }
 
   /* ============================================================
