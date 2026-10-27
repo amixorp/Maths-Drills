@@ -957,41 +957,83 @@
     };
   }
 
-      function genParallelTriangle() {
-    const B = 55; // angle at top left
-    const C = 35; // angle at top right
-    const H = 80; // height of the triangle
-    const DY = 0.5 * H; // separation between parallel lines equals distance from bottom line to vertex
+        function genParallelTriangle() {
+    // 50/50: vertex of the triangle at the bottom (original) or at the top
+    // (entire diagram mirrored vertically). Everything else is identical.
+    const flip = rng() < 0.5;
+
     const d2r = Math.PI / 180;
 
-    // Triangle vertices (reflected vertically)
-    const L = { x: -H * Math.tan(C * d2r), y: 0 }; // Top left
-    const R = { x: H * Math.tan(B * d2r), y: 0 };  // Top right
-    const V = { x: 0, y: H };                      // Bottom vertex
+    // ---- flavour ------------------------------------------------------
+    // 0: right angle at the apex (square marker) — no label at V
+    // 1: apex angle given as a value
+    // 2: apex angle unknown — both base angles are given as values
+    const mode = ri(0, 2);
 
-    // Parallel line at y = DY
+    // Pick angles first, then determine H case-by-case. Narrow apex
+    // wedges need a taller triangle so the label at V and its arc have
+    // room to sit clear of the T1/T2 arcs on the parallel line.
+    // Mode 0 has no label at V (right-angle marker), so it never needs
+    // scaling. H is capped so the total diagram width stays inside the
+    // ~245-pt question box.
+    let alpha, beta, apex, H;
+    const ext = 30;
+    const MAX_TOTAL_WIDTH = 245;
+    let tries = 0;
+    do {
+      tries++;
+      if (mode === 0) {
+        alpha = ri(38, 54);
+        beta = 90 - alpha;
+      } else {
+        do {
+          alpha = ri(44, 66);
+          beta = ri(44, 66);
+        } while (alpha + beta < 95 || alpha + beta > 130 || Math.abs(alpha - beta) > 12);
+      }
+      apex = 180 - alpha - beta;
+
+      let desiredH = 80;
+      // Only scale when V actually carries a label (modes 1 and 2).
+      if (mode !== 0 && apex < 75) {
+        desiredH = 80 + Math.ceil((75 - apex) * 1.5);
+      }
+      const widthFactor = 1 / Math.tan(alpha * d2r) + 1 / Math.tan(beta * d2r);
+      const maxH = (MAX_TOTAL_WIDTH - 2 * ext) / widthFactor;
+      H = Math.max(80, Math.min(desiredH, maxH));
+    } while (tries < 6 && H < 80);
+
+    // Three distinct letters, never 'o' (the pool also skips i and l).
+    const letters = [];
+    const pool = UNKNOWN_LETTERS.slice();
+    for (let k = 0; k < 3; k++) {
+      const j = ri(0, pool.length - 1);
+      letters.push(pool[j]);
+      pool.splice(j, 1);
+    }
+
+    // Triangle vertices
+    const L = { x: -H / Math.tan(alpha * d2r), y: 0 }; // Top left
+    const R = { x:  H / Math.tan(beta  * d2r), y: 0 }; // Top right
+    const V = { x: 0, y: H };                          // Bottom vertex
+
+    const DY = 0.5 * H;
     const y_par = DY;
 
-    // Intersections of parallel line with legs
     const T1 = { x: L.x * (1 - DY / H), y: y_par };
     const T2 = { x: R.x * (1 - DY / H), y: y_par };
 
     const items = [];
-    const ext = 30; // extension of parallel lines
 
-    // Make both parallel lines the same length
     const x_start = L.x - ext;
     const x_end = R.x + ext;
 
     items.push({ t: 'line', x1: x_start, y1: 0, x2: x_end, y2: 0, w: 1.4 });
     items.push({ t: 'line', x1: x_start, y1: y_par, x2: x_end, y2: y_par, w: 1.4 });
 
-    // Left leg
     items.push({ t: 'line', x1: L.x, y1: L.y, x2: V.x, y2: V.y, w: 1.4 });
-    // Right leg
     items.push({ t: 'line', x1: R.x, y1: R.y, x2: V.x, y2: V.y, w: 1.4 });
 
-    // Arrows on parallel lines
     function drawArrow(p) {
       items.push({ t: 'line', x1: p.x, y1: p.y, x2: p.x - 8, y2: p.y + 5, w: 1.2 });
       items.push({ t: 'line', x1: p.x, y1: p.y, x2: p.x - 8, y2: p.y - 5, w: 1.2 });
@@ -999,30 +1041,39 @@
     drawArrow({ x: x_end - 5, y: 0 });
     drawArrow({ x: x_end - 5, y: y_par });
 
-    // Right angle marker at V
-    const sz = 14;
-    const vL = { x: L.x - V.x, y: L.y - V.y };
-    const lenL = Math.hypot(vL.x, vL.y);
-    const p1 = { x: V.x + sz * vL.x / lenL, y: V.y + sz * vL.y / lenL };
-    
-    const vR = { x: R.x - V.x, y: R.y - V.y };
-    const lenR = Math.hypot(vR.x, vR.y);
-    const p2 = { x: V.x + sz * vR.x / lenR, y: V.y + sz * vR.y / lenR };
-    
-    const p3 = { x: p1.x + p2.x - V.x, y: p1.y + p2.y - V.y };
-    items.push({ t: 'line', x1: p1.x, y1: p1.y, x2: p3.x, y2: p3.y, w: 0.9 });
-    items.push({ t: 'line', x1: p2.x, y1: p2.y, x2: p3.x, y2: p3.y, w: 0.9 });
+    // Right angle marker at V (mode 0 only)
+    if (mode === 0) {
+      const sz = 14;
+      const vL = { x: L.x - V.x, y: L.y - V.y };
+      const lenL = Math.hypot(vL.x, vL.y);
+      const p1 = { x: V.x + sz * vL.x / lenL, y: V.y + sz * vL.y / lenL };
+
+      const vR = { x: R.x - V.x, y: R.y - V.y };
+      const lenR = Math.hypot(vR.x, vR.y);
+      const p2 = { x: V.x + sz * vR.x / lenR, y: V.y + sz * vR.y / lenR };
+
+      const p3 = { x: p1.x + p2.x - V.x, y: p1.y + p2.y - V.y };
+      items.push({ t: 'line', x1: p1.x, y1: p1.y, x2: p3.x, y2: p3.y, w: 0.9 });
+      items.push({ t: 'line', x1: p2.x, y1: p2.y, x2: p3.x, y2: p3.y, w: 0.9 });
+    }
 
     function addAngleAt(cx, cy, a1, a2, label, isUnknown) {
       let bis = (a1 + a2) / 2;
       if (Math.abs(a2 - a1) > 180) bis += 180;
       const bisRad = bis * Math.PI / 180;
       const w = textWidth(label, 10, false) / 2;
-      const h = 10 * 0.6;
-      const theta1 = a1 * Math.PI / 180;
-      const theta2 = a2 * Math.PI / 180;
+      // Tighter half-height (was 6) — labels fit closer to the vertex.
+      const h = 5;
 
-      // Tighter minimum distance for the text label
+      // Sort so theta1 is the lower bound of the wedge. Without this,
+      // vertices whose rays are supplied in descending order (the bottom-
+      // left vertex L is called as (0, -alpha)) have both interior-side
+      // checks inverted, and the label falls back to a wrong radius.
+      const aMin = Math.min(a1, a2);
+      const aMax = Math.max(a1, a2);
+      const theta1 = aMin * Math.PI / 180;
+      const theta2 = aMax * Math.PI / 180;
+
       let labelR = 12;
       for (let r = 10; r <= 100; r += 0.2) {
         const px = r * Math.cos(bisRad);
@@ -1036,14 +1087,13 @@
         let fits = true;
         for (const p of corners) {
           const d1 = -p.x * Math.sin(theta1) + p.y * Math.cos(theta1);
-          if (d1 < 1.5) { fits = false; break; }
+          if (d1 < 1.0) { fits = false; break; }
           const d2 = p.x * Math.sin(theta2) - p.y * Math.cos(theta2);
-          if (d2 < 1.5) { fits = false; break; }
+          if (d2 < 1.0) { fits = false; break; }
         }
         if (fits) { labelR = r; break; }
       }
 
-      // Calculate arc radius to neatly wrap around the outside of the text
       const cx0 = labelR * Math.cos(bisRad);
       const cy0 = labelR * Math.sin(bisRad);
       const maxCornerDist = Math.max(
@@ -1052,7 +1102,8 @@
           Math.sqrt((cx0 - w)**2 + (cy0 + h)**2),
           Math.sqrt((cx0 - w)**2 + (cy0 - h)**2)
       );
-      const arcR = maxCornerDist + 1.5;
+      // Tighter arc padding (was 1.5) — arc hugs the text more closely.
+      const arcR = maxCornerDist + 0.8;
 
       items.push({ t: 'arc', cx: cx, cy: cy, r: arcR, a1: Math.min(a1, a2), a2: Math.max(a1, a2), w: 0.9 });
       items.push({
@@ -1066,10 +1117,39 @@
       });
     }
 
-    addAngleAt(L.x, L.y, 0, -B, 's', true);
-    addAngleAt(R.x, R.y, 180, 180 + C, '35\u00B0', false);
-    addAngleAt(T1.x, T1.y, -B, 0, 'r', true);
-    addAngleAt(T2.x, T2.y, 180, 180 + C, 'q', true);
+    if (mode === 2) {
+      // Both base angles are given as values; the apex is the unknown.
+      addAngleAt(L.x, L.y, 0, -alpha, alpha + '\u00B0', false);
+      addAngleAt(R.x, R.y, 180, 180 + beta, beta + '\u00B0', false);
+      addAngleAt(T1.x, T1.y, -alpha, 0, letters[0], true);
+      addAngleAt(T2.x, T2.y, 180, 180 + beta, letters[1], true);
+      addAngleAt(V.x, V.y, beta, 180 - alpha, letters[2], true);
+    } else {
+      addAngleAt(L.x, L.y, 0, -alpha, letters[0], true);
+      addAngleAt(R.x, R.y, 180, 180 + beta, beta + '\u00B0', false);
+      addAngleAt(T1.x, T1.y, -alpha, 0, letters[1], true);
+      addAngleAt(T2.x, T2.y, 180, 180 + beta, letters[2], true);
+      if (mode === 1) {
+        addAngleAt(V.x, V.y, beta, 180 - alpha, apex + '\u00B0', false);
+      }
+    }
+
+    // ---- Variant: mirror the whole diagram vertically (vertex up) ----
+    if (flip) {
+      for (const it of items) {
+        if (it.t === 'line') {
+          it.y1 = H - it.y1;
+          it.y2 = H - it.y2;
+        } else if (it.t === 'arc') {
+          it.cy = H - it.cy;
+          const a1 = it.a1, a2 = it.a2;
+          it.a1 = -a2;
+          it.a2 = -a1;
+        } else if (it.t === 'text') {
+          it.y = H - it.y;
+        }
+      }
+    }
 
     const minX = x_start;
     const maxX = x_end;
@@ -1089,9 +1169,22 @@
       }
     }
 
+    let qText, ans;
+    if (mode === 2) {
+      qText = 'Work out angles ' + letters[0] + ', ' + letters[1] + ', ' + letters[2] + '.';
+      ans = letters[0] + ' = ' + alpha + '\u00B0, ' +
+            letters[1] + ' = ' + beta  + '\u00B0, ' +
+            letters[2] + ' = ' + apex  + '\u00B0';
+    } else {
+      qText = 'Work out angles ' + letters[1] + ', ' + letters[2] + ', ' + letters[0] + '.';
+      ans = letters[1] + ' = ' + alpha + '\u00B0, ' +
+            letters[2] + ' = ' + beta  + '\u00B0, ' +
+            letters[0] + ' = ' + alpha + '\u00B0';
+    }
+
     return {
-      q: 'Work out angles r, q, s.',
-      ans: 'r = 55\u00B0, q = 35\u00B0, s = 55\u00B0',
+      q: qText,
+      ans: ans,
       items: items,
       dcy: 85
     };
