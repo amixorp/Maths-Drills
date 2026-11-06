@@ -289,6 +289,9 @@
   body.dragging-active{ user-select:none; -webkit-user-select:none; }
   body.dragging-active .slot{ border-color:#93c5fd; }
 
+  /* Touch-action: allow taps + pinch, but prevent accidental double-tap zoom */
+  .slot, .pool, .work { touch-action: manipulation; }
+
   /* ---------- per-question feedback ---------- */
   .q-feedback{
     margin-top:10px; min-height:16px; text-align:center;
@@ -320,7 +323,6 @@
   }
   .q.ok{ animation:cardPop .45s ease; }
 
-  /* gentle per-diagram bounce */
   @keyframes diagram-bounce{
     0%   { transform: scale(1) translateY(0); }
     30%  { transform: scale(1.12) translateY(-8px); }
@@ -331,7 +333,6 @@
     animation: diagram-bounce .7s ease both;
   }
 
-  /* gentle tile wiggle */
   @keyframes tile-wiggle{
     0%   { transform: rotate(0deg) scale(1); }
     20%  { transform: rotate(-8deg) scale(1.06); }
@@ -344,14 +345,12 @@
     animation: tile-wiggle .85s ease both;
   }
 
-  /* calm glow for reduced-motion users */
   .diagram.gentle-glow{
     box-shadow: 0 0 26px 6px rgba(251,191,36,.55);
     border-radius: 50%;
     transition: box-shadow .5s ease;
   }
 
-  /* per-diagram star burst */
   .star-layer{
     position:absolute; inset:0;
     pointer-events:none;
@@ -368,7 +367,6 @@
     transform: translate(-50%,-50%);
   }
 
-  /* full-screen falling confetti */
   .screen-confetti{
     position:fixed; inset:0;
     pointer-events:none;
@@ -382,7 +380,6 @@
     will-change:transform, opacity;
   }
 
-  /* well done banner */
   .well-done-banner{
     position:fixed;
     left:50%;
@@ -422,7 +419,6 @@
     50%      { transform: translateY(-10px) rotate(8deg); }
   }
 
-  /* ---------- reduced motion ---------- */
   @media (prefers-reduced-motion: reduce){
     .q.ok{ animation:none; }
     .diagrams.shake{ animation:none; }
@@ -461,6 +457,162 @@
   .toast button:hover{ background:#1d4ed8; }
   @media (max-width:560px){
     .toast{ flex-direction:column; align-items:stretch; text-align:center; gap:10px; }
+  }
+
+  /* ============================================================
+     SINGLE-BOARD MODE — fills the screen, no scrolling
+     ============================================================ */
+  body.single-board {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body.single-board .toolbar {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    gap: 8px;
+    font-size: 12px;
+  }
+  body.single-board .toolbar input[type=number] {
+    width: 70px;
+    padding: 4px 6px;
+  }
+  body.single-board .toolbar select,
+  body.single-board .toolbar button {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  body.single-board .tb-title {
+    font-size: 13px;
+    margin-right: 4px;
+  }
+  body.single-board #printBtn,
+  body.single-board #shareBtn {
+    display: none;
+  }
+  body.single-board .score-chip {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  body.single-board .sheet {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    max-width: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 6px 10px 8px;
+    overflow: hidden;
+  }
+  body.single-board .sheet-head {
+    flex: 0 0 auto;
+    padding-bottom: 4px;
+    border-bottom-width: 2px;
+  }
+  body.single-board .sheet-head h1 {
+    font-size: 15px;
+  }
+  body.single-board .meta {
+    gap: 10px;
+    font-size: 11px;
+  }
+  body.single-board .meta .line { width: 56px; }
+  body.single-board .meta .line.short { width: 40px; }
+  body.single-board .meta .line.tiny { width: 28px; }
+
+  body.single-board .instructions {
+    flex: 0 0 auto;
+    font-size: 11px;
+    line-height: 1.35;
+    margin: 4px 0 6px;
+  }
+
+  body.single-board .questions {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  body.single-board .q {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 6px 8px;
+    border-width: 1px;
+  }
+  body.single-board .q-head {
+    display: none;
+  }
+  body.single-board .work {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 8px;
+    grid-template-columns: 1fr var(--pool-w, 220px);
+  }
+  body.single-board .diagrams {
+    min-height: 0;
+    gap: 6px;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  body.single-board .cell {
+    min-height: 0;
+    gap: 3px;
+    justify-content: center;
+  }
+  body.single-board .diagram,
+  body.single-board .slot {
+    width: var(--diagram-size, 90px);
+    height: var(--diagram-size, 90px);
+    max-width: none;
+  }
+  body.single-board .pool {
+    min-height: 0;
+    gap: 5px;
+    padding: 6px;
+  }
+  body.single-board .pool .tile {
+    width: var(--tile-size, 55px);
+    height: var(--tile-size, 55px);
+    font-size: calc(var(--tile-size, 55px) * 0.36);
+  }
+  body.single-board .slot > .tile {
+    font-size: calc(var(--diagram-size, 90px) * 0.38);
+  }
+  body.single-board .q-feedback {
+    flex: 0 0 auto;
+    margin-top: 4px;
+    min-height: 14px;
+    font-size: 11.5px;
+  }
+  body.single-board .key {
+    display: none;
+  }
+
+  @media (max-width: 700px) {
+    body.single-board .work {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr auto;
+    }
+    body.single-board .pool {
+      max-height: 32%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  @media (max-width: 640px) {
+    body.single-board .toolbar label:has(#seedInput),
+    body.single-board .toolbar label:has(#answersChk) {
+      display: none;
+    }
   }
 
   /* ============================================================
@@ -540,6 +692,7 @@
     body.is-focus .sheet{
       margin:0 !important; padding:0 !important; max-width:none !important;
     }
+    body.single-board .sheet { padding: 0 !important; }
     .focus-ui{display:none !important}
     .q{border-color:#9ca3af; background:#fff !important; animation:none !important}
     .q-feedback{display:none !important}
@@ -967,6 +1120,99 @@
   ];
 
   /* ============================================================
+     SINGLE-BOARD LAYOUT (fills the screen, no scrolling)
+     ============================================================ */
+  function updateSingleBoardClass() {
+    const isSingle = countSel.value === '1';
+    const wasSingle = document.body.classList.contains('single-board');
+    document.body.classList.toggle('single-board', isSingle);
+
+    if (isSingle) {
+      /* Two rAFs: the first lets the class swap apply,
+         the second lets the new layout settle. */
+      requestAnimationFrame(function () {
+        requestAnimationFrame(fitSingleBoard);
+      });
+      observeWorkSize();
+    } else if (wasSingle) {
+      if (window._workRO) {
+        window._workRO.disconnect();
+        window._workRO = null;
+      }
+    }
+  }
+
+  function observeWorkSize() {
+    if (!window.ResizeObserver) return;
+    if (window._workRO) window._workRO.disconnect();
+    const work = document.querySelector('.q .work');
+    if (!work) return;
+    window._workRO = new ResizeObserver(function () {
+      fitSingleBoard();
+    });
+    window._workRO.observe(work);
+  }
+
+  function fitSingleBoard() {
+    if (!document.body.classList.contains('single-board')) return;
+    const q = document.querySelector('.q');
+    if (!q) return;
+    const work = q.querySelector('.work');
+    const pool = q.querySelector('.pool');
+    if (!work || !pool) return;
+
+    const workRect = work.getBoundingClientRect();
+    const poolRect = pool.getBoundingClientRect();
+    if (workRect.width < 20 || workRect.height < 20) return;
+
+    const poolBelow = poolRect.top > workRect.top + 20;
+
+    let diagramsW, diagramsH;
+    if (poolBelow) {
+      diagramsW = workRect.width;
+      diagramsH = workRect.height - poolRect.height - 8;
+    } else {
+      diagramsW = workRect.width - poolRect.width - 8;
+      diagramsH = workRect.height;
+    }
+    if (diagramsW < 20 || diagramsH < 20) return;
+
+    const gridGap = 6;
+    const cellGap = 3;
+    const cellW = (diagramsW - 3 * gridGap) / 4;
+    const cellH = diagramsH;
+
+    /* Each cell has diagram (1:1) + slot (1:1) + gap. */
+    const byWidth = cellW;
+    const byHeight = (cellH - cellGap) / 2;
+    const diagramSize = Math.max(24, Math.min(byWidth, byHeight, 200));
+
+    document.documentElement.style.setProperty(
+      '--diagram-size', diagramSize.toFixed(1) + 'px'
+    );
+
+    /* Pool tiles: try 4, then 3, then 2, then 1 per row */
+    const poolInnerW = poolRect.width - 12;
+    const poolInnerH = poolRect.height - 12;
+    let tileSize = 28;
+    for (let cols = 4; cols >= 1; cols--) {
+      const byW = (poolInnerW - (cols - 1) * 5) / cols;
+      const rows = Math.ceil(8 / cols);
+      const byH = (poolInnerH - (rows - 1) * 5) / rows;
+      const s = Math.min(byW, byH, 76);
+      if (s >= 30) { tileSize = s; break; }
+    }
+    document.documentElement.style.setProperty(
+      '--tile-size', tileSize.toFixed(1) + 'px'
+    );
+  }
+
+  window.addEventListener('resize', fitSingleBoard);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', fitSingleBoard);
+  }
+
+  /* ============================================================
      RENDER THE SHEET
      ============================================================ */
   function renderActivity() {
@@ -1032,6 +1278,7 @@
     document.title = 'Fractions of Shapes \u2014 Maths Drill';
 
     toggleKey();
+    updateSingleBoardClass();
     updateScore();
   }
 
@@ -1074,21 +1321,31 @@
     return null;
   }
 
+  /* -------- drag ghost (corrected for visual-viewport zoom) -------- */
+  function setGhostPosition(clientX, clientY) {
+    if (!drag || !drag.ghost) return;
+    const vv = window.visualViewport;
+    const ox = vv ? vv.offsetLeft : 0;
+    const oy = vv ? vv.offsetTop : 0;
+    /* position:fixed on mobile is visual-relative, while clientX/Y
+       is layout-relative when the page is pinch-zoomed. Subtract the
+       visual-viewport offsets so the ghost stays under the finger. */
+    drag.ghost.style.left = (clientX - ox) + 'px';
+    drag.ghost.style.top  = (clientY - oy) + 'px';
+  }
+
   function startGhost() {
     const g = document.createElement('div');
     g.className = 'drag-ghost';
     g.innerHTML = drag.tile.innerHTML;
-    g.style.left = drag.startX + 'px';
-    g.style.top = drag.startY + 'px';
     document.body.appendChild(g);
     drag.ghost = g;
     drag.tile.classList.add('dragging');
+    setGhostPosition(drag.startX, drag.startY);
   }
 
   function moveGhost(x, y) {
-    if (!drag.ghost) return;
-    drag.ghost.style.left = x + 'px';
-    drag.ghost.style.top = y + 'px';
+    setGhostPosition(x, y);
   }
 
   function highlight(x, y) {
@@ -1265,28 +1522,24 @@
     return audioCtx;
   }
 
-  /* Softer, shorter celebratory chime (4 rising notes, low gain). */
   function playChime() {
     if (!soundOn) return;
     const ctx = getAudioCtx();
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    const notes = [523.25, 659.25, 783.99, 1046.50];
     const gap = 0.09;
 
     notes.forEach(function (freq, i) {
       const t = now + i * gap;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, t);
-
       gain.gain.setValueAtTime(0.0001, t);
       gain.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
-
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(t);
@@ -1299,7 +1552,6 @@
               window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  /* --- per-diagram star burst ---------------------------------- */
   function starBurst(container, colour) {
     if (prefersReducedMotion()) return;
 
@@ -1341,7 +1593,6 @@
     setTimeout(function () { layer.remove(); }, 1400);
   }
 
-  /* --- full-screen falling confetti ---------------------------- */
   function screenConfetti() {
     if (prefersReducedMotion()) return;
 
@@ -1390,7 +1641,6 @@
     setTimeout(function () { layer.remove(); }, 4600);
   }
 
-  /* --- well done banner ---------------------------------------- */
   function showBanner() {
     if (!wellDoneBanner) return;
 
@@ -1431,12 +1681,10 @@
     wellDoneBanner.classList.remove('show');
   }
 
-  /* --- the master celebration ---------------------------------- */
   function celebrate(qEl) {
     const reduced = prefersReducedMotion();
 
     if (reduced) {
-      /* Calm path: gentle glow on each diagram, no motion. */
       qEl.querySelectorAll('.diagram').forEach(function (d) {
         d.classList.add('gentle-glow');
       });
@@ -1446,15 +1694,13 @@
         });
       }, 2400);
     } else {
-      /* 1. diagrams bounce, staggered */
       qEl.querySelectorAll('.diagram').forEach(function (d, i) {
         d.classList.remove('celebrate-bounce');
-        void d.offsetWidth;                 /* force reflow so it can replay */
+        void d.offsetWidth;
         d.style.animationDelay = (i * 0.1) + 's';
         d.classList.add('celebrate-bounce');
       });
 
-      /* 2. placed tiles wiggle, staggered after the bounce */
       qEl.querySelectorAll('.slot > .tile').forEach(function (t, i) {
         t.classList.remove('wiggle');
         void t.offsetWidth;
@@ -1462,18 +1708,15 @@
         t.classList.add('wiggle');
       });
 
-      /* 3. star burst from each diagram, in that diagram's colour */
       setTimeout(function () {
         qEl.querySelectorAll('.diagram').forEach(function (d) {
           starBurst(d, d.dataset.colour || '#3b82f6');
         });
       }, 220);
 
-      /* 4. full-screen confetti falls */
       screenConfetti();
     }
 
-    /* 5. banner + sound always fire */
     showBanner();
     playChime();
   }
