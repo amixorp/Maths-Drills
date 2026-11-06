@@ -129,6 +129,7 @@
   }
 
   .diagram{
+    position:relative;
     width:100%;
     max-width:128px;
     aspect-ratio:1 / 1;
@@ -309,7 +310,9 @@
   .key-note ul{ margin:8px 0 0 18px; padding:0; }
   .key-note li{ margin-bottom:3px; }
 
-  /* ---------- celebration ---------- */
+  /* ============================================================
+     CELEBRATION  —  layered (Option C)
+     ============================================================ */
   @keyframes cardPop{
     0%   { transform:scale(1); }
     35%  { transform:scale(1.012); }
@@ -317,23 +320,122 @@
   }
   .q.ok{ animation:cardPop .45s ease; }
 
-  .celebrate-layer{
-    position:absolute; inset:0;
-    overflow:hidden;
-    pointer-events:none;
-    border-radius:12px;
-    z-index:5;
+  /* gentle per-diagram bounce */
+  @keyframes diagram-bounce{
+    0%   { transform: scale(1) translateY(0); }
+    30%  { transform: scale(1.12) translateY(-8px); }
+    60%  { transform: scale(1.05) translateY(-2px); }
+    100% { transform: scale(1) translateY(0); }
   }
-  .confetti{
+  .diagram.celebrate-bounce{
+    animation: diagram-bounce .7s ease both;
+  }
+
+  /* gentle tile wiggle */
+  @keyframes tile-wiggle{
+    0%   { transform: rotate(0deg) scale(1); }
+    20%  { transform: rotate(-8deg) scale(1.06); }
+    40%  { transform: rotate(8deg) scale(1.06); }
+    60%  { transform: rotate(-5deg) scale(1.03); }
+    80%  { transform: rotate(5deg) scale(1.03); }
+    100% { transform: rotate(0deg) scale(1); }
+  }
+  .slot > .tile.wiggle{
+    animation: tile-wiggle .85s ease both;
+  }
+
+  /* calm glow for reduced-motion users */
+  .diagram.gentle-glow{
+    box-shadow: 0 0 26px 6px rgba(251,191,36,.55);
+    border-radius: 50%;
+    transition: box-shadow .5s ease;
+  }
+
+  /* per-diagram star burst */
+  .star-layer{
+    position:absolute; inset:0;
+    pointer-events:none;
+    overflow:visible;
+    z-index:3;
+  }
+  .star{
+    position:absolute;
+    display:block;
+    font-weight:900;
+    line-height:1;
+    will-change:transform, opacity;
+    text-shadow: 0 0 4px rgba(255,255,255,.85);
+    transform: translate(-50%,-50%);
+  }
+
+  /* full-screen falling confetti */
+  .screen-confetti{
+    position:fixed; inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:90;
+  }
+  .confetti-piece{
     position:absolute;
     display:block;
     border-radius:2px;
     will-change:transform, opacity;
   }
 
+  /* well done banner */
+  .well-done-banner{
+    position:fixed;
+    left:50%;
+    bottom:-160px;
+    transform: translateX(-50%);
+    z-index:95;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:20px 42px;
+    background: linear-gradient(135deg,#fbbf24,#f59e0b);
+    color:#fff;
+    border-radius:22px;
+    box-shadow:
+      0 22px 54px rgba(245,158,11,.55),
+      0 0 0 4px rgba(255,255,255,.35),
+      inset 0 2px 0 rgba(255,255,255,.4);
+    font-size:32px;
+    font-weight:900;
+    letter-spacing:2px;
+    transition: bottom .55s cubic-bezier(.2,.85,.3,1.15);
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .well-done-banner.show{ bottom: 110px; }
+  .wd-trophy{
+    font-size:48px;
+    line-height:1;
+    display:inline-block;
+    animation: trophy-bounce 1s ease-in-out infinite;
+  }
+  .wd-text{
+    text-shadow: 0 2px 0 rgba(0,0,0,.18);
+  }
+  @keyframes trophy-bounce{
+    0%, 100% { transform: translateY(0) rotate(-8deg); }
+    50%      { transform: translateY(-10px) rotate(8deg); }
+  }
+
+  /* ---------- reduced motion ---------- */
   @media (prefers-reduced-motion: reduce){
     .q.ok{ animation:none; }
     .diagrams.shake{ animation:none; }
+    .diagram.celebrate-bounce{ animation:none; }
+    .slot > .tile.wiggle{ animation:none; }
+    .wd-trophy{ animation:none; }
+
+    .well-done-banner{
+      transition: opacity .35s ease;
+      bottom: 110px;
+      opacity: 0;
+    }
+    .well-done-banner.show{ opacity: 1; }
   }
 
   /* ---------- completion toast ---------- */
@@ -415,6 +517,18 @@
     .tile.frac{ font-size:19px; }
     .slot > .tile{ font-size:22px; }
     body.is-focus .sheet{ padding-top:52px; }
+
+    .well-done-banner{
+      padding:14px 26px;
+      font-size:22px;
+      gap:10px;
+      letter-spacing:1.4px;
+    }
+    .well-done-banner.show{ bottom: 90px; }
+    .wd-trophy{ font-size:34px; }
+  }
+  @media (prefers-reduced-motion: reduce) and (max-width:640px){
+    .well-done-banner{ bottom: 90px; }
   }
 
   /* ---------- print ---------- */
@@ -430,7 +544,9 @@
     .q{border-color:#9ca3af; background:#fff !important; animation:none !important}
     .q-feedback{display:none !important}
     .tile{ box-shadow:none; }
-    .celebrate-layer{display:none !important}
+    .star-layer,
+    .screen-confetti,
+    .well-done-banner,
     .toast{display:none !important}
   }
 </style>
@@ -458,6 +574,11 @@
 </div>
 
 <div class="sheet" id="sheet"></div>
+
+<div class="well-done-banner no-print" id="wellDoneBanner" aria-hidden="true">
+  <span class="wd-trophy" id="wdTrophy">🏆</span>
+  <span class="wd-text" id="wdText">WELL DONE!</span>
+</div>
 
 <div class="toast no-print" id="toast" role="status" aria-live="polite">
   <span class="toast-text"></span>
@@ -521,11 +642,6 @@
 
   /* ============================================================
      SHADING PALETTE
-     ------------------------------------------------------------
-     Each diagram is shaded in a single colour, but different
-     diagrams use different colours. The fraction tiles stay
-     plain on purpose, so the colour can never give the answer
-     away — pupils must compare the numbers.
      ============================================================ */
   const SHADE_PALETTE = [
     '#3b82f6', // blue
@@ -540,10 +656,6 @@
 
   /* ============================================================
      DIAGRAM GEOMETRY
-     ------------------------------------------------------------
-     Every diagram is a list of "parts". A part is either
-       { d: "<svg path data>" }   or   { pts: [[x,y], ...] }
-     in a 100 × 100 viewBox. The first k parts are shaded.
      ============================================================ */
   const CX = 50, CY = 50, RAD = 44;
 
@@ -551,7 +663,6 @@
     return [CX + r * Math.cos(ang), CY + r * Math.sin(ang)];
   }
 
-  /* --- circle cut into n equal sectors --- */
   function circleParts(n) {
     const step = 2 * Math.PI / n;
     const large = step > Math.PI + 1e-9 ? 1 : 0;
@@ -570,7 +681,6 @@
     return out;
   }
 
-  /* --- regular polygon cut from the centre into `sides` triangles --- */
   function polygonVertexParts(sides) {
     const v = [];
     for (let i = 0; i < sides; i++) {
@@ -583,7 +693,6 @@
     return out;
   }
 
-  /* --- regular hexagon cut into 3 equal rhombi --- */
   function hexagonRhombusParts() {
     const v = [];
     for (let i = 0; i < 6; i++) {
@@ -596,7 +705,6 @@
     return out;
   }
 
-  /* --- equilateral triangle cut into 4 smaller equilateral triangles --- */
   function triangleQuadParts() {
     const A = pt(RAD, -Math.PI / 2);
     const B = pt(RAD, -Math.PI / 2 + 2 * Math.PI / 3);
@@ -611,7 +719,6 @@
     ];
   }
 
-  /* --- square cut into a cols × rows grid --- */
   function squareGridParts(cols, rows) {
     const x0 = 12, y0 = 12, w = 76, h = 76;
     const cw = w / cols, ch = h / rows;
@@ -625,7 +732,6 @@
     return out;
   }
 
-  /* --- rectangle cut into n equal vertical strips --- */
   function rectStripParts(n) {
     const x0 = 6, y0 = 28, w = 88, h = 44;
     const cw = w / n;
@@ -639,43 +745,33 @@
 
   /* ============================================================
      DIAGRAM CATALOGUE
-     ------------------------------------------------------------
-     Each entry knows how many equal parts it makes (n) and how
-     to build them. Only denominators ≤ 8 are used.
      ============================================================ */
   const SPECS = (function () {
     const s = [];
 
-    /* circles: 2 – 8 sectors */
     for (let n = 2; n <= 8; n++) {
       s.push({ kind: 'circle', n: n, make: function () { return circleParts(n); } });
     }
 
-    /* equilateral triangle: 3 wedges, or 4 small triangles */
     s.push({ kind: 'triangle', n: 3, make: function () { return polygonVertexParts(3); } });
     s.push({ kind: 'triangle', n: 4, make: function () { return triangleQuadParts(); } });
 
-    /* square: halves, quarters, eighths */
     s.push({ kind: 'square', n: 2, make: function () { return squareGridParts(2, 1); } });
     s.push({ kind: 'square', n: 4, make: function () { return squareGridParts(2, 2); } });
     s.push({ kind: 'square', n: 8, make: function () { return squareGridParts(4, 2); } });
 
-    /* rectangle: equal vertical strips */
     [2, 3, 4, 5, 6, 8].forEach(function (n) {
       s.push({ kind: 'rectangle', n: n, make: function () { return rectStripParts(n); } });
     });
 
-    /* pentagon: 5 wedges */
     s.push({ kind: 'pentagon', n: 5, make: function () { return polygonVertexParts(5); } });
 
-    /* hexagon: 3 rhombi, or 6 triangles */
     s.push({ kind: 'hexagon', n: 3, make: function () { return hexagonRhombusParts(); } });
     s.push({ kind: 'hexagon', n: 6, make: function () { return polygonVertexParts(6); } });
 
     return s;
   })();
 
-  /* Every (spec, k) pair with k/n in lowest terms. */
   function buildCandidates() {
     const out = [];
     SPECS.forEach(function (spec) {
@@ -697,7 +793,6 @@
     const usedFrac = Object.create(null);
     const usedKind = Object.create(null);
 
-    /* first pass: aim for four different shape kinds */
     for (let i = 0; i < candidates.length && picked.length < 4; i++) {
       const c = candidates[i];
       const key = c.k + '/' + c.spec.n;
@@ -706,7 +801,6 @@
       usedFrac[key] = true;
       usedKind[c.spec.kind] = true;
     }
-    /* second pass: fill any remaining places */
     for (let i = 0; i < candidates.length && picked.length < 4; i++) {
       const c = candidates[i];
       const key = c.k + '/' + c.spec.n;
@@ -715,7 +809,6 @@
       usedFrac[key] = true;
     }
 
-    /* one colour per diagram, all different within a board */
     const shadeColours = shuffle(SHADE_PALETTE);
 
     const diagrams = picked.map(function (c, i) {
@@ -730,7 +823,6 @@
       };
     });
 
-    /* ---- distractor fractions ---- */
     const answerKeys = Object.create(null);
     diagrams.forEach(function (d) { answerKeys[d.key] = true; });
 
@@ -811,7 +903,7 @@
   function renderBoard(board, i) {
     const cells = board.diagrams.map(function (d, j) {
       return '<div class="cell">' +
-        '<div class="diagram">' + renderDiagramSVG(d) + '</div>' +
+        '<div class="diagram" data-colour="' + d.color + '">' + renderDiagramSVG(d) + '</div>' +
         '<div class="slot" data-slot="' + j + '" data-answer="' + d.key + '" ' +
              'tabindex="0" role="button" aria-label="Answer box ' + (j + 1) + '">' +
           '<div class="slot-answer">' +
@@ -841,22 +933,26 @@
   /* ============================================================
      DOM HANDLES
      ============================================================ */
-  const sheet       = document.getElementById('sheet');
-  const seedInput   = document.getElementById('seedInput');
-  const countSel    = document.getElementById('countSelect');
-  const answersChk  = document.getElementById('answersChk');
-  const soundChk    = document.getElementById('soundChk');
-  const scoreTag    = document.getElementById('scoreTag');
-  const toastEl     = document.getElementById('toast');
-  const fsBtn       = document.getElementById('fsBtn');
-  const fsExitBtn   = document.getElementById('fsExitBtn');
-  const focusScore  = document.getElementById('focusScore');
+  const sheet        = document.getElementById('sheet');
+  const seedInput    = document.getElementById('seedInput');
+  const countSel     = document.getElementById('countSelect');
+  const answersChk   = document.getElementById('answersChk');
+  const soundChk     = document.getElementById('soundChk');
+  const scoreTag     = document.getElementById('scoreTag');
+  const toastEl      = document.getElementById('toast');
+  const fsBtn        = document.getElementById('fsBtn');
+  const fsExitBtn    = document.getElementById('fsExitBtn');
+  const focusScore   = document.getElementById('focusScore');
+  const wellDoneBanner = document.getElementById('wellDoneBanner');
+  const wdTrophy     = document.getElementById('wdTrophy');
+  const wdText       = document.getElementById('wdText');
 
   /* ============================================================
      STATE
      ============================================================ */
   let boards = [];
   let allDone = false;
+  let bannerTimeout = null;
 
   const WRONG_MSG =
     'Not quite \u2014 at least one fraction doesn\u2019t match its diagram. ' +
@@ -1074,7 +1170,6 @@
     }
   }
 
-  /* Move a tile into a slot, or back into the tray. */
   function placeTile(tile, dest, dropX, dropY) {
     const from = tile.parentElement;
     if (!from) return;
@@ -1101,7 +1196,6 @@
     evaluate(qEl);
   }
 
-  /* Insert a tile into the tray at the drop point. */
   function insertTileIntoPool(tile, pool, x, y) {
     const others = Array.prototype.slice.call(pool.querySelectorAll('.tile'))
       .filter(function (t) { return t !== tile; });
@@ -1149,7 +1243,7 @@
   }
 
   /* ============================================================
-     CELEBRATION  —  confetti + chime
+     CELEBRATION  —  layered (Option C)
      ============================================================ */
   const SOUND_KEY = 'mathsDrills.sound';
   let soundOn = true;
@@ -1171,16 +1265,18 @@
     return audioCtx;
   }
 
+  /* Softer, shorter celebratory chime (4 rising notes, low gain). */
   function playChime() {
     if (!soundOn) return;
     const ctx = getAudioCtx();
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    const notes = [523.25, 659.25, 783.99, 1046.50];
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+    const gap = 0.09;
 
     notes.forEach(function (freq, i) {
-      const t = now + i * 0.075;
+      const t = now + i * gap;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -1188,13 +1284,13 @@
       osc.frequency.setValueAtTime(freq, t);
 
       gain.gain.setValueAtTime(0.0001, t);
-      gain.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      gain.gain.exponentialRampToValueAtTime(0.08, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start(t);
-      osc.stop(t + 0.45);
+      osc.stop(t + 0.6);
     });
   }
 
@@ -1203,53 +1299,183 @@
               window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }
 
-  function burstConfetti(qEl) {
+  /* --- per-diagram star burst ---------------------------------- */
+  function starBurst(container, colour) {
     if (prefersReducedMotion()) return;
 
     const layer = document.createElement('div');
-    layer.className = 'celebrate-layer';
-    qEl.appendChild(layer);
+    layer.className = 'star-layer';
+    container.appendChild(layer);
 
-    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
-    const COUNT = 30;
-
+    const COUNT = 10;
     for (let i = 0; i < COUNT; i++) {
-      const p = document.createElement('span');
-      p.className = 'confetti';
-      p.style.background = colours[i % colours.length];
-      p.style.left = '50%';
-      p.style.top  = '45%';
+      const star = document.createElement('span');
+      star.className = 'star';
+      star.textContent = '★';
+      star.style.color = colour;
+      star.style.left = '50%';
+      star.style.top = '50%';
+      star.style.fontSize = (10 + Math.random() * 9) + 'px';
+      layer.appendChild(star);
 
-      const w = 5 + Math.random() * 6;
-      const h = 8 + Math.random() * 8;
-      p.style.width  = w + 'px';
-      p.style.height = h + 'px';
-      if (Math.random() < 0.4) p.style.borderRadius = '50%';
-
-      layer.appendChild(p);
-
-      const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
-      const dist  = 70 + Math.random() * 130;
+      const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.4;
+      const dist  = 40 + Math.random() * 40;
       const dx    = Math.cos(angle) * dist;
-      const dy    = Math.sin(angle) * dist - 30;
-      const rot   = (Math.random() - 0.5) * 720;
+      const dy    = Math.sin(angle) * dist;
+      const rot   = (Math.random() - 0.5) * 360;
 
-      p.animate(
+      star.animate(
         [
-          { transform: 'translate(-50%,-50%) scale(.35)', opacity: 1 },
-          { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) ' +
-                       'rotate(' + rot + 'deg) scale(1)', opacity: 0 }
+          { transform: 'translate(-50%,-50%) scale(0) rotate(0deg)', opacity: 0 },
+          { transform: 'translate(-50%,-50%) scale(1.1) rotate(' + (rot * 0.3) + 'deg)', opacity: 1, offset: 0.25 },
+          { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) scale(0.6) rotate(' + rot + 'deg)', opacity: 0 }
         ],
         {
-          duration: 800 + Math.random() * 500,
-          delay: Math.random() * 90,
+          duration: 750 + Math.random() * 350,
           easing: 'cubic-bezier(.15,.7,.3,1)',
           fill: 'forwards'
         }
       );
     }
 
-    setTimeout(function () { layer.remove(); }, 1600);
+    setTimeout(function () { layer.remove(); }, 1400);
+  }
+
+  /* --- full-screen falling confetti ---------------------------- */
+  function screenConfetti() {
+    if (prefersReducedMotion()) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'screen-confetti';
+    document.body.appendChild(layer);
+
+    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185', '#f59e0b'];
+    const COUNT = 50;
+    const vh = window.innerHeight || 800;
+
+    for (let i = 0; i < COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti-piece';
+      p.style.background = colours[i % colours.length];
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.top = '-24px';
+
+      const w = 6 + Math.random() * 8;
+      const h = 10 + Math.random() * 10;
+      p.style.width = w + 'px';
+      p.style.height = h + 'px';
+      if (Math.random() < 0.3) p.style.borderRadius = '50%';
+
+      layer.appendChild(p);
+
+      const dx  = (Math.random() - 0.5) * 220;
+      const rot = (Math.random() - 0.5) * 1440;
+      const dur = 2200 + Math.random() * 1400;
+      const delay = Math.random() * 350;
+
+      p.animate(
+        [
+          { transform: 'translate(0, 0) rotate(0deg)', opacity: 1 },
+          { transform: 'translate(' + dx + 'px, ' + (vh + 60) + 'px) rotate(' + rot + 'deg)', opacity: 0.85 }
+        ],
+        {
+          duration: dur,
+          delay: delay,
+          easing: 'cubic-bezier(.25,.5,.4,1)',
+          fill: 'forwards'
+        }
+      );
+    }
+
+    setTimeout(function () { layer.remove(); }, 4600);
+  }
+
+  /* --- well done banner ---------------------------------------- */
+  function showBanner() {
+    if (!wellDoneBanner) return;
+
+    const solved = document.querySelectorAll('.q.ok').length;
+    const total  = document.querySelectorAll('.q').length;
+
+    let emoji = '🏆';
+    let text  = 'WELL DONE!';
+
+    if (total > 0 && solved >= total) {
+      emoji = '🏆'; text = 'CHAMPION!';
+    } else {
+      const opts = [
+        { e: '🏆', t: 'WELL DONE!' },
+        { e: '🌟', t: 'AMAZING!' },
+        { e: '🎉', t: 'SUPERB!' },
+        { e: '👏', t: 'BRILLIANT!' },
+        { e: '⭐', t: 'FANTASTIC!' }
+      ];
+      const pick = opts[Math.floor(Math.random() * opts.length)];
+      emoji = pick.e; text = pick.t;
+    }
+
+    if (wdTrophy) wdTrophy.textContent = emoji;
+    if (wdText)   wdText.textContent   = text;
+
+    wellDoneBanner.classList.add('show');
+    if (bannerTimeout) clearTimeout(bannerTimeout);
+    bannerTimeout = setTimeout(function () {
+      wellDoneBanner.classList.remove('show');
+      bannerTimeout = null;
+    }, 3200);
+  }
+
+  function hideBanner() {
+    if (!wellDoneBanner) return;
+    if (bannerTimeout) { clearTimeout(bannerTimeout); bannerTimeout = null; }
+    wellDoneBanner.classList.remove('show');
+  }
+
+  /* --- the master celebration ---------------------------------- */
+  function celebrate(qEl) {
+    const reduced = prefersReducedMotion();
+
+    if (reduced) {
+      /* Calm path: gentle glow on each diagram, no motion. */
+      qEl.querySelectorAll('.diagram').forEach(function (d) {
+        d.classList.add('gentle-glow');
+      });
+      setTimeout(function () {
+        qEl.querySelectorAll('.diagram').forEach(function (d) {
+          d.classList.remove('gentle-glow');
+        });
+      }, 2400);
+    } else {
+      /* 1. diagrams bounce, staggered */
+      qEl.querySelectorAll('.diagram').forEach(function (d, i) {
+        d.classList.remove('celebrate-bounce');
+        void d.offsetWidth;                 /* force reflow so it can replay */
+        d.style.animationDelay = (i * 0.1) + 's';
+        d.classList.add('celebrate-bounce');
+      });
+
+      /* 2. placed tiles wiggle, staggered after the bounce */
+      qEl.querySelectorAll('.slot > .tile').forEach(function (t, i) {
+        t.classList.remove('wiggle');
+        void t.offsetWidth;
+        t.style.animationDelay = (0.5 + i * 0.1) + 's';
+        t.classList.add('wiggle');
+      });
+
+      /* 3. star burst from each diagram, in that diagram's colour */
+      setTimeout(function () {
+        qEl.querySelectorAll('.diagram').forEach(function (d) {
+          starBurst(d, d.dataset.colour || '#3b82f6');
+        });
+      }, 220);
+
+      /* 4. full-screen confetti falls */
+      screenConfetti();
+    }
+
+    /* 5. banner + sound always fire */
+    showBanner();
+    playChime();
   }
 
   /* ============================================================
@@ -1293,8 +1519,7 @@
       qEl.classList.add('ok');
       qEl.classList.remove('no');
       setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
-      burstConfetti(qEl);
-      playChime();
+      celebrate(qEl);
     } else {
       qEl.classList.add('no');
       qEl.classList.remove('ok');
@@ -1346,11 +1571,18 @@
      ============================================================ */
   function resetAnswers() {
     allDone = false;
+    hideBanner();
     document.querySelectorAll('.q').forEach(function (qEl) {
       delete qEl.dataset.locked;
       qEl.classList.remove('ok', 'no');
-      const layer = qEl.querySelector('.celebrate-layer');
-      if (layer) layer.remove();
+      qEl.querySelectorAll('.diagram').forEach(function (d) {
+        d.classList.remove('celebrate-bounce', 'gentle-glow');
+        d.style.animationDelay = '';
+      });
+      qEl.querySelectorAll('.slot > .tile').forEach(function (t) {
+        t.classList.remove('wiggle');
+        t.style.animationDelay = '';
+      });
       const pool = qEl.querySelector('.pool');
       qEl.querySelectorAll('.slot .tile').forEach(function (t) { pool.appendChild(t); });
       const tiles = Array.prototype.slice.call(pool.querySelectorAll('.tile'));
@@ -1495,6 +1727,7 @@
     seedInput.value = randomSeed();
     applySeed();
     hideToast();
+    hideBanner();
     renderActivity();
   }
 
@@ -1504,11 +1737,13 @@
   seedInput.addEventListener('change', function () {
     applySeed();
     hideToast();
+    hideBanner();
     renderActivity();
   });
 
   countSel.addEventListener('change', function () {
     hideToast();
+    hideBanner();
     renderActivity();
   });
 
