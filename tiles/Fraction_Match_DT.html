@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fractions of Shapes — Match the Diagram</title>
+<style>
+  :root{
+    --ink:#111827;
+    --muted:#6b7280;
+    --line:#d1d5db;
+    --accent:#2563eb;
+    --shade:#3b82f6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color:var(--ink);
+    background:#eef1f5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+    padding:12px 20px;
+    background:#111827; color:#f9fafb;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+    font-size:14px;
+  }
+  .tb-title{font-weight:700; margin-right:auto; letter-spacing:.3px}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e5e7eb}
+  .toolbar input[type=number]{
+    width:110px; padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar select{
+    padding:6px 8px; border-radius:6px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit;
+  }
+  .toolbar button{
+    padding:8px 14px; border-radius:8px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb; font:inherit; font-weight:600; cursor:pointer;
+  }
+  .toolbar button:hover{background:#374151}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:#1d4ed8}
+  .toolbar button.fs-btn{background:#0f766e; border-color:#0f766e}
+  .toolbar button.fs-btn:hover{background:#115e59}
+  .chk{cursor:pointer}
+  .score-chip{
+    padding:6px 12px; border-radius:999px;
+    background:#1f2937; border:1px solid #374151;
+    font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap;
+  }
+
+  /* ---------- sheet ---------- */
+  .sheet{
+    background:#fff;
+    max-width:1120px;
+    margin:22px auto 60px;
+    padding:30px 34px 42px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(15,23,42,.10);
+  }
+  .sheet-head{
+    display:flex; flex-wrap:wrap; align-items:flex-end; gap:16px;
+    border-bottom:3px solid var(--ink);
+    padding-bottom:10px;
+  }
+  .sheet-head h1{margin:0; font-size:26px; letter-spacing:.5px}
+  .meta{margin-left:auto; display:flex; gap:18px; font-size:13px; color:#374151}
+  .meta .line{display:inline-block; width:110px; border-bottom:1px solid #9ca3af}
+  .meta .line.short{width:80px}
+  .meta .line.tiny{width:48px}
+  .instructions{margin:14px 0 18px; font-size:14px; color:var(--muted); line-height:1.55}
+  .seed-note{white-space:nowrap}
+
+  /* ---------- questions ---------- */
+  .questions{display:grid; grid-template-columns:1fr; gap:20px;}
+
+  .q{
+    position:relative;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px 16px;
+    background:#fff;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    display:flex; flex-direction:column;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .q.ok{ border-color:#86efac; background:#f0fdf4; }
+  .q.no{ border-color:#fca5a5; background:#fff7f7; }
+
+  .q-head{display:flex; align-items:flex-start; gap:8px; margin-bottom:14px}
+  .q-num{
+    flex:none;
+    width:22px; height:22px; border-radius:50%;
+    background:var(--ink); color:#fff;
+    font-size:12px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-top:1px;
+  }
+  .q-prompt{font-size:13.5px; line-height:1.35; font-weight:600}
+
+  /* ---------- work area: diagrams | pool ---------- */
+  .work{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 240px;
+    gap:18px;
+    align-items:start;
+  }
+
+  .diagrams{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(0,1fr));
+    gap:12px;
+  }
+
+  .cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+
+  .diagram{
+    width:100%;
+    max-width:128px;
+    aspect-ratio:1 / 1;
+    margin:0 auto;
+  }
+  .diagram svg{ width:100%; height:100%; display:block; }
+
+  /* ---------- slots ---------- */
+  .slot{
+    position:relative;
+    width:100%;
+    max-width:104px;
+    aspect-ratio:1 / 1;
+    margin:0 auto;
+    border:2.5px dashed #9ca3af;
+    border-radius:12px;
+    background:#f9fafb;
+    display:grid;
+    place-items:center;
+    padding:6px;
+    transition:border-color .15s ease, background .15s ease, transform .15s ease;
+  }
+  .slot.over{
+    border-color:var(--accent); background:#dbeafe; transform:scale(1.06);
+  }
+  .slot.filled{
+    border-style:solid;
+    border-color:#e5e7eb;
+    background:#fff;
+  }
+
+  .slot-answer{
+    position:absolute;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+    font-weight:700;
+    color:#cbd5e1;
+    font-size:26px;
+    pointer-events:none;
+  }
+  .sa-bar{
+    display:block;
+    width:1.2em;
+    height:.13em;
+    background:currentColor;
+    border-radius:1px;
+    margin:.12em 0;
+  }
+  .show-answers .slot:not(.filled) .slot-answer{ display:flex; }
+
+  /* ---------- pool of tiles ---------- */
+  .pool{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-content:flex-start;
+    justify-content:center;
+    padding:10px;
+    border:1.5px dashed #d1d5db;
+    border-radius:12px;
+    background:#f9fafb;
+    min-height:190px;
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .pool.over{ background:#dbeafe; border-color:var(--accent); }
+  .pool .tile{
+    width:68px;
+    height:68px;
+    flex:none;
+  }
+
+  /* ---------- tile ---------- */
+  .tile{
+    display:flex; align-items:center; justify-content:center;
+    padding:4px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    cursor:grab;
+    user-select:none; -webkit-user-select:none;
+    touch-action:none;
+    -webkit-tap-highlight-color:transparent;
+    box-shadow:0 1px 2px rgba(15,23,42,.08);
+    transition:background .12s ease, box-shadow .12s ease, border-color .12s ease, opacity .12s ease;
+  }
+  .tile:hover{ background:#f3f4f6; }
+  .tile:active{ cursor:grabbing; }
+  .tile:focus-visible{ outline:2.5px solid var(--accent); outline-offset:2px; }
+  .tile.selected{
+    border-color:var(--accent);
+    background:#eff6ff;
+    box-shadow:0 0 0 3px rgba(37,99,235,.25);
+  }
+  .tile.dragging{ opacity:.35; }
+
+  /* fraction tile contents */
+  .tile.frac{
+    font-size:22px;
+    color:var(--ink);
+    font-weight:700;
+  }
+  .frac-inner{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    line-height:1;
+  }
+  .frac-num, .frac-den{ font-size:1em; }
+  .frac-bar{
+    display:block;
+    width:1.2em;
+    height:.13em;
+    background:currentColor;
+    border-radius:1px;
+    margin:.12em 0;
+  }
+
+  .slot > .tile{
+    width:100%; height:100%;
+    padding:2px;
+    border-color:#c7d2fe;
+    background:#eef2ff;
+    box-shadow:none;
+    font-size:26px;
+  }
+  .slot > .tile:hover{ background:#e0e7ff; }
+
+  .q.ok .slot > .tile{
+    background:#dcfce7; border-color:#16a34a; color:#14532d;
+  }
+
+  @keyframes shake{
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-6px)}
+    60%{transform:translateX(6px)}
+    80%{transform:translateX(-3px)}
+  }
+  .diagrams.shake{ animation:shake .38s ease; }
+
+  /* ---------- drag ghost ---------- */
+  .drag-ghost{
+    position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
+    width:76px; height:76px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:22px; font-weight:700; color:var(--ink);
+    padding:4px;
+    border-radius:10px;
+    background:#fff; border:1.5px solid var(--accent);
+    box-shadow:0 10px 22px rgba(15,23,42,.28);
+    transform:translate(-50%,-50%) scale(1.06);
+  }
+  body.dragging-active{ user-select:none; -webkit-user-select:none; }
+  body.dragging-active .slot{ border-color:#93c5fd; }
+
+  /* ---------- per-question feedback ---------- */
+  .q-feedback{
+    margin-top:10px; min-height:16px; text-align:center;
+    font-size:12.5px; font-weight:700; letter-spacing:.2px;
+  }
+  .q-feedback.ok{color:#15803d}
+  .q-feedback.no{color:#b91c1c}
+
+  /* ---------- answer key ---------- */
+  .key{
+    margin-top:26px;
+    border-top:3px solid var(--ink);
+    padding-top:12px;
+    break-inside:avoid;
+  }
+  .key h2{margin:0 0 10px; font-size:16px; letter-spacing:.5px}
+  .key-note{ font-size:13px; color:#374151; line-height:1.6; }
+  .key-note p{margin:0 0 6px}
+  .key-note ul{ margin:8px 0 0 18px; padding:0; }
+  .key-note li{ margin-bottom:3px; }
+
+  /* ---------- celebration ---------- */
+  @keyframes cardPop{
+    0%   { transform:scale(1); }
+    35%  { transform:scale(1.012); }
+    100% { transform:scale(1); }
+  }
+  .q.ok{ animation:cardPop .45s ease; }
+
+  .celebrate-layer{
+    position:absolute; inset:0;
+    overflow:hidden;
+    pointer-events:none;
+    border-radius:12px;
+    z-index:5;
+  }
+  .confetti{
+    position:absolute;
+    display:block;
+    border-radius:2px;
+    will-change:transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .q.ok{ animation:none; }
+    .diagrams.shake{ animation:none; }
+  }
+
+  /* ---------- completion toast ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:24px;
+    transform:translate(-50%, 220%);
+    z-index:80;
+    display:flex; align-items:center; gap:16px;
+    padding:14px 18px;
+    background:#111827; color:#f9fafb;
+    border-radius:14px;
+    box-shadow:0 14px 34px rgba(15,23,42,.42);
+    font-size:15px; font-weight:600;
+    max-width:calc(100vw - 32px);
+    transition:transform .38s cubic-bezier(.2,.85,.3,1.15);
+  }
+  .toast.show{ transform:translate(-50%, 0); }
+  .toast button{
+    padding:9px 16px; border-radius:9px; border:0;
+    background:var(--accent); color:#fff;
+    font:inherit; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .toast button:hover{ background:#1d4ed8; }
+  @media (max-width:560px){
+    .toast{ flex-direction:column; align-items:stretch; text-align:center; gap:10px; }
+  }
+
+  /* ============================================================
+     FULL-SCREEN (FOCUS) MODE
+     ============================================================ */
+  body.is-focus .toolbar{ display:none !important; }
+
+  body.is-focus .sheet{
+    max-width:1400px;
+    margin-top:10px;
+    margin-bottom:30px;
+    padding-top:56px;
+  }
+
+  .focus-ui{
+    position:fixed; top:10px; right:10px; z-index:200;
+    display:none; align-items:center; gap:8px;
+    padding:5px 6px 5px 14px;
+    background:rgba(17,24,39,.94);
+    color:#f9fafb;
+    border-radius:999px;
+    box-shadow:0 8px 22px rgba(15,23,42,.38);
+    font-size:13px; font-weight:600;
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+  }
+  body.is-focus .focus-ui{ display:flex; }
+
+  .focus-score{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+
+  .focus-ui button{
+    padding:6px 13px; border-radius:999px; border:1px solid #374151;
+    background:#1f2937; color:#f9fafb;
+    font:inherit; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .focus-ui button:hover{ background:#374151; }
+
+  @media (min-width:1000px){
+    body.is-focus .work{ grid-template-columns:minmax(0,1fr) 260px; }
+    body.is-focus .pool .tile{ width:76px; height:76px; }
+    body.is-focus .tile.frac{ font-size:24px; }
+  }
+
+  /* ---------- small screens ---------- */
+  @media (max-width:900px){
+    .work{ grid-template-columns:1fr; }
+    .pool{ min-height:0; }
+  }
+  @media (max-width:640px){
+    .sheet{padding:22px 16px 30px}
+    .diagrams{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+    .pool{ gap:6px; padding:8px; }
+    .pool .tile{ width:60px; height:60px; }
+    .tile.frac{ font-size:19px; }
+    .slot > .tile{ font-size:22px; }
+    body.is-focus .sheet{ padding-top:52px; }
+  }
+
+  /* ---------- print ---------- */
+  @page{ size:A4; margin:12mm; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .sheet{margin:0; padding:0; max-width:none; box-shadow:none; border-radius:0}
+    body.is-focus .sheet{
+      margin:0 !important; padding:0 !important; max-width:none !important;
+    }
+    .focus-ui{display:none !important}
+    .q{border-color:#9ca3af; background:#fff !important; animation:none !important}
+    .q-feedback{display:none !important}
+    .tile{ box-shadow:none; }
+    .celebrate-layer{display:none !important}
+    .toast{display:none !important}
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <div class="tb-title">🔢 Fractions of Shapes</div>
+  <button id="fsBtn" type="button" class="fs-btn" title="Full screen (F)">⛶ Full screen</button>
+  <label>Seed <input id="seedInput" type="number" min="0" step="1" value=""></label>
+  <label>Boards
+    <select id="countSelect">
+      <option selected>1</option>
+      <option>2</option>
+      <option>3</option>
+    </select>
+  </label>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="resetBtn">↺ Reset answers</button>
+  <button id="printBtn">🖨️ Print</button>
+  <button id="shareBtn">🔗 Copy link to this sheet</button>
+  <label class="chk"><input type="checkbox" id="answersChk"> Show answers</label>
+  <label class="chk"><input type="checkbox" id="soundChk" checked> 🔊 Sound</label>
+  <span class="score-chip" id="scoreTag">0 / 1 correct</span>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<div class="toast no-print" id="toast" role="status" aria-live="polite">
+  <span class="toast-text"></span>
+  <button type="button"></button>
+</div>
+
+<div class="focus-ui no-print" id="focusUI">
+  <span class="focus-score" id="focusScore">0 / 1 correct</span>
+  <button type="button" id="fsExitBtn" title="Exit full screen (Esc)">✕ Exit</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     SEEDED RANDOM
+     ============================================================ */
+  let rng = Math.random;
+  let baseSeed = 1;
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(a) {
+    a = a.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function hashStr(s) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function deriveSeed(base, key) {
+    return ((Math.imul(hashStr(key), 2654435761) >>> 0) ^ (base >>> 0)) >>> 0;
+  }
+
+  function setRngFor(key) {
+    rng = mulberry32(deriveSeed(baseSeed, key));
+  }
+
+  /* ============================================================
+     FRACTION HELPERS
+     ============================================================ */
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+
+  /* ============================================================
+     SHADING PALETTE
+     ------------------------------------------------------------
+     Each diagram is shaded in a single colour, but different
+     diagrams use different colours. The fraction tiles stay
+     plain on purpose, so the colour can never give the answer
+     away — pupils must compare the numbers.
+     ============================================================ */
+  const SHADE_PALETTE = [
+    '#3b82f6', // blue
+    '#10b981', // emerald
+    '#f59e0b', // amber
+    '#a855f7', // purple
+    '#ec4899', // pink
+    '#14b8a6', // teal
+    '#6366f1', // indigo
+    '#f97316'  // orange
+  ];
+
+  /* ============================================================
+     DIAGRAM GEOMETRY
+     ------------------------------------------------------------
+     Every diagram is a list of "parts". A part is either
+       { d: "<svg path data>" }   or   { pts: [[x,y], ...] }
+     in a 100 × 100 viewBox. The first k parts are shaded.
+     ============================================================ */
+  const CX = 50, CY = 50, RAD = 44;
+
+  function pt(r, ang) {
+    return [CX + r * Math.cos(ang), CY + r * Math.sin(ang)];
+  }
+
+  /* --- circle cut into n equal sectors --- */
+  function circleParts(n) {
+    const step = 2 * Math.PI / n;
+    const large = step > Math.PI + 1e-9 ? 1 : 0;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const a1 = -Math.PI / 2 + i * step;
+      const a2 = a1 + step;
+      const p1 = pt(RAD, a1), p2 = pt(RAD, a2);
+      out.push({
+        d: 'M ' + CX + ' ' + CY +
+           ' L ' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2) +
+           ' A ' + RAD + ' ' + RAD + ' 0 ' + large + ' 1 ' +
+           p2[0].toFixed(2) + ' ' + p2[1].toFixed(2) + ' Z'
+      });
+    }
+    return out;
+  }
+
+  /* --- regular polygon cut from the centre into `sides` triangles --- */
+  function polygonVertexParts(sides) {
+    const v = [];
+    for (let i = 0; i < sides; i++) {
+      v.push(pt(RAD, -Math.PI / 2 + i * 2 * Math.PI / sides));
+    }
+    const out = [];
+    for (let i = 0; i < sides; i++) {
+      out.push({ pts: [[CX, CY], v[i], v[(i + 1) % sides]] });
+    }
+    return out;
+  }
+
+  /* --- regular hexagon cut into 3 equal rhombi --- */
+  function hexagonRhombusParts() {
+    const v = [];
+    for (let i = 0; i < 6; i++) {
+      v.push(pt(RAD, -Math.PI / 2 + i * Math.PI / 3));
+    }
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      out.push({ pts: [[CX, CY], v[2 * i], v[2 * i + 1], v[(2 * i + 2) % 6]] });
+    }
+    return out;
+  }
+
+  /* --- equilateral triangle cut into 4 smaller equilateral triangles --- */
+  function triangleQuadParts() {
+    const A = pt(RAD, -Math.PI / 2);
+    const B = pt(RAD, -Math.PI / 2 + 2 * Math.PI / 3);
+    const C = pt(RAD, -Math.PI / 2 + 4 * Math.PI / 3);
+    function mid(p, q) { return [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; }
+    const AB = mid(A, B), BC = mid(B, C), CA = mid(C, A);
+    return [
+      { pts: [A, AB, CA] },
+      { pts: [AB, B, BC] },
+      { pts: [CA, BC, C] },
+      { pts: [AB, BC, CA] }
+    ];
+  }
+
+  /* --- square cut into a cols × rows grid --- */
+  function squareGridParts(cols, rows) {
+    const x0 = 12, y0 = 12, w = 76, h = 76;
+    const cw = w / cols, ch = h / rows;
+    const out = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const x = x0 + c * cw, y = y0 + r * ch;
+        out.push({ pts: [[x, y], [x + cw, y], [x + cw, y + ch], [x, y + ch]] });
+      }
+    }
+    return out;
+  }
+
+  /* --- rectangle cut into n equal vertical strips --- */
+  function rectStripParts(n) {
+    const x0 = 6, y0 = 28, w = 88, h = 44;
+    const cw = w / n;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * cw;
+      out.push({ pts: [[x, y0], [x + cw, y0], [x + cw, y0 + h], [x, y0 + h]] });
+    }
+    return out;
+  }
+
+  /* ============================================================
+     DIAGRAM CATALOGUE
+     ------------------------------------------------------------
+     Each entry knows how many equal parts it makes (n) and how
+     to build them. Only denominators ≤ 8 are used.
+     ============================================================ */
+  const SPECS = (function () {
+    const s = [];
+
+    /* circles: 2 – 8 sectors */
+    for (let n = 2; n <= 8; n++) {
+      s.push({ kind: 'circle', n: n, make: function () { return circleParts(n); } });
+    }
+
+    /* equilateral triangle: 3 wedges, or 4 small triangles */
+    s.push({ kind: 'triangle', n: 3, make: function () { return polygonVertexParts(3); } });
+    s.push({ kind: 'triangle', n: 4, make: function () { return triangleQuadParts(); } });
+
+    /* square: halves, quarters, eighths */
+    s.push({ kind: 'square', n: 2, make: function () { return squareGridParts(2, 1); } });
+    s.push({ kind: 'square', n: 4, make: function () { return squareGridParts(2, 2); } });
+    s.push({ kind: 'square', n: 8, make: function () { return squareGridParts(4, 2); } });
+
+    /* rectangle: equal vertical strips */
+    [2, 3, 4, 5, 6, 8].forEach(function (n) {
+      s.push({ kind: 'rectangle', n: n, make: function () { return rectStripParts(n); } });
+    });
+
+    /* pentagon: 5 wedges */
+    s.push({ kind: 'pentagon', n: 5, make: function () { return polygonVertexParts(5); } });
+
+    /* hexagon: 3 rhombi, or 6 triangles */
+    s.push({ kind: 'hexagon', n: 3, make: function () { return hexagonRhombusParts(); } });
+    s.push({ kind: 'hexagon', n: 6, make: function () { return polygonVertexParts(6); } });
+
+    return s;
+  })();
+
+  /* Every (spec, k) pair with k/n in lowest terms. */
+  function buildCandidates() {
+    const out = [];
+    SPECS.forEach(function (spec) {
+      for (let k = 1; k < spec.n; k++) {
+        if (gcd(k, spec.n) !== 1) continue;
+        out.push({ spec: spec, k: k });
+      }
+    });
+    return out;
+  }
+
+  /* ============================================================
+     BOARD BUILDER
+     ============================================================ */
+  function buildBoard() {
+    const candidates = shuffle(buildCandidates());
+
+    const picked = [];
+    const usedFrac = Object.create(null);
+    const usedKind = Object.create(null);
+
+    /* first pass: aim for four different shape kinds */
+    for (let i = 0; i < candidates.length && picked.length < 4; i++) {
+      const c = candidates[i];
+      const key = c.k + '/' + c.spec.n;
+      if (usedFrac[key] || usedKind[c.spec.kind]) continue;
+      picked.push(c);
+      usedFrac[key] = true;
+      usedKind[c.spec.kind] = true;
+    }
+    /* second pass: fill any remaining places */
+    for (let i = 0; i < candidates.length && picked.length < 4; i++) {
+      const c = candidates[i];
+      const key = c.k + '/' + c.spec.n;
+      if (usedFrac[key] || picked.indexOf(c) !== -1) continue;
+      picked.push(c);
+      usedFrac[key] = true;
+    }
+
+    /* one colour per diagram, all different within a board */
+    const shadeColours = shuffle(SHADE_PALETTE);
+
+    const diagrams = picked.map(function (c, i) {
+      const parts = c.spec.make();
+      return {
+        parts: parts,
+        shaded: parts.map(function (_, j) { return j < c.k; }),
+        num: c.k,
+        den: c.spec.n,
+        key: c.k + '/' + c.spec.n,
+        color: shadeColours[i % shadeColours.length]
+      };
+    });
+
+    /* ---- distractor fractions ---- */
+    const answerKeys = Object.create(null);
+    diagrams.forEach(function (d) { answerKeys[d.key] = true; });
+
+    const spare = [];
+    for (let den = 2; den <= 8; den++) {
+      for (let num = 1; num < den; num++) {
+        if (gcd(num, den) !== 1) continue;
+        const key = num + '/' + den;
+        if (answerKeys[key]) continue;
+        spare.push({ num: num, den: den, key: key });
+      }
+    }
+
+    const answers = diagrams.map(function (d) { return [d.num, d.den]; });
+
+    function nearness(f) {
+      let score = 0;
+      answers.forEach(function (a) {
+        if (f.den === a[1]) score += 2;
+        if (f.num === a[0]) score += 2;
+        if (Math.abs(f.num / f.den - a[0] / a[1]) < 0.14) score += 1;
+      });
+      return score;
+    }
+
+    const ranked = spare
+      .map(function (f) { return { f: f, s: nearness(f) }; })
+      .sort(function (a, b) { return b.s - a.s; })
+      .slice(0, 14)
+      .map(function (r) { return r.f; });
+
+    const distractors = shuffle(ranked).slice(0, 4);
+
+    const tiles = diagrams.map(function (d) {
+      return { num: d.num, den: d.den, key: d.key };
+    }).concat(distractors.map(function (f) {
+      return { num: f.num, den: f.den, key: f.key };
+    }));
+
+    return { diagrams: diagrams, tiles: shuffle(tiles) };
+  }
+
+  /* ============================================================
+     RENDERING
+     ============================================================ */
+  function renderDiagramSVG(d) {
+    const shadeColour = d.color || 'var(--shade)';
+    let inner = '';
+    d.parts.forEach(function (p, i) {
+      const fill = d.shaded[i] ? shadeColour : '#ffffff';
+      if (p.d) {
+        inner += '<path d="' + p.d + '" fill="' + fill + '" stroke="#1f2937" ' +
+                 'stroke-width="1.8" stroke-linejoin="round"/>';
+      } else {
+        const pts = p.pts.map(function (q) {
+          return q[0].toFixed(2) + ',' + q[1].toFixed(2);
+        }).join(' ');
+        inner += '<polygon points="' + pts + '" fill="' + fill + '" stroke="#1f2937" ' +
+                 'stroke-width="1.8" stroke-linejoin="round"/>';
+      }
+    });
+    return '<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+             inner +
+           '</svg>';
+  }
+
+  function renderTile(t) {
+    return '<div class="tile frac" data-frac="' + t.key + '" tabindex="0" role="button" ' +
+                'aria-label="' + t.num + ' over ' + t.den + '">' +
+             '<div class="frac-inner">' +
+               '<span class="frac-num">' + t.num + '</span>' +
+               '<span class="frac-bar"></span>' +
+               '<span class="frac-den">' + t.den + '</span>' +
+             '</div>' +
+           '</div>';
+  }
+
+  function renderBoard(board, i) {
+    const cells = board.diagrams.map(function (d, j) {
+      return '<div class="cell">' +
+        '<div class="diagram">' + renderDiagramSVG(d) + '</div>' +
+        '<div class="slot" data-slot="' + j + '" data-answer="' + d.key + '" ' +
+             'tabindex="0" role="button" aria-label="Answer box ' + (j + 1) + '">' +
+          '<div class="slot-answer">' +
+            '<span class="sa-num">' + d.num + '</span>' +
+            '<span class="sa-bar"></span>' +
+            '<span class="sa-den">' + d.den + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    const tiles = board.tiles.map(renderTile).join('');
+
+    return '<article class="q" data-q="' + i + '">' +
+      '<div class="q-head">' +
+        '<span class="q-num">' + (i + 1) + '</span>' +
+        '<span class="q-prompt">Drag each fraction into the box under the diagram it matches.</span>' +
+      '</div>' +
+      '<div class="work">' +
+        '<div class="diagrams">' + cells + '</div>' +
+        '<div class="pool">' + tiles + '</div>' +
+      '</div>' +
+      '<div class="q-feedback" aria-live="polite"></div>' +
+    '</article>';
+  }
+
+  /* ============================================================
+     DOM HANDLES
+     ============================================================ */
+  const sheet       = document.getElementById('sheet');
+  const seedInput   = document.getElementById('seedInput');
+  const countSel    = document.getElementById('countSelect');
+  const answersChk  = document.getElementById('answersChk');
+  const soundChk    = document.getElementById('soundChk');
+  const scoreTag    = document.getElementById('scoreTag');
+  const toastEl     = document.getElementById('toast');
+  const fsBtn       = document.getElementById('fsBtn');
+  const fsExitBtn   = document.getElementById('fsExitBtn');
+  const focusScore  = document.getElementById('focusScore');
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  let boards = [];
+  let allDone = false;
+
+  const WRONG_MSG =
+    'Not quite \u2014 at least one fraction doesn\u2019t match its diagram. ' +
+    'Check how many parts are shaded and how many parts there are altogether.';
+
+  const PRAISE = [
+    'Correct! \uD83C\uDF89',
+    'Yes \u2014 all four! \u2B50',
+    'That\u2019s right! Well done. \uD83D\uDC4F',
+    'Spot on! \u2705',
+    'Excellent \u2014 every fraction matches! \uD83C\uDFAF'
+  ];
+
+  /* ============================================================
+     RENDER THE SHEET
+     ============================================================ */
+  function renderActivity() {
+    const n = parseInt(countSel.value, 10);
+
+    setRngFor('fractions');
+
+    boards = [];
+    for (let i = 0; i < n; i++) boards.push(buildBoard());
+
+    sheet.innerHTML =
+      '<header class="sheet-head">' +
+        '<h1>Fractions of Shapes</h1>' +
+        '<div class="meta">' +
+          '<span>Name: <span class="line"></span></span>' +
+          '<span>Date: <span class="line short"></span></span>' +
+          '<span>Score: <span class="line tiny"></span></span>' +
+        '</div>' +
+      '</header>' +
+      '<p class="instructions">' +
+        'Each diagram is split into <b>equal parts</b>, and some of those parts are shaded. ' +
+        'Drag the fraction tile that matches each diagram into the box beneath it \u2014 ' +
+        'the order doesn\u2019t matter. You can also tap a fraction and then tap a box, ' +
+        'and you can drag a tile out again if you change your mind. ' +
+        'When all four boxes on a board are full you\u2019ll be told straight away whether ' +
+        'you\u2019re right. ' +
+        '<span class="seed-note">(Seed: <span id="seedTag"></span>)</span>' +
+      '</p>' +
+      '<div class="questions">' +
+        boards.map(function (b, i) { return renderBoard(b, i); }).join('') +
+      '</div>' +
+      '<section class="key" id="keySection">' +
+        '<h2>Answer Key</h2>' +
+        '<div class="key-note">' +
+          '<p>The fraction on a tile compares the shaded part with the whole shape: ' +
+          'the <b>denominator</b> (bottom number) is the total number of equal parts, and ' +
+          'the <b>numerator</b> (top number) is how many of them are shaded.</p>' +
+          '<ul>' +
+            '<li>The <b>circle</b> is cut into equal sectors \u2014 from 2 up to 8.</li>' +
+            '<li>The <b>pentagon</b> and <b>hexagon</b> are cut from the centre into ' +
+                '5 or 6 equal triangles (the hexagon may also be cut into 3 equal rhombi).</li>' +
+            '<li>The <b>square</b> is cut into equal rows and columns; the <b>rectangle</b> ' +
+                'into equal vertical strips.</li>' +
+            '<li>The <b>equilateral triangle</b> is cut from its centre into 3 equal ' +
+                'triangles, or into 4 smaller equilateral triangles.</li>' +
+            '<li>Every fraction is written in its simplest form, so each diagram has ' +
+                'exactly one correct tile.</li>' +
+          '</ul>' +
+          '<p>The colours are just for decoration: each diagram is shaded in a single ' +
+          'colour, and the fraction tiles are deliberately plain, so colour never gives ' +
+          'the answer away.</p>' +
+          '<p>Tip: tick <b>Show answers</b> in the toolbar to reveal the fraction inside ' +
+          'each empty box.</p>' +
+        '</div>' +
+      '</section>';
+
+    const seedTag = document.getElementById('seedTag');
+    if (seedTag) seedTag.textContent = seedInput.value;
+
+    document.querySelectorAll('.q').forEach(syncSlots);
+
+    allDone = false;
+    document.title = 'Fractions of Shapes \u2014 Maths Drill';
+
+    toggleKey();
+    updateScore();
+  }
+
+  function toggleKey() {
+    sheet.classList.toggle('show-answers', !!answersChk.checked);
+  }
+
+  /* ============================================================
+     DRAG & DROP  /  TAP-TO-PLACE
+     ============================================================ */
+  let drag = null;
+  let selectedTile = null;
+
+  function clearSelection() {
+    if (selectedTile) selectedTile.classList.remove('selected');
+    selectedTile = null;
+  }
+
+  function setSelection(tile) {
+    if (selectedTile === tile) { clearSelection(); return; }
+    clearSelection();
+    selectedTile = tile;
+    tile.classList.add('selected');
+  }
+
+  function syncSlots(qEl) {
+    if (!qEl) return;
+    qEl.querySelectorAll('.slot').forEach(function (s) {
+      s.classList.toggle('filled', !!s.querySelector('.tile'));
+    });
+  }
+
+  function dropTargetAt(qEl, x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el || !el.closest) return null;
+    const slot = el.closest('.slot');
+    if (slot && qEl.contains(slot)) return slot;
+    const pool = el.closest('.pool');
+    if (pool && qEl.contains(pool)) return pool;
+    return null;
+  }
+
+  function startGhost() {
+    const g = document.createElement('div');
+    g.className = 'drag-ghost';
+    g.innerHTML = drag.tile.innerHTML;
+    g.style.left = drag.startX + 'px';
+    g.style.top = drag.startY + 'px';
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.tile.classList.add('dragging');
+  }
+
+  function moveGhost(x, y) {
+    if (!drag.ghost) return;
+    drag.ghost.style.left = x + 'px';
+    drag.ghost.style.top = y + 'px';
+  }
+
+  function highlight(x, y) {
+    const z = dropTargetAt(drag.qEl, x, y);
+    if (drag.over && drag.over !== z) drag.over.classList.remove('over');
+    if (z) z.classList.add('over');
+    drag.over = z;
+  }
+
+  function onPointerDown(e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const qEl = t.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = t.closest('.tile');
+    const slot = t.closest('.slot');
+    const pool = t.closest('.pool');
+
+    drag = {
+      id: e.pointerId,
+      qEl: qEl,
+      tile: (tile && qEl.contains(tile)) ? tile : null,
+      slot: slot,
+      pool: (pool && qEl.contains(pool)) ? pool : null,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      ghost: null,
+      over: null
+    };
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      if (!drag.tile) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      clearSelection();
+      startGhost();
+      document.body.classList.add('dragging-active');
+    }
+    moveGhost(e.clientX, e.clientY);
+    highlight(e.clientX, e.clientY);
+  }
+
+  function finishDrag(e, cancelled) {
+    if (!drag || !e || e.pointerId !== drag.id) return;
+    const d = drag;
+    drag = null;
+
+    if (d.ghost) d.ghost.remove();
+    if (d.over) d.over.classList.remove('over');
+    if (d.tile) d.tile.classList.remove('dragging');
+    document.body.classList.remove('dragging-active');
+
+    if (cancelled) return;
+
+    if (d.moved) {
+      const target = dropTargetAt(d.qEl, e.clientX, e.clientY);
+      if (target && d.tile) placeTile(d.tile, target, e.clientX, e.clientY);
+    } else {
+      if (d.tile) {
+        setSelection(d.tile);
+      } else if (d.slot && selectedTile && d.qEl.contains(selectedTile)) {
+        const t = selectedTile;
+        clearSelection();
+        placeTile(t, d.slot);
+      } else if (d.pool && selectedTile && d.qEl.contains(selectedTile)) {
+        const t = selectedTile;
+        clearSelection();
+        placeTile(t, d.pool, e.clientX, e.clientY);
+      }
+    }
+  }
+
+  /* Move a tile into a slot, or back into the tray. */
+  function placeTile(tile, dest, dropX, dropY) {
+    const from = tile.parentElement;
+    if (!from) return;
+
+    if (dest.classList.contains('pool')) {
+      insertTileIntoPool(tile, dest, dropX, dropY);
+      const qEl = tile.closest('.q');
+      clearSelection();
+      syncSlots(qEl);
+      evaluate(qEl);
+      return;
+    }
+
+    if (from === dest) return;
+
+    const occupant = dest.querySelector('.tile');
+    if (occupant && occupant !== tile) from.appendChild(occupant);
+
+    dest.appendChild(tile);
+
+    const qEl = tile.closest('.q');
+    clearSelection();
+    syncSlots(qEl);
+    evaluate(qEl);
+  }
+
+  /* Insert a tile into the tray at the drop point. */
+  function insertTileIntoPool(tile, pool, x, y) {
+    const others = Array.prototype.slice.call(pool.querySelectorAll('.tile'))
+      .filter(function (t) { return t !== tile; });
+
+    if (!others.length) {
+      pool.appendChild(tile);
+      return;
+    }
+
+    const haveCoords = (typeof x === 'number' && isFinite(x) &&
+                        typeof y === 'number' && isFinite(y));
+
+    if (haveCoords) {
+      let maxBottom = -Infinity;
+      others.forEach(function (t) {
+        const r = t.getBoundingClientRect();
+        if (r.bottom > maxBottom) maxBottom = r.bottom;
+      });
+      if (y > maxBottom + 4) {
+        pool.appendChild(tile);
+        return;
+      }
+    }
+
+    let best = null;
+    let bestDist = Infinity;
+    others.forEach(function (t) {
+      const r = t.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d = haveCoords ? Math.hypot(cx - x, cy - y) : 0;
+      if (d < bestDist) { bestDist = d; best = t; }
+    });
+
+    if (!best) { pool.appendChild(tile); return; }
+
+    const r = best.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+
+    if (haveCoords && x < cx) {
+      pool.insertBefore(tile, best);
+    } else {
+      pool.insertBefore(tile, best.nextSibling);
+    }
+  }
+
+  /* ============================================================
+     CELEBRATION  —  confetti + chime
+     ============================================================ */
+  const SOUND_KEY = 'mathsDrills.sound';
+  let soundOn = true;
+  try {
+    const saved = localStorage.getItem(SOUND_KEY);
+    if (saved !== null) soundOn = (saved === '1');
+  } catch (err) { /* localStorage unavailable — keep the default */ }
+
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { audioCtx = new AC(); } catch (err) { return null; }
+    }
+    if (audioCtx.state === 'suspended') {
+      try { audioCtx.resume(); } catch (err) { /* ignore */ }
+    }
+    return audioCtx;
+  }
+
+  function playChime() {
+    if (!soundOn) return;
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+
+    notes.forEach(function (freq, i) {
+      const t = now + i * 0.075;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t);
+
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.14, t + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    });
+  }
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function burstConfetti(qEl) {
+    if (prefersReducedMotion()) return;
+
+    const layer = document.createElement('div');
+    layer.className = 'celebrate-layer';
+    qEl.appendChild(layer);
+
+    const colours = ['#fbbf24', '#34d399', '#60a5fa', '#f472b6', '#a78bfa', '#fb7185'];
+    const COUNT = 30;
+
+    for (let i = 0; i < COUNT; i++) {
+      const p = document.createElement('span');
+      p.className = 'confetti';
+      p.style.background = colours[i % colours.length];
+      p.style.left = '50%';
+      p.style.top  = '45%';
+
+      const w = 5 + Math.random() * 6;
+      const h = 8 + Math.random() * 8;
+      p.style.width  = w + 'px';
+      p.style.height = h + 'px';
+      if (Math.random() < 0.4) p.style.borderRadius = '50%';
+
+      layer.appendChild(p);
+
+      const angle = (Math.PI * 2 * i) / COUNT + Math.random() * 0.5;
+      const dist  = 70 + Math.random() * 130;
+      const dx    = Math.cos(angle) * dist;
+      const dy    = Math.sin(angle) * dist - 30;
+      const rot   = (Math.random() - 0.5) * 720;
+
+      p.animate(
+        [
+          { transform: 'translate(-50%,-50%) scale(.35)', opacity: 1 },
+          { transform: 'translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) ' +
+                       'rotate(' + rot + 'deg) scale(1)', opacity: 0 }
+        ],
+        {
+          duration: 800 + Math.random() * 500,
+          delay: Math.random() * 90,
+          easing: 'cubic-bezier(.15,.7,.3,1)',
+          fill: 'forwards'
+        }
+      );
+    }
+
+    setTimeout(function () { layer.remove(); }, 1600);
+  }
+
+  /* ============================================================
+     MARKING
+     ============================================================ */
+  function setFeedback(qEl, cls, msg) {
+    const fb = qEl.querySelector('.q-feedback');
+    if (!fb) return;
+    fb.className = 'q-feedback' + (cls ? ' ' + cls : '');
+    fb.textContent = msg || '';
+  }
+
+  function shakeDiagrams(qEl) {
+    const s = qEl.querySelector('.diagrams');
+    if (!s) return;
+    s.classList.remove('shake');
+    void s.offsetWidth;
+    s.classList.add('shake');
+  }
+
+  function evaluate(qEl) {
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const slots = Array.prototype.slice.call(qEl.querySelectorAll('.slot'));
+    const filled = slots.filter(function (s) { return !!s.querySelector('.tile'); });
+
+    if (filled.length < slots.length) {
+      qEl.classList.remove('ok', 'no');
+      setFeedback(qEl, '', '');
+      updateScore();
+      return;
+    }
+
+    const allCorrect = slots.every(function (s) {
+      const t = s.querySelector('.tile');
+      return t && t.dataset.frac === s.dataset.answer;
+    });
+
+    if (allCorrect) {
+      qEl.dataset.locked = '1';
+      qEl.classList.add('ok');
+      qEl.classList.remove('no');
+      setFeedback(qEl, 'ok', PRAISE[Math.floor(Math.random() * PRAISE.length)]);
+      burstConfetti(qEl);
+      playChime();
+    } else {
+      qEl.classList.add('no');
+      qEl.classList.remove('ok');
+      setFeedback(qEl, 'no', WRONG_MSG);
+      shakeDiagrams(qEl);
+    }
+    updateScore();
+  }
+
+  function updateScore() {
+    if (!scoreTag) return;
+    const total = document.querySelectorAll('.q').length;
+    const solved = document.querySelectorAll('.q.ok').length;
+    const txt = solved + ' / ' + total + ' correct';
+    scoreTag.textContent = txt;
+    if (focusScore) focusScore.textContent = txt;
+
+    if (total > 0 && solved === total) onAllComplete();
+  }
+
+  /* ============================================================
+     TOASTS
+     ============================================================ */
+  function showToast(text, btnLabel, onClick) {
+    if (!toastEl) return;
+    toastEl.querySelector('.toast-text').textContent = text;
+    const b = toastEl.querySelector('button');
+    b.textContent = btnLabel;
+    b.onclick = function () { hideToast(); onClick(); };
+    toastEl.classList.add('show');
+  }
+
+  function hideToast() {
+    if (toastEl) toastEl.classList.remove('show');
+  }
+
+  function onAllComplete() {
+    if (allDone) return;
+    allDone = true;
+    showToast(
+      '\uD83C\uDFC6 Every board is correct \u2014 brilliant work!',
+      'New sheet \u21BB',
+      newSheet
+    );
+  }
+
+  /* ============================================================
+     RESET
+     ============================================================ */
+  function resetAnswers() {
+    allDone = false;
+    document.querySelectorAll('.q').forEach(function (qEl) {
+      delete qEl.dataset.locked;
+      qEl.classList.remove('ok', 'no');
+      const layer = qEl.querySelector('.celebrate-layer');
+      if (layer) layer.remove();
+      const pool = qEl.querySelector('.pool');
+      qEl.querySelectorAll('.slot .tile').forEach(function (t) { pool.appendChild(t); });
+      const tiles = Array.prototype.slice.call(pool.querySelectorAll('.tile'));
+      shuffle(tiles).forEach(function (t) { pool.appendChild(t); });
+      syncSlots(qEl);
+      setFeedback(qEl, '', '');
+    });
+    clearSelection();
+    updateScore();
+  }
+
+  /* ============================================================
+     FULL-SCREEN (FOCUS) MODE
+     ============================================================ */
+  let focusMode = false;
+
+  function fsElement() {
+    return document.fullscreenElement ||
+           document.webkitFullscreenElement ||
+           document.msFullscreenElement ||
+           null;
+  }
+
+  function syncFocusUI() {
+    const on = focusMode || !!fsElement();
+    document.body.classList.toggle('is-focus', on);
+    if (fsBtn) fsBtn.textContent = on ? '\u2715 Exit full screen' : '\u26F6 Full screen';
+  }
+
+  function requestFs() {
+    const el = document.documentElement;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (!fn) return;
+    try {
+      const p = fn.call(el);
+      if (p && typeof p.catch === 'function') p.catch(function () {});
+    } catch (err) { /* focus mode still applies */ }
+  }
+
+  function releaseFs() {
+    if (!fsElement()) return;
+    const fn = document.exitFullscreen ||
+               document.webkitExitFullscreen ||
+               document.msExitFullscreen;
+    if (!fn) return;
+    try {
+      const p = fn.call(document);
+      if (p && typeof p.catch === 'function') p.catch(function () {});
+    } catch (err) { /* ignore */ }
+  }
+
+  function enterFocus() {
+    focusMode = true;
+    syncFocusUI();
+    requestFs();
+  }
+
+  function exitFocus() {
+    focusMode = false;
+    syncFocusUI();
+    releaseFs();
+  }
+
+  function toggleFocus() {
+    if (focusMode || fsElement()) exitFocus();
+    else enterFocus();
+  }
+
+  ['fullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange']
+    .forEach(function (ev) {
+      document.addEventListener(ev, function () {
+        if (!fsElement()) focusMode = false;
+        syncFocusUI();
+      });
+    });
+
+  if (fsBtn) fsBtn.addEventListener('click', toggleFocus);
+  if (fsExitBtn) fsExitBtn.addEventListener('click', exitFocus);
+
+  /* ============================================================
+     EVENT WIRING
+     ============================================================ */
+  document.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', function (e) { finishDrag(e, false); });
+  window.addEventListener('pointercancel', function (e) { finishDrag(e, true); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    const el = e.target;
+    if (!el || !el.closest) return;
+    const qEl = el.closest('.q');
+    if (!qEl || qEl.dataset.locked === '1') return;
+
+    const tile = el.closest('.tile');
+    if (tile) {
+      e.preventDefault();
+      setSelection(tile);
+      return;
+    }
+    const slot = el.closest('.slot');
+    if (slot && selectedTile && qEl.contains(selectedTile)) {
+      e.preventDefault();
+      const t = selectedTile;
+      clearSelection();
+      placeTile(t, slot);
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' && e.key !== 'Esc') return;
+    if (focusMode && !fsElement()) exitFocus();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'f' && e.key !== 'F') return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+    e.preventDefault();
+    toggleFocus();
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest || !e.target.closest('.tile, .slot')) clearSelection();
+  });
+
+  soundChk.checked = soundOn;
+  soundChk.addEventListener('change', function () {
+    soundOn = soundChk.checked;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? '1' : '0'); } catch (err) {}
+    if (soundOn) playChime();
+  });
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    baseSeed = isNaN(s) ? 1 : (s >>> 0);
+    rng = mulberry32(baseSeed);
+  }
+
+  function newSheet() {
+    seedInput.value = randomSeed();
+    applySeed();
+    hideToast();
+    renderActivity();
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', newSheet);
+  document.getElementById('resetBtn').addEventListener('click', resetAnswers);
+
+  seedInput.addEventListener('change', function () {
+    applySeed();
+    hideToast();
+    renderActivity();
+  });
+
+  countSel.addEventListener('change', function () {
+    hideToast();
+    renderActivity();
+  });
+
+  answersChk.addEventListener('change', toggleKey);
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+
+  document.getElementById('shareBtn').addEventListener('click', function () {
+    const url = new URL(window.location.href);
+    url.searchParams.set('seed', seedInput.value);
+    navigator.clipboard.writeText(url.toString()).then(
+      function () {
+        const b = document.getElementById('shareBtn');
+        b.textContent = '\u2705 Link copied';
+        setTimeout(function () {
+          b.textContent = '\uD83D\uDD17 Copy link to this sheet';
+        }, 1500);
+      },
+      function () { window.prompt('Copy this link:', url.toString()); }
+    );
+  });
+
+  /* ============================================================
+     SEED HANDLING & BOOT
+     ============================================================ */
+  function getSeedFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('seed');
+    if (s === null) return null;
+    const n = parseInt(s, 10);
+    return isNaN(n) ? null : n;
+  }
+
+  function clearParamsFromURL() {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('seed')) return;
+    url.searchParams.delete('seed');
+    window.history.replaceState({}, '', url);
+  }
+
+  function randomSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return buf[0] % 1000000000;
+    }
+    return Math.floor(
+      ((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0
+    ) % 1000000000;
+  }
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : randomSeed();
+    clearParamsFromURL();
+    applySeed();
+    renderActivity();
+  }
+
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+})();
+</script>
+</body>
+</html>
