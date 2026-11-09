@@ -131,7 +131,7 @@
   .diagram{
     position:relative;
     width:100%;
-    max-width:128px;
+    max-width:141px; /* was 128px — 10% larger */
     aspect-ratio:1 / 1;
     margin:0 auto;
   }
@@ -141,7 +141,7 @@
   .slot{
     position:relative;
     width:100%;
-    max-width:104px;
+    max-width:114px; /* was 104px — 10% larger */
     aspect-ratio:1 / 1;
     margin:0 auto;
     border:2.5px dashed #9ca3af;
@@ -200,8 +200,8 @@
   }
   .pool.over{ background:#dbeafe; border-color:var(--accent); }
   .pool .tile{
-    width:68px;
-    height:68px;
+    width:61px;   /* was 68px — 10% smaller */
+    height:61px;  /* was 68px — 10% smaller */
     flex:none;
   }
 
@@ -231,7 +231,7 @@
 
   /* fraction tile contents */
   .tile.frac{
-    font-size:22px;
+    font-size:20px;  /* was 22px — 10% smaller */
     color:var(--ink);
     font-weight:700;
   }
@@ -258,7 +258,7 @@
     border-color:#c7d2fe;
     background:#eef2ff;
     box-shadow:none;
-    font-size:26px;
+    font-size:29px;  /* was 26px — ~10% larger to match the bigger slot */
   }
   .slot > .tile:hover{ background:#e0e7ff; }
 
@@ -277,9 +277,11 @@
   /* ---------- drag ghost ---------- */
   .drag-ghost{
     position:fixed; left:0; top:0; z-index:9999; pointer-events:none;
-    width:76px; height:76px;
+    width:68px;   /* was 76px — 10% smaller */
+    height:68px;  /* was 76px — 10% smaller */
     display:flex; align-items:center; justify-content:center;
-    font-size:22px; font-weight:700; color:var(--ink);
+    font-size:20px;  /* was 22px — 10% smaller */
+    font-weight:700; color:var(--ink);
     padding:4px;
     border-radius:10px;
     background:#fff; border:1.5px solid var(--accent);
@@ -600,9 +602,9 @@
 
   /* The floating drag ghost follows the finger and matches the tile size */
   body.single-board .drag-ghost {
-    width: var(--tile-size, 76px);
-    height: var(--tile-size, 76px);
-    font-size: calc(var(--tile-size, 76px) * 0.32);
+    width: var(--tile-size, 68px);
+    height: var(--tile-size, 68px);
+    font-size: calc(var(--tile-size, 68px) * 0.32);
   }
 
   body.single-board .q-feedback {
@@ -671,8 +673,8 @@
 
   @media (min-width:1000px){
     body.is-focus .work{ grid-template-columns:minmax(0,1fr) 260px; }
-    body.is-focus .pool .tile{ width:76px; height:76px; }
-    body.is-focus .tile.frac{ font-size:24px; }
+    body.is-focus .pool .tile{ width:68px; height:68px; }
+    body.is-focus .tile.frac{ font-size:22px; }
   }
 
   /* ---------- small screens ---------- */
@@ -684,9 +686,9 @@
     .sheet{padding:22px 16px 30px}
     .diagrams{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
     .pool{ gap:6px; padding:8px; }
-    .pool .tile{ width:60px; height:60px; }
-    .tile.frac{ font-size:19px; }
-    .slot > .tile{ font-size:22px; }
+    .pool .tile{ width:54px; height:54px; }  /* was 60px — 10% smaller */
+    .tile.frac{ font-size:17px; }            /* was 19px — 10% smaller */
+    .slot > .tile{ font-size:24px; }         /* was 22px — ~10% larger */
     body.is-focus .sheet{ padding-top:52px; }
 
     .well-done-banner{
@@ -1210,11 +1212,11 @@
     const cellH = diagramsH;
 
     /* Diagrams sit in a square cell alongside a square answer box.
-       A 0.90 scale keeps them slightly smaller than before, making
-       room for the larger fraction pool on the right. */
+       DIAGRAM_SCALE was 0.90; bumping it to 0.99 makes the four
+       diagram/slot tiles on the board ~10% larger. */
     const byWidth = cellW;
     const byHeight = (cellH - CELL_GAP) / 2;
-    const DIAGRAM_SCALE = 0.90;
+    const DIAGRAM_SCALE = 0.99;   /* was 0.90 — +10% */
     const DIAGRAM_MAX = 180;
     const rawDiagram = Math.min(byWidth, byHeight, DIAGRAM_MAX);
     const diagramSize = Math.max(24, rawDiagram * DIAGRAM_SCALE);
@@ -1224,12 +1226,12 @@
     );
 
     /* Pool: try 4, 3, 2 and 1 columns and keep whichever gives the
-       largest tile that still fits. A generous cap keeps the tiles
-       big and clear without overflowing. */
+       largest tile that still fits. TILE_MAX values reduced by 10%
+       so the answer tiles on the right shrink accordingly. */
     const poolInnerW = pool.clientWidth - 2 * POOL_PAD;
     const poolInnerH = pool.clientHeight - 2 * POOL_PAD;
-    const TILE_MAX = poolBelow ? 96 : 130;
-    const TILE_MIN = 30;
+    const TILE_MAX = poolBelow ? 86 : 117;  /* was 96 : 130 — −10% */
+    const TILE_MIN = 27;                    /* was 30 — −10% */
 
     let bestTile = 0;
     for (let cols = 4; cols >= 1; cols--) {
