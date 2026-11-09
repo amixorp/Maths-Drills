@@ -528,8 +528,8 @@
 
   body.single-board .instructions {
     flex: 0 0 auto;
-    font-size: 11px;
-    line-height: 1.35;
+    font-size: 12px;
+    line-height: 1.4;
     margin: 4px 0 6px;
   }
 
@@ -551,32 +551,40 @@
   body.single-board .q-head {
     display: none;
   }
+
+  /* Wider pool column + stretched height gives larger fraction tiles */
   body.single-board .work {
     flex: 1 1 auto;
     min-height: 0;
-    gap: 8px;
-    grid-template-columns: 1fr var(--pool-w, 220px);
+    gap: 10px;
+    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 38%);
   }
+
   body.single-board .diagrams {
     min-height: 0;
-    gap: 6px;
+    gap: 8px;
     grid-template-columns: repeat(4, 1fr);
   }
+
   body.single-board .cell {
     min-height: 0;
     gap: 3px;
-    justify-content: center;
+    justify-content: flex-start;
   }
+
   body.single-board .diagram,
   body.single-board .slot {
     width: var(--diagram-size, 90px);
     height: var(--diagram-size, 90px);
     max-width: none;
   }
+
   body.single-board .pool {
     min-height: 0;
-    gap: 5px;
-    padding: 6px;
+    gap: 6px;
+    padding: 8px;
+    overflow: hidden;
   }
   body.single-board .pool .tile {
     width: var(--tile-size, 55px);
@@ -586,11 +594,22 @@
   body.single-board .slot > .tile {
     font-size: calc(var(--diagram-size, 90px) * 0.38);
   }
+  body.single-board .slot-answer {
+    font-size: calc(var(--diagram-size, 90px) * 0.32);
+  }
+
+  /* The floating drag ghost follows the finger and matches the tile size */
+  body.single-board .drag-ghost {
+    width: var(--tile-size, 76px);
+    height: var(--tile-size, 76px);
+    font-size: calc(var(--tile-size, 76px) * 0.32);
+  }
+
   body.single-board .q-feedback {
     flex: 0 0 auto;
     margin-top: 4px;
     min-height: 14px;
-    font-size: 11.5px;
+    font-size: 12.5px;
   }
   body.single-board .key {
     display: none;
@@ -1128,8 +1147,6 @@
     document.body.classList.toggle('single-board', isSingle);
 
     if (isSingle) {
-      /* Two rAFs: the first lets the class swap apply,
-         the second lets the new layout settle. */
       requestAnimationFrame(function () {
         requestAnimationFrame(fitSingleBoard);
       });
@@ -1153,6 +1170,12 @@
     window._workRO.observe(work);
   }
 
+  function scheduleFit() {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(fitSingleBoard);
+    });
+  }
+
   function fitSingleBoard() {
     if (!document.body.classList.contains('single-board')) return;
     const q = document.querySelector('.q');
@@ -1162,46 +1185,62 @@
     if (!work || !pool) return;
 
     const workRect = work.getBoundingClientRect();
-    const poolRect = pool.getBoundingClientRect();
     if (workRect.width < 20 || workRect.height < 20) return;
 
-    const poolBelow = poolRect.top > workRect.top + 20;
+    const poolRect0 = pool.getBoundingClientRect();
+    const poolBelow = poolRect0.top > workRect.top + 20;
+
+    const GAP = 10;
+    const GRID_GAP = 8;
+    const CELL_GAP = 3;
+    const POOL_PAD = 8;
+    const POOL_GAP = 6;
 
     let diagramsW, diagramsH;
     if (poolBelow) {
       diagramsW = workRect.width;
-      diagramsH = workRect.height - poolRect.height - 8;
+      diagramsH = workRect.height - poolRect0.height - GAP;
     } else {
-      diagramsW = workRect.width - poolRect.width - 8;
+      diagramsW = workRect.width - poolRect0.width - GAP;
       diagramsH = workRect.height;
     }
     if (diagramsW < 20 || diagramsH < 20) return;
 
-    const gridGap = 6;
-    const cellGap = 3;
-    const cellW = (diagramsW - 3 * gridGap) / 4;
+    const cellW = (diagramsW - 3 * GRID_GAP) / 4;
     const cellH = diagramsH;
 
-    /* Each cell has diagram (1:1) + slot (1:1) + gap. */
+    /* Diagrams sit in a square cell alongside a square answer box.
+       A 0.90 scale keeps them slightly smaller than before, making
+       room for the larger fraction pool on the right. */
     const byWidth = cellW;
-    const byHeight = (cellH - cellGap) / 2;
-    const diagramSize = Math.max(24, Math.min(byWidth, byHeight, 200));
+    const byHeight = (cellH - CELL_GAP) / 2;
+    const DIAGRAM_SCALE = 0.90;
+    const DIAGRAM_MAX = 180;
+    const rawDiagram = Math.min(byWidth, byHeight, DIAGRAM_MAX);
+    const diagramSize = Math.max(24, rawDiagram * DIAGRAM_SCALE);
 
     document.documentElement.style.setProperty(
       '--diagram-size', diagramSize.toFixed(1) + 'px'
     );
 
-    /* Pool tiles: try 4, then 3, then 2, then 1 per row */
-    const poolInnerW = poolRect.width - 12;
-    const poolInnerH = poolRect.height - 12;
-    let tileSize = 28;
+    /* Pool: try 4, 3, 2 and 1 columns and keep whichever gives the
+       largest tile that still fits. A generous cap keeps the tiles
+       big and clear without overflowing. */
+    const poolInnerW = pool.clientWidth - 2 * POOL_PAD;
+    const poolInnerH = pool.clientHeight - 2 * POOL_PAD;
+    const TILE_MAX = poolBelow ? 96 : 130;
+    const TILE_MIN = 30;
+
+    let bestTile = 0;
     for (let cols = 4; cols >= 1; cols--) {
-      const byW = (poolInnerW - (cols - 1) * 5) / cols;
+      const byW = (poolInnerW - (cols - 1) * POOL_GAP) / cols;
       const rows = Math.ceil(8 / cols);
-      const byH = (poolInnerH - (rows - 1) * 5) / rows;
-      const s = Math.min(byW, byH, 76);
-      if (s >= 30) { tileSize = s; break; }
+      const byH = (poolInnerH - (rows - 1) * POOL_GAP) / rows;
+      const s = Math.min(byW, byH, TILE_MAX);
+      if (s > bestTile) bestTile = s;
     }
+    const tileSize = Math.max(TILE_MIN, bestTile);
+
     document.documentElement.style.setProperty(
       '--tile-size', tileSize.toFixed(1) + 'px'
     );
@@ -1437,6 +1476,7 @@
       clearSelection();
       syncSlots(qEl);
       evaluate(qEl);
+      scheduleFit();
       return;
     }
 
@@ -1451,6 +1491,7 @@
     clearSelection();
     syncSlots(qEl);
     evaluate(qEl);
+    scheduleFit();
   }
 
   function insertTileIntoPool(tile, pool, x, y) {
@@ -1835,6 +1876,7 @@
     });
     clearSelection();
     updateScore();
+    scheduleFit();
   }
 
   /* ============================================================
