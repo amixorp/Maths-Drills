@@ -5,165 +5,424 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Automatically-generated Worksheets</title>
 <style>
+  :root{
+    --violet:#7c3aed;
+    --teal:  #0d9488;
+    --rose:  #e11d48;
+    --amber: #d97706;
+    --sky:   #0284c7;
+
+    --ink:   #111827;
+    --muted: #5b6478;
+  }
+
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
+
   body{
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-    color:#111827;
-    background:#eef1f5;
+    color:var(--ink);
     min-height:100vh;
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:40px 20px;
-  }
-  .card{
-    background:#fff;
-    max-width:560px;
-    width:100%;
-    padding:34px 36px 30px;
-    border-radius:12px;
-    box-shadow:0 6px 24px rgba(15,23,42,.10);
-  }
-  h1{
-    margin:0 0 6px;
-    font-size:26px;
-    letter-spacing:.4px;
-  }
-  p.lede{
-    margin:0 0 20px;
-    color:#6b7280;
-    font-size:14px;
-    line-height:1.5;
+    padding:44px 20px;
+
+    background-color:#0b1020;
+    background-image:
+      radial-gradient(900px 520px at 12% -8%,  rgba(124,58,237,.45), transparent 68%),
+      radial-gradient(820px 520px at 96% 6%,   rgba(13,148,136,.34), transparent 66%),
+      radial-gradient(900px 620px at 50% 114%, rgba(225,29,72,.28),  transparent 66%);
+    background-attachment:fixed;
   }
 
-  /* ---------- back-link (mirrors the nav button on index) ---------- */
-  .nav-btn{
+  /* soft floating light orbs */
+  body::before,
+  body::after{
+    content:"";
+    position:fixed;
+    border-radius:50%;
+    pointer-events:none;
+    filter:blur(30px);
+    z-index:0;
+  }
+  body::before{
+    width:460px;height:460px;
+    top:-170px;left:-140px;
+    background:radial-gradient(circle, rgba(139,92,246,.55), transparent 70%);
+  }
+  body::after{
+    width:520px;height:520px;
+    bottom:-220px;right:-180px;
+    background:radial-gradient(circle, rgba(20,184,166,.42), transparent 70%);
+  }
+
+  /* ---------------- card ---------------- */
+  .card{
+    position:relative;
+    z-index:1;
+    background:#fff;
+    max-width:660px;
+    width:100%;
+    padding:42px 40px 30px;
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow:
+      0 40px 80px -30px rgba(2,6,23,.75),
+      0 0 0 1px rgba(255,255,255,.10);
+  }
+
+  /* rainbow strip across the top */
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0;
+    height:6px;
+    background:linear-gradient(90deg,
+      var(--violet) 0%,
+      var(--sky) 28%,
+      var(--teal) 52%,
+      var(--amber) 76%,
+      var(--rose) 100%);
+  }
+
+  h1{
+    margin:0 0 10px;
+    font-size:28px;
+    line-height:1.15;
+    letter-spacing:-.6px;
+    font-weight:800;
+    background:linear-gradient(100deg,#3b0764 0%, #7c3aed 48%, #0d9488 100%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  p.lede{
+    margin:0 0 18px;
+    font-size:14px;
+    line-height:1.6;
+    color:var(--muted);
+  }
+
+  /* ---------------- decorative spark row ---------------- */
+  .spark{
+    display:flex;
+    gap:7px;
+    margin:0 0 24px;
+  }
+  .spark span{
+    height:6px;
+    border-radius:999px;
+    background:var(--violet);
+  }
+  .spark span:nth-child(1){ width:26px; }
+  .spark span:nth-child(2){ width:18px; background:var(--teal); }
+  .spark span:nth-child(3){ width:12px; background:var(--amber); }
+  .spark span:nth-child(4){ width:7px;  background:var(--rose); }
+
+  /* ---------------- back pill ---------------- */
+  .back{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 26px;
+    padding:9px 18px 9px 15px;
+    border-radius:999px;
+    font-size:13.5px;
+    font-weight:700;
+    text-decoration:none;
+    color:#5b21b6;
+    background:#f5f3ff;
+    border:1.5px solid #ddd6fe;
+    transition:background .16s ease, border-color .16s ease,
+               transform .16s ease, box-shadow .16s ease;
+  }
+  .back:hover{
+    background:#ede9fe;
+    border-color:#c4b5fd;
+    transform:translateX(-3px);
+    box-shadow:0 8px 20px -10px rgba(124,58,237,.6);
+  }
+  .back:focus-visible{
+    outline:3px solid rgba(124,58,237,.55);
+    outline-offset:3px;
+  }
+
+  /* ---------------- section headings ---------------- */
+  .section-head{
     display:flex;
     align-items:center;
-    gap:10px;
-    width:100%;
-    padding:11px 16px;
-    margin:0 0 22px;
-    border:1.5px solid #d1d5db;
-    background:#f9fafb;
-    border-radius:9px;
-    color:#374151;
-    text-decoration:none;
-    font-weight:600;
-    font-size:14px;
-    transition:background .12s, border-color .12s;
+    gap:12px;
+    margin:28px 0 14px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:2.2px;
+    text-transform:uppercase;
+    color:var(--violet);
   }
-  .nav-btn:hover{
-    background:#f3f4f6;
-    border-color:#9ca3af;
+  .section-head.alt{ color:var(--teal); }
+  .section-head:first-of-type{ margin-top:0; }
+
+  .section-head::after{
+    content:"";
+    flex:1;
+    height:2px;
+    border-radius:2px;
+    background:linear-gradient(90deg,currentColor,transparent);
+    opacity:.35;
   }
 
+  /* ---------------- worksheet links ---------------- */
   ul{
     list-style:none;
     margin:0;
     padding:0;
+    display:grid;
+    gap:10px;
   }
-  li{margin-bottom:10px}
+
   a.ws-link{
-    display:block;
-    padding:14px 16px;
-    border:1.5px solid #d1d5db;
-    border-radius:9px;
-    color:#111827;
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 16px 14px 22px;
+    border-radius:14px;
+    background:#fff;
+    border:1.5px solid #e6e8ef;
+    color:inherit;
     text-decoration:none;
-    font-weight:600;
-    transition:background .12s, border-color .12s, transform .12s;
+    overflow:hidden;
+    transition:transform .18s cubic-bezier(.2,.8,.3,1),
+               box-shadow .18s ease,
+               border-color .18s ease,
+               background .18s ease;
   }
+
+  /* coloured accent bar (grows on hover) */
+  a.ws-link::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:5px;
+    background:var(--accent);
+    transform:scaleY(.5);
+    transform-origin:center;
+    transition:transform .22s cubic-bezier(.2,.8,.3,1);
+  }
+
   a.ws-link:hover{
-    background:#f3f4f6;
-    border-color:#9ca3af;
+    transform:translateY(-3px);
+    border-color:rgba(var(--glow),.42);
+    background:#fdfdff;
+    box-shadow:
+      0 16px 32px -14px rgba(var(--glow),.60),
+      0 3px 8px rgba(15,23,42,.05);
   }
-  a.ws-link span{
+  a.ws-link:hover::before{ transform:scaleY(1); }
+
+  a.ws-link:focus-visible{
+    outline:3px solid rgba(var(--glow),.55);
+    outline-offset:2px;
+  }
+
+  .ws-body{
+    flex:1;
+    min-width:0;
+  }
+
+  .ws-title{
     display:block;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:-.1px;
+    color:#141a2b;
+  }
+
+  .ws-desc{
+    display:block;
+    margin-top:3px;
     font-weight:400;
     font-size:12.5px;
-    color:#6b7280;
-    margin-top:3px;
+    line-height:1.45;
+    color:var(--muted);
   }
+
+  .ws-chevron{
+    flex:none;
+    width:30px;
+    height:30px;
+    display:grid;
+    place-items:center;
+    border-radius:50%;
+    background:#f3f4f7;
+    color:#9aa1ae;
+    font-size:14px;
+    font-weight:700;
+    line-height:1;
+    transition:background .18s ease, color .18s ease, transform .18s ease;
+  }
+
+  a.ws-link:hover .ws-chevron{
+    background:var(--accent);
+    color:#fff;
+    transform:translateX(4px);
+  }
+
+  /* ---------------- footer ---------------- */
   footer{
-    margin-top:22px;
-    padding-top:14px;
-    border-top:1px solid #e5e7eb;
+    margin-top:30px;
+    padding-top:16px;
+    border-top:1px dashed #e2e5ee;
     font-size:12px;
-    color:#9ca3af;
+    letter-spacing:.2px;
+    color:#9aa1ae;
     text-align:center;
+  }
+
+  /* ---------------- small screens ---------------- */
+  @media (max-width:480px){
+    body{ padding:24px 14px; }
+    .card{ padding:32px 22px 22px; border-radius:18px; }
+    h1{ font-size:23px; }
+    a.ws-link{ padding:13px 13px 13px 19px; gap:11px; }
+    .ws-title{ font-size:14px; }
+    .ws-chevron{ width:26px; height:26px; font-size:12px; }
+  }
+
+  /* ---------------- reduced motion ---------------- */
+  @media (prefers-reduced-motion: reduce){
+    a.ws-link, a.ws-link::before, .back, .ws-chevron{
+      transition:none !important;
+    }
+    a.ws-link:hover{ transform:none; }
+    a.ws-link:hover::before{ transform:scaleY(.5); }
+    a.ws-link:hover .ws-chevron{ transform:none; }
+    .back:hover{ transform:none; }
   }
 </style>
 </head>
 <body>
   <main class="card">
     <h1>Automatically-generated Worksheets</h1>
-    <p class="lede">Printable A4 worksheets that generate fresh questions on demand. Each one can be downloaded as a PDF or sent straight to your printer.</p>
+    <p class="lede">
+      Printable A4 worksheets that generate fresh questions on demand.
+      Each one can be downloaded as a PDF or sent straight to your printer.
+    </p>
 
-    <a class="nav-btn" href="index.html">← Back to Maths Drills</a>
+    <div class="spark" aria-hidden="true">
+      <span></span><span></span><span></span><span></span>
+    </div>
 
+    <a class="back" href="index.html">← Back to Maths Drills</a>
+
+    <!-- ================= A-LEVEL ================= -->
+    <h2 class="section-head">A-Level</h2>
     <ul>
       <li>
-      <li>
-          <a class="ws-link" href="pdf-worksheets/AS_Chapter_3.html">>
-          AS Chapter 3 Revision
-          <span>Automatically-Generated Questions</span>
-        </a>
-      </li>
-	<li>
-          <a class="ws-link" href="pdf-worksheets/AS_Chapter_6.html">>
-          AS Chapter 6 Revision
-          <span>Automatically-Generated Questions</span>
-        </a>
-      </li>
-	<li>
-          <a class="ws-link" href="pdf-worksheets/A2_Chapter_10_ID.html">>
-          A2 Chapter 10 - Implicit Differentiation
-          <span>Automatically-Generated Questions</span>
+        <a class="ws-link" href="pdf-worksheets/AS_Chapter_3.html"
+           style="--accent:#7c3aed; --glow:124,58,237">
+          <span class="ws-body">
+            <span class="ws-title">AS Chapter 3 Revision</span>
+            <span class="ws-desc">Automatically-generated questions covering Chapter 3.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
       <li>
-          <a class="ws-link" href="pdf-worksheets/Str235_WS.html">>
-          Strands 2, 3 and 5 Revision Worksheet (Higher)
-          <span>Mixed questions for GCSE revision.</span>
+        <a class="ws-link" href="pdf-worksheets/AS_Chapter_6.html"
+           style="--accent:#0284c7; --glow:2,132,199">
+          <span class="ws-body">
+            <span class="ws-title">AS Chapter 6 Revision</span>
+            <span class="ws-desc">Automatically-generated questions covering Chapter 6.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
+      <li>
+        <a class="ws-link" href="pdf-worksheets/A2_Chapter_10_ID.html"
+           style="--accent:#0d9488; --glow:13,148,136">
+          <span class="ws-body">
+            <span class="ws-title">A2 Chapter 10 — Implicit Differentiation</span>
+            <span class="ws-desc">Automatically-generated implicit differentiation questions.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
+        </a>
+      </li>
+    </ul>
 
-          <a class="ws-link" href="pdf-worksheets/F_Mixed_WS.html">>
-          Mixed Revision Worksheet (Foundation)
-          <span>Mixed questions for GCSE revision.</span>
+    <!-- ================= GCSE ================= -->
+    <h2 class="section-head alt">GCSE</h2>
+    <ul>
+      <li>
+        <a class="ws-link" href="pdf-worksheets/Str235_WS.html"
+           style="--accent:#e11d48; --glow:225,29,72">
+          <span class="ws-body">
+            <span class="ws-title">Strands 2, 3 and 5 Revision Worksheet (Higher)</span>
+            <span class="ws-desc">Mixed questions for GCSE revision.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
       <li>
-          <a class="ws-link" href="pdf-worksheets/Perc_Of_Amount.html">>
-          Percentages of Amounts
-          <span>Non-calculator practice: 10%, 25%, 50%, 75% and other simple percentages of an amount.</span>
+        <a class="ws-link" href="pdf-worksheets/F_Mixed_WS.html"
+           style="--accent:#d97706; --glow:217,119,6">
+          <span class="ws-body">
+            <span class="ws-title">Mixed Revision Worksheet (Foundation)</span>
+            <span class="ws-desc">Mixed questions for GCSE revision.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
       <li>
-          <a class="ws-link" href="pdf-worksheets/Simplifying_Ratios.html">
-          Simplifying Ratio
-          <span>Simplify ratios to their simplest form.</span>
+        <a class="ws-link" href="pdf-worksheets/Perc_Of_Amount.html"
+           style="--accent:#7c3aed; --glow:124,58,237">
+          <span class="ws-body">
+            <span class="ws-title">Percentages of Amounts</span>
+            <span class="ws-desc">Non-calculator practice: 10%, 25%, 50%, 75% and other simple percentages of an amount.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
       <li>
-<li>
-          <a class="ws-link" href="pdf-worksheets/Simp_Exp_WS.html">
-          Simplifying Expressions
-          <span>Practise simplifying expressions.</span>
-        </a>
-      </li>
-	<li>
-          <a class="ws-link" href="pdf-worksheets/DP_WS_V08.html">
-          Direct Proportion
-          <span>Mixed questions on direct proportion.</span>
+        <a class="ws-link" href="pdf-worksheets/Simplifying_Ratios.html"
+           style="--accent:#0284c7; --glow:2,132,199">
+          <span class="ws-body">
+            <span class="ws-title">Simplifying Ratio</span>
+            <span class="ws-desc">Simplify ratios to their simplest form.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
       <li>
-          <a class="ws-link" href="pdf-worksheets/Number_Pyramids_WS.html">
-          Addition Pyramids
-          <span>Simple worksheet on addition pyramids.</span>
+        <a class="ws-link" href="pdf-worksheets/Simp_Exp_WS.html"
+           style="--accent:#0d9488; --glow:13,148,136">
+          <span class="ws-body">
+            <span class="ws-title">Simplifying Expressions</span>
+            <span class="ws-desc">Practise simplifying expressions.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
+        </a>
+      </li>
+      <li>
+        <a class="ws-link" href="pdf-worksheets/DP_WS_V08.html"
+           style="--accent:#e11d48; --glow:225,29,72">
+          <span class="ws-body">
+            <span class="ws-title">Direct Proportion</span>
+            <span class="ws-desc">Mixed questions on direct proportion.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
+        </a>
+      </li>
+      <li>
+        <a class="ws-link" href="pdf-worksheets/Number_Pyramids_WS.html"
+           style="--accent:#d97706; --glow:217,119,6">
+          <span class="ws-body">
+            <span class="ws-title">Addition Pyramids</span>
+            <span class="ws-desc">Simple worksheet on addition pyramids.</span>
+          </span>
+          <span class="ws-chevron" aria-hidden="true">→</span>
         </a>
       </li>
     </ul>
