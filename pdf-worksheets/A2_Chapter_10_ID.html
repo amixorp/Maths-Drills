@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A2 Implicit Differentiation Worksheet Generator</title>
+<link rel="stylesheet" href="katex/katex.min.css">
+<script defer src="katex/katex.min.js"></script>
+
+<style>
+  :root{ --ink:#0f172a; --muted:#64748b; --accent:#2563eb; --accent-dark:#1d4ed8; --page-bg:#eef2f7; }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg); color:var(--ink); font-size:16px;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .toolbar{position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap;
+    align-items:center; gap:12px; padding:12px 20px;
+    background:#0f172a; color:#f8fafc; box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;}
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],.toolbar input[type=text]{padding:7px 9px; border-radius:8px;
+    border:1px solid #334155; background:#1e293b; color:#f8fafc; font:inherit;}
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:240px}
+  .toolbar button{padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700; cursor:pointer; white-space:nowrap;}
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{background:#15803d; border-color:#16a34a}
+  .toolbar button.reveal-on:hover{background:#166534}
+  .viewport{padding:28px 0 6px;}
+  .pages{display:flex; flex-direction:column; align-items:center; gap:24px;}
+  .page-wrap{position:relative; overflow:hidden;}
+  .page{position:absolute; top:0; left:0; width:210mm; height:297mm;
+    background:#fff; box-shadow:0 6px 26px rgba(15,23,42,.16);
+    transform-origin:top left; font-family:Helvetica,Arial,sans-serif; color:#000;}
+  .page .tx{position:absolute; white-space:pre; line-height:1; font-family:Helvetica,Arial,sans-serif;}
+  .page .ans{visibility:hidden; color:#2563eb;}
+  .pages.revealed .ans{visibility:visible;}
+  .hint{text-align:center; color:var(--muted); font-size:13px; line-height:1.5; padding:4px 16px 34px;}
+  .hint kbd{background:#e2e8f0; border-radius:5px; padding:1px 6px; font-family:inherit; font-size:12px;}
+  .topics-panel{position:fixed; top:0; right:0; bottom:0; width:420px; max-width:92vw;
+    background:#fff; color:var(--ink); box-shadow:-4px 0 24px rgba(15,23,42,.25);
+    transform:translateX(100%); transition:transform .22s ease; z-index:100;
+    display:flex; flex-direction:column; font-size:14px;}
+  .topics-panel.open{transform:translateX(0);}
+  .tp-head{padding:14px 18px; border-bottom:1px solid #e2e8f0; display:flex;
+    align-items:center; justify-content:space-between; gap:12px;}
+  .tp-head h2{margin:0; font-size:15px;}
+  .tp-head .count{color:var(--muted); font-size:13px; margin-top:2px;}
+  .tp-head button{background:none; border:none; font-size:22px; line-height:1;
+    cursor:pointer; color:var(--muted); padding:0 4px;}
+  .tp-body{overflow-y:auto; padding:4px 0 24px; flex:1;}
+  .tp-strand{padding:12px 18px 4px; font-weight:700; font-size:12px;
+    letter-spacing:.6px; text-transform:uppercase; color:var(--muted);}
+  .tp-item{display:flex; align-items:center; gap:10px; padding:7px 18px;
+    cursor:pointer; user-select:none;}
+  .tp-item:hover{background:#f1f5f9;}
+  .tp-item input{flex:none; margin:0; width:16px; height:16px; cursor:pointer;}
+  .tp-item .name{flex:1; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px;}
+  .tp-foot{padding:12px 18px; border-top:1px solid #e2e8f0; display:flex;
+    gap:8px; justify-content:flex-end; flex-wrap:wrap;}
+  .tp-foot button{padding:7px 12px; border-radius:8px; border:1px solid #cbd5e1;
+    background:#f8fafc; color:var(--ink); font:inherit; font-weight:600; cursor:pointer;}
+  .tp-foot button:hover{background:#e2e8f0;}
+  .backdrop{position:fixed; inset:0; background:rgba(15,23,42,.35);
+    opacity:0; pointer-events:none; transition:opacity .2s; z-index:99;}
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{padding:0 !important;}
+    .pages{display:block;}
+    .page-wrap{width:auto !important; height:auto !important; overflow:visible !important;
+      page-break-after:always; break-after:page;}
+    .page-wrap:last-child{page-break-after:auto; break-after:auto;}
+    .page{position:relative !important; transform:none !important;
+      width:210mm !important; height:296.9mm !important; box-shadow:none !important;}
+    .pages .ans { visibility: hidden !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">📐 A2 Implicit Differentiation</span>
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Implicit Differentiation — Revision" spellcheck="false">
+  </label>
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="topicsBtn">📋 Topics</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">🖨️ Answers PDF</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="backdrop no-print" id="backdrop"></div>
+<aside class="topics-panel no-print" id="topicsPanel" aria-hidden="true">
+  <div class="tp-head">
+    <div>
+      <h2>Topic bank</h2>
+      <div class="count" id="tpCount"></div>
+    </div>
+    <button id="tpClose" title="Close">×</button>
+  </div>
+  <div class="tp-body" id="tpBody"></div>
+  <div class="tp-foot">
+    <button id="tpAll">All on</button>
+    <button id="tpNone">All off</button>
+    <button id="tpReset">Reset</button>
+  </div>
+</aside>
+
+<div class="viewport" id="viewport">
+  <div class="pages" id="pages"></div>
+</div>
+
+<p class="hint no-print">
+  Generates a <b>two-page</b> worksheet drawn from the implicit differentiation topic bank.
+  Answers appear on the right when you click <b>Reveal answers</b>.
+  Add <kbd>?seed=12345</kbd> to the URL to reproduce a sheet.
+</p>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   RNG + helpers
+   ============================================================ */
+let rng = Math.random;
+function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0;
+  let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t;
+  return ((t^(t>>>14))>>>0)/4294967296; }; }
+const pick = a => a[Math.floor(rng()*a.length)];
+const ri   = (a,b) => a + Math.floor(rng()*(b-a+1));
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(rng()*(i+1));
+  const t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b);
+  while(b){ const t=a%b; a=b; b=t; } return a; }
+const MINUS = '\u2212';
+function nStr(x){ return x<0 ? MINUS + Math.abs(x) : String(x); }
+function T(text){ return { type:'text', text: text }; }
+function Q(key, blocks, answers, solution, opts){
+  const q = { key, blocks, answers: answers||[], solution: solution||null };
+  if (opts) for (const k in opts) if (opts[k]!==undefined) q[k]=opts[k];
+  return q;
+}
+
+/* ============================================================
+   Coordinate-geometry formatting helpers
+   ============================================================ */
+function ptStr(x, y){ return '(' + nStr(x) + ', ' + nStr(y) + ')'; }
+
+function gradientFracStr(num, den){
+  if (den < 0){ num = -num; den = -den; }
+  if (num === 0) return '0';
+  if (den === 1) return nStr(num);
+  return (num < 0 ? MINUS : '') + '\\frac{' + Math.abs(num) + '}{' + den + '}';
+}
+
+function gradientStr(m){
+  if (Number.isInteger(m)) return nStr(m);
+  for (let q = 2; q <= 1000; q++){
+    const p = m * q;
+    if (Math.abs(p - Math.round(p)) < 1e-9){
+      const rp = Math.round(p);
+      const g = gcd(Math.abs(rp), q) || 1;
+      return gradientFracStr(rp/g, q/g);
+    }
+  }
+  return nStr(Math.round(m*100)/100);
+}
+
+function fracOrIntStr(x){
+  if (Number.isInteger(x)) return nStr(x);
+  for (let q = 2; q <= 1000; q++){
+    const p = x * q;
+    if (Math.abs(p - Math.round(p)) < 1e-9){
+      const rp = Math.round(p);
+      const g = gcd(Math.abs(rp), q) || 1;
+      return gradientFracStr(rp/g, q/g);
+    }
+  }
+  return nStr(Math.round(x*100)/100);
+}
+
+function lineEqStr(m, c){
+  if (m === 0){
+    return 'y = ' + fracOrIntStr(c);
+  }
+  let mStr = gradientStr(m);
+  if (mStr === '1') mStr = '';
+  else if (mStr === MINUS + '1') mStr = MINUS;
+  
+  let s = 'y = ' + mStr + 'x';
+  if (c !== 0){
+    const cStr = fracOrIntStr(Math.abs(c));
+    s += (c > 0 ? ' + ' : ' ' + MINUS + ' ') + cStr;
+  }
+  return s;
+}
+
+function lineEqFracStr(num, den, c){
+  if (den < 0){ num = -num; den = -den; }
+  let mPart;
+  if (den === 1){
+    if (num === 1) mPart = 'x';
+    else if (num === -1) mPart = MINUS + 'x';
+    else mPart = nStr(num) + 'x';
+  } else {
+    if (num === 1) mPart = '\\frac{1}{' + den + '}x';
+    else if (num === -1) mPart = MINUS + '\\frac{1}{' + den + '}x';
+    else mPart = '\\frac{' + nStr(num) + '}{' + den + '}x';
+  }
+  let s = 'y = ' + mPart;
+  if (c > 0) s += ' + ' + nStr(c);
+  else if (c < 0) s += ' ' + MINUS + ' ' + Math.abs(c);
+  return s;
+}
+
+function lineGeneralStr(a, b, c){
+  let s = '';
+  if (a !== 0){
+    if (a === 1) s += 'x';
+    else if (a === -1) s += MINUS + 'x';
+    else s += nStr(a) + 'x';
+  }
+  if (b !== 0){
+    if (s !== '') s += ' ';
+    if (b === 1) s += '+ y';
+    else if (b === -1) s += MINUS + ' y';
+    else s += (b > 0 ? '+ ' : MINUS + ' ') + Math.abs(b) + 'y';
+  }
+  if (c !== 0){
+    if (s !== '') s += ' ';
+    s += (c > 0 ? '+ ' : MINUS + ' ') + Math.abs(c);
+  }
+  s += ' = 0';
+  return s;
+}
+
+function lineStandardStr(a, b, c){
+  let s = '';
+  if (a !== 0){
+    if (a === 1) s += 'x';
+    else if (a === -1) s += MINUS + 'x';
+    else s += nStr(a) + 'x';
+  }
+  if (b !== 0){
+    if (s !== '') s += ' ';
+    if (b === 1) s += '+ y';
+    else if (b === -1) s += MINUS + ' y';
+    else s += (b > 0 ? '+ ' : MINUS + ' ') + Math.abs(b) + 'y';
+  }
+  s += ' = ' + nStr(c);
+  return s;
+}
+
+function ptFracStr(x, y){
+  return '(' + fracOrIntStr(x) + ', ' + fracOrIntStr(y) + ')';
+}
+
+/* ============================================================
+   Text measurement (Helvetica widths × 1000)
+   ============================================================ */
+const W_REG = [
+  278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+  556,556,556,556,556,556,556,556,556,556,
+  278,278,584,584,584,556,1015,
+  667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+  278,278,278,469,556,333,
+  556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+  334,260,334,584
+];
+const W_BOLD = [
+  278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+  556,556,556,556,556,556,556,556,556,556,
+  333,333,584,584,584,611,975,
+  722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+  333,278,333,584,556,333,
+  556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+  389,280,389,584
+];
+function textWidth(str, size, bold){
+  const t = bold ? W_BOLD : W_REG;
+  let w=0;
+  for (let i=0;i<str.length;i++){
+    const c=str.charCodeAt(i);
+    if (c===96) continue;
+    if (c===0xE000){ w += t[0]*0.55; continue; }
+    w += (c>=32 && c<=126) ? t[c-32] : 556;
+  }
+  return w * size / 1000;
+}
+
+/* ============================================================
+   Run parsing + emission
+   ============================================================ */
+function parseRuns(text){
+  const runs=[]; let i=0;
+  while(i<text.length){
+    const tick = text.indexOf('`', i);
+    const frac = text.indexOf('\\frac{', i);
+    const sqrt = text.indexOf('\\sqrt{', i);
+    const dollar = text.indexOf('$', i);
+
+    let next = -1, kind = null;
+    if (dollar !== -1 && (next===-1 || dollar<next)) { next=dollar; kind='math'; }
+    if (tick !== -1 && (next===-1 || tick<next)) { next=tick; kind='tick'; }
+    if (frac !== -1 && (next===-1 || frac<next)) { next=frac; kind='frac'; }
+    if (sqrt !== -1 && (next===-1 || sqrt<next)) { next=sqrt; kind='sqrt'; }
+
+    if (next === -1){ if (i<text.length) runs.push({kind:'text',text:text.slice(i),italic:false}); break; }
+    if (next > i) runs.push({kind:'text', text:text.slice(i,next), italic:false});
+
+    if (kind==='math'){
+      const close = text.indexOf('$', next+1);
+      if (close !== -1) {
+        let inner = text.slice(next+1, close);
+        inner = inner.replace(/\u2212/g, '-');
+        runs.push({kind:'math', text: '$'+inner+'$', inner: inner});
+        i = close+1;
+      } else {
+        runs.push({kind:'text', text: text.slice(next), italic:false});
+        break;
+      }
+    } else if (kind==='tick'){
+      const close = text.indexOf('`', next+1);
+      if (close===-1){ runs.push({kind:'text',text:text.slice(next),italic:false}); break; }
+      runs.push({kind:'text', text:text.slice(next+1,close), italic:true});
+      i = close+1;
+    } else if (kind==='sqrt'){
+      const open = text.indexOf('{', next);
+      let close = open + 1, depth = 1;
+      while (close < text.length && depth > 0) {
+          if (text[close] === '{') depth++;
+          else if (text[close] === '}') depth--;
+          close++;
+      }
+      runs.push({kind:'sqrt', inner: text.slice(open+1, close-1)});
+      i = close;
+    } else {
+      const o1=text.indexOf('{',next); const c1=o1===-1?-1:text.indexOf('}',o1);
+      const o2=c1===-1?-1:text.indexOf('{',c1); const c2=o2===-1?-1:text.indexOf('}',o2);
+      if (o1===-1||c1===-1||o2===-1||c2===-1){
+        runs.push({kind:'text',text:text.slice(next),italic:false}); break;
+      }
+      runs.push({kind:'frac', num:text.slice(o1+1,c1), den:text.slice(o2+1,c2)});
+      i = c2+1;
+    }
+  }
+  const merged=[];
+  for (const r of runs){
+    const last = merged[merged.length-1];
+    if (r.kind==='text' && last && last.kind==='text' && last.italic===r.italic){
+      last.text += r.text;
+    } else merged.push(r);
+  }
+  return merged.filter(r => r.kind!=='text' || r.text.length>0);
+}
+
+function textToTokens(text){
+  const runs = parseRuns(text);
+  const tokens=[]; let pendingSpace=false;
+  for (const r of runs){
+    if (r.kind==='math'){ tokens.push({kind:'math', text:r.text, inner:r.inner, space:pendingSpace}); pendingSpace=false; continue; }
+    if (r.kind==='frac'){ tokens.push({kind:'frac', num:r.num, den:r.den, space:pendingSpace}); pendingSpace=false; continue; }
+    if (r.kind==='sqrt'){ tokens.push({kind:'sqrt', inner:r.inner, space:pendingSpace}); pendingSpace=false; continue; }
+    const parts = r.text.split(/(\s+)/);
+    for (const p of parts){
+      if (p==='') continue;
+      if (/^\s+$/.test(p)){ pendingSpace=true; continue; }
+      tokens.push({kind:'word', word:p, italic:r.italic, space:pendingSpace});
+      pendingSpace=false;
+    }
+  }
+  return tokens;
+}
+
+function approxMathWidth(inner, size, bold){
+  let approx = inner
+    .replace(/\\[a-zA-Z]+/g, 'xxxx')
+    .replace(/[\{\}]/g, '')
+    .replace(/\s+/g, '');
+  let baseW = textWidth(approx, size, bold);
+  let supCount = (inner.match(/\^|_/g) || []).length;
+  let opCount = (inner.match(/[+\-=<>]/g) || []).length;
+  return Math.max(25, baseW * 1.3 + supCount * size * 0.3 + opCount * size * 0.3 + 20);
+}
+
+function tokenWidth(tok, size, bold){
+  if (tok.kind==='math') return approxMathWidth(tok.inner, size, bold);
+  if (tok.kind==='frac'){
+    const sub=size*0.7;
+    const nw=textWidth(tok.num,sub,bold);
+    const dw=textWidth(tok.den,sub,bold);
+    return Math.max(nw,dw)+0.20*size;
+  }
+  if (tok.kind==='sqrt') return textWidth(tok.inner, size, bold) + 0.4*size;
+  return textWidth(tok.word,size,bold);
+}
+
+function wrapTokens(tokens, size, bold, maxW){
+  const lines=[]; let cur=[]; let curW=0;
+  for (const tok of tokens){
+    const spaceW = (tok.space && cur.length) ? textWidth(' ',size,bold) : 0;
+    const w = spaceW + tokenWidth(tok,size,bold);
+    if (cur.length && curW + w > maxW){
+      lines.push(cur);
+      cur = [{ kind:tok.kind, num:tok.num, den:tok.den, inner:tok.inner,
+               text:tok.text, word:tok.word, italic:tok.italic, space:false }];
+      curW = tokenWidth(tok,size,bold);
+    } else { cur.push(tok); curW += w; }
+  }
+  if (cur.length) lines.push(cur);
+  return lines;
+}
+
+function lineToRuns(lineTokens){
+  const runs=[];
+  for (let i=0;i<lineTokens.length;i++){
+    const tok = lineTokens[i];
+    const prefix = (i===0) ? '' : (tok.space ? ' ' : '');
+    if (tok.kind==='math') runs.push({kind:'math', text:tok.text, inner:tok.inner, prefix});
+    else if (tok.kind==='frac') runs.push({kind:'frac', num:tok.num, den:tok.den, prefix});
+    else if (tok.kind==='sqrt') runs.push({kind:'sqrt', inner:tok.inner, prefix});
+    else {
+      const last = runs[runs.length-1];
+      if (last && last.kind==='text' && last.italic===tok.italic) last.text += prefix + tok.word;
+      else runs.push({kind:'text', text:prefix + tok.word, italic:tok.italic});
+    }
+  }
+  return runs;
+}
+
+function emitRuns(runs, x0, y, size, items, variant){
+  let textType, barType;
+  if (variant==='answer'){ textType='answer'; barType='answer-line'; }
+  else { textType='run'; barType='line'; }
+  let rx = x0;
+  for (let i = 0; i < runs.length; i++){
+    const run = runs[i];
+    let prefix = '';
+    if (i > 0 && run.prefix) {
+      prefix = ' ';
+      rx += textWidth(' ', size, false);
+    }
+    
+    if (run.kind==='math'){
+      items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix + run.text });
+      rx += approxMathWidth(run.inner, size, false);
+    } else if (run.kind==='frac'){
+      if (prefix) items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix });
+      const sub = size*0.7;
+      const nw = textWidth(run.num, sub, false);
+      const dw = textWidth(run.den, sub, false);
+      const innerW = Math.max(nw, dw);
+      const totalW = innerW + 0.20*size;
+      const barW = innerW + 0.08*size;
+      items.push({ t: textType, x: rx + (totalW-nw)/2, y: y - 0.32*size,
+        size: sub, bold:false, italic:false, s: run.num });
+      items.push({ t: barType,
+        x1: rx + (totalW-barW)/2, y1: y - 0.12*size,
+        x2: rx + (totalW+barW)/2, y2: y - 0.12*size, w: 0.5 });
+      items.push({ t: textType, x: rx + (totalW-dw)/2, y: y + 0.44*size,
+        size: sub, bold:false, italic:false, s: run.den });
+      rx += totalW;
+    } else if (run.kind==='sqrt'){
+      if (prefix) items.push({ t: textType, x: rx, y, size, bold:false, italic:false, s: prefix });
+      const innerW = textWidth(run.inner, size, false);
+      const totalW = innerW + size * 0.4;
+      items.push({ t: barType, x1: rx, y1: y, x2: rx + size*0.15, y2: y - size*0.5, w: 0.7 });
+      items.push({ t: barType, x1: rx + size*0.15, y1: y - size*0.5, x2: rx + size*0.3, y2: y + size*0.1, w: 0.7 });
+      items.push({ t: barType, x1: rx + size*0.3, y1: y + size*0.1, x2: rx + totalW, y2: y + size*0.1, w: 0.7 });
+      items.push({ t: textType, x: rx + size*0.35, y: y, size: size, bold: false, italic: false, s: run.inner });
+      rx += totalW;
+    } else {
+      items.push({ t: textType, x: rx, y, size, bold:false, italic:run.italic, s: prefix + run.text });
+      rx += textWidth(run.text, size, false);
+    }
+  }
+  return rx;
+}
+
+/* ============================================================
+   LAYOUT — question layout
+   ============================================================ */
+const PW = 595.276, PH = 841.890, MG = 42.52, FIXED_FS = 11;
+const HEADER_H = 19*0.78 + 19*0.32 + 6 + 17 + 10.5*0.78 + 26;
+const CONT_HEADER_H = 9*1.4 + 8 + 14;
+const QUESTION_GAP = 14;
+
+function columnRuleX(){ return MG + (PW - 2*MG) * 0.60; }
+function promptWidth(fs){ return columnRuleX() - (MG + fs*1.6) - 10; }
+
+function drawQuestionBlocks(blocks, x, y, fs, maxW, items, baselines){
+  const lineH = fs*1.42;
+  let cursor = y;
+  for (const block of blocks){
+    if (baselines) baselines.push(cursor);
+    if (block.type === 'text'){
+      const lines = wrapTokens(textToTokens(block.text), fs, false, maxW);
+      for (let j=0;j<lines.length;j++)
+        emitRuns(lineToRuns(lines[j]), x, cursor + j*lineH, fs, items, 'normal');
+      cursor += lines.length * lineH;
+        } else if (block.type === 'plot'){
+      cursor += drawPlotBlock(block, x, cursor, fs, maxW, items) + fs * 3.0;
+    }
+  }
+  return cursor;
+}
+
+function drawQuestion(q, index, fs, qTop, items, revealState){
+  const lineH = fs*1.42;
+  const numColW = fs*1.6;
+  const textX = MG + numColW;
+  const ruleX = columnRuleX();
+  const maxW = ruleX - textX - 10; 
+
+  let contentY = qTop + fs*0.78;
+
+  if (q.difficulty >= 5) {
+    const badgeText = 'CHALLENGING';
+    const badgeFs = fs * 0.55; 
+    const badgeW = textWidth(badgeText, badgeFs, true) + 8;
+    const boxH = fs * 1.1;
+    const badgeX = ruleX - badgeW - 2; 
+    const badgeY = qTop - 6; 
+
+    items.push({t:'line', x1:badgeX, y1:badgeY, x2:badgeX+badgeW, y2:badgeY, w:0.8});
+    items.push({t:'line', x1:badgeX, y1:badgeY+boxH, x2:badgeX+badgeW, y2:badgeY+boxH, w:0.8});
+    items.push({t:'line', x1:badgeX, y1:badgeY, x2:badgeX, y2:badgeY+boxH, w:0.8});
+    items.push({t:'line', x1:badgeX+badgeW, y1:badgeY, x2:badgeX+badgeW, y2:badgeY+boxH, w:0.8});
+    items.push({t:'text', x: badgeX + 4, y: badgeY + boxH*0.72, size: badgeFs, bold: true, s: badgeText});
+
+    contentY += fs * 1.1 + 4; 
+  }
+
+  items.push({t:'text', x:MG, y:contentY, size:fs, bold:true, s:(index+1)+'.'});
+  drawQuestionBlocks(q.blocks, textX, contentY, fs, maxW, items, null);
+
+  const qH = measureQuestion(q, fs);
+  items.push({t:'line', x1:ruleX, y1:qTop+2, x2:ruleX, y2:qTop+qH-2, w:0.4, grey:true});
+
+  /* WS badge — small red marker for questions with a worked solution */
+  if (SOLUTION_TOPICS.includes(q.topicId)) {
+    items.push({
+      t: 'text',
+      x: MG,
+      y: qTop + qH - 3,
+      size: 5,
+      bold: true,
+      s: 'WS',
+      color: [200, 30, 30]
+    });
+  }
+
+  if (revealState && q.answers && q.answers.length) {
+      const rightX = ruleX + 8;
+      const rightW = PW - MG - rightX - 4;
+      const ansStr = q.answers.map(a => a.text).join('   ');
+      const lines = wrapTokens(textToTokens(ansStr), fs, false, rightW);
+      for (let j=0; j<lines.length; j++) {
+          emitRuns(lineToRuns(lines[j]), rightX, contentY + j*lineH, fs, items, 'answer');
+      }
+  }
+  return qTop + qH;
+}
+function measureQuestion(q, fs){
+  const maxW = promptWidth(fs);
+  const lineH = fs*1.42;
+  let h = 0;
+  if (q.difficulty >= 5) {
+    h += fs * 1.1 + 8;
+  }
+  for (const b of q.blocks){
+    if (b.type === 'text'){
+      const lines = wrapTokens(textToTokens(b.text), fs, false, maxW);
+      h += lines.length * lineH;
+        } else if (b.type === 'plot'){
+      h += measurePlotBlockHeight(b, fs, maxW) + fs * 3.0;
+    }
+  }
+  return h;
+}
+
+function drawHeader(items, title){
+  const innerW = PW - 2*MG;
+  const ts = 19;
+  const tw = textWidth(title, ts, true);
+  let bl = MG + ts*0.78;
+  items.push({t:'text', x: MG + Math.max(0, (innerW-tw)/2), y: bl, size: ts, bold: true, s: title});
+  let top = bl + ts*0.32 + 6;
+  items.push({t:'line', x1:MG, y1:top, x2:PW-MG, y2:top, w:1.1});
+  top += 17;
+  const ns = 10.5;
+  bl = top + ns*0.78;
+  items.push({t:'text', x:MG, y:bl, size:ns, bold:false, s:'Name:'});
+  const nlw = textWidth('Name:', ns, false);
+  items.push({t:'line', x1:MG+nlw+6, y1:bl+2.2, x2:MG+innerW*0.46, y2:bl+2.2, w:0.6});
+  items.push({t:'text', x:MG+innerW*0.60, y:bl, size:ns, bold:false, s:'Date:'});
+  const dlw = textWidth('Date:', ns, false);
+  items.push({t:'line', x1:MG+innerW*0.60+dlw+6, y1:bl+2.2, x2:PW-MG, y2:bl+2.2, w:0.6});
+}
+function drawContinuationHeader(items, title){
+  items.push({t:'text', x:MG, y:MG+9*0.78, size:9, bold:false, s:title+' (continued)'});
+  const ruleY = MG + 9*1.4 + 8;
+  items.push({t:'line', x1:MG, y1:ruleY, x2:PW-MG, y2:ruleY, w:0.4, grey:true});
+}
+
+function layoutSheet(opts){
+  const title = opts.title, questions = opts.questions, revealState = opts.revealState;
+  const fs = FIXED_FS;
+  const pages = []; let items = []; let y = MG;
+  drawHeader(items, title);
+  y = MG + HEADER_H;
+  let onPage = 0;
+  for (let i = 0; i < questions.length; i++){
+    const q = questions[i];
+    const qH = measureQuestion(q, fs);
+    if (onPage > 0 && y + qH > PH - MG){
+      pages.push(items); items = []; y = MG + CONT_HEADER_H;
+      drawContinuationHeader(items, title); onPage = 0;
+    }
+    if (onPage > 0){
+      items.push({t:'line', x1:MG, y1:y-7, x2:PW-MG, y2:y-7, w:0.4, grey:true});
+    }
+    drawQuestion(q, i, fs, y, items, revealState);
+    y += qH + QUESTION_GAP;
+    onPage++;
+  }
+  if (items.length) pages.push(items);
+  if (pages.length > 1){
+    for (let i = 0; i < pages.length; i++){
+      const s = 'Page ' + (i+1) + ' of ' + pages.length;
+      const w = textWidth(s, 8, false);
+      pages[i].push({t:'text', x:PW-MG-w, y:PH-MG+12, size:8, bold:false, s:s});
+    }
+  }
+  return pages;
+}
+
+function layoutCompactAnswers(opts){
+  const title = opts.title, questions = opts.questions, seed = opts.seed;
+  const pages = [];
+  let items = [];
+  const innerW = PW - 2*MG;
+  const fs = 11;
+  const lineH = fs * 1.42;
+
+  /* ---------- header ---------- */
+  const ts = 17;
+  const heading = title + ' — Answers';
+  const tw = textWidth(heading, ts, true);
+  let bl = MG + ts*0.78;
+  items.push({t:'text', x:MG + Math.max(0,(innerW-tw)/2), y:bl, size:ts, bold:true, s:heading});
+  const ruleY = bl + ts*0.32 + 6;
+  items.push({t:'line', x1:MG, y1:ruleY, x2:PW-MG, y2:ruleY, w:1.1});
+  let y = ruleY + 22;
+
+  /* ---------- one entry per question ---------- */
+  for (let i = 0; i < questions.length; i++){
+    const q = questions[i];
+    const showSolution =
+      SOLUTION_TOPICS.includes(q.topicId) &&
+      Array.isArray(q.solution) && q.solution.length > 0;
+
+    /* measure ------------------------------------------------------ */
+    const ansJoined = (q.answers||[]).map(a => a.text).join('   ');
+    const ansLines  = wrapTokens(textToTokens(ansJoined), fs, false, innerW - 25);
+    let entryH = ansLines.length * lineH;
+
+    const solLineSets = [];
+    if (showSolution){
+      entryH += 4 + lineH;                          // gap + "Solution:" label
+      for (const b of q.solution){
+        if (b.type === 'text'){
+          const lines = wrapTokens(textToTokens(b.text), fs, false, innerW - 25);
+          solLineSets.push(lines);
+          entryH += lines.length * lineH;
+        }
+      }
+    }
+    entryH += 12;                                   // gap after the entry
+
+    /* page break --------------------------------------------------- */
+    if (y + entryH > PH - MG - 18 && y > MG + 80){
+      pages.push(items);
+      items = [];
+      items.push({t:'text', x:MG, y:MG+9*0.78, size:9, bold:false, s:heading + ' (continued)'});
+      const chY = MG + 9*1.4 + 8;
+      items.push({t:'line', x1:MG, y1:chY, x2:PW-MG, y2:chY, w:0.4, grey:true});
+      y = chY + 18;
+    }
+
+    /* number + answer --------------------------------------------- */
+    items.push({t:'text', x:MG, y:y + fs*0.78, size:fs, bold:true, s:(i+1) + '.'});
+    for (let j = 0; j < ansLines.length; j++){
+      emitRuns(lineToRuns(ansLines[j]), MG+20, y + fs*0.78 + j*lineH, fs, items, 'normal');
+    }
+    y += ansLines.length * lineH;
+
+    /* worked solution --------------------------------------------- */
+    if (showSolution){
+      y += 4;
+      items.push({t:'text', x:MG+20, y:y + fs*0.78, size:fs*0.9, bold:true, s:'Solution:'});
+      y += lineH;
+      for (const lines of solLineSets){
+        for (const line of lines){
+          emitRuns(lineToRuns(line), MG+20, y + fs*0.78, fs, items, 'normal');
+          y += lineH;
+        }
+      }
+    }
+    y += 12;
+  }
+
+  if (items.length) pages.push(items);
+
+  /* ---------- footers ---------- */
+  if (pages.length > 0){
+    for (let i = 0; i < pages.length; i++){
+      const s = 'Page ' + (i+1) + ' of ' + pages.length;
+      const w = textWidth(s, 8, false);
+      pages[i].push({t:'text', x:PW-MG-w, y:PH-MG+12, size:8, bold:false, s:s});
+    }
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    pages[pages.length-1].push({t:'text', x:PW-MG-noteW, y:PH-MG+22, size:noteSize, bold:false, s:note});
+  }
+
+  return pages;
+}
+/* ============================================================
+   PDF writer
+   ============================================================ */
+const WINANSI = {
+  0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84,
+  0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88,
+  0x2030:0x89, 0x0160:0x8A, 0x2039:0x8B, 0x0152:0x8C,
+  0x017D:0x8E, 0x2018:0x91, 0x2019:0x92, 0x201C:0x93,
+  0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97,
+  0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B,
+  0x0153:0x9C, 0x017E:0x9E, 0x0178:0x9F
+};
+function cleanLatexForPdf(text){
+  if (!text.includes('$')) return text;
+  return text.replace(/\$([^$]*)\$/g, function(match, inner) {
+    let s = inner;
+    let prev;
+
+    /* Strip \left / \right prefixes, keeping the delimiter */
+    s = s.replace(/\\left\s*\(/g, '(');
+    s = s.replace(/\\right\s*\)/g, ')');
+    s = s.replace(/\\left\s*\[/g, '[');
+    s = s.replace(/\\right\s*\]/g, ']');
+    s = s.replace(/\\left\s*\|/g, '|');
+    s = s.replace(/\\right\s*\|/g, '|');
+    s = s.replace(/\\left\s*\\\{/g, '{');
+    s = s.replace(/\\right\s*\\\}/g, '}');
+    s = s.replace(/\\left\./g, '');
+    s = s.replace(/\\right\./g, '');
+
+    /* \frac and \sqrt — repeat so nested braces resolve */
+    do {
+      prev = s;
+      s = s.replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, '($1)/($2)');
+    } while (s !== prev);
+    do {
+      prev = s;
+      s = s.replace(/\\sqrt\{([^{}]*)\}/g, '√($1)');
+    } while (s !== prev);
+
+    /* Greek letters (WinAnsi has no Greek; spell them out) */
+    s = s.replace(/\\theta/g, 'theta');
+    s = s.replace(/\\alpha/g, 'alpha');
+    s = s.replace(/\\beta/g,  'beta');
+    s = s.replace(/\\pi/g,    'pi');
+    s = s.replace(/\\Delta/g, 'Delta');
+
+    /* Symbols */
+    s = s.replace(/\\pm/g, '±');
+    s = s.replace(/\\cdot/g, '·');
+    s = s.replace(/\\div/g, '÷');
+    s = s.replace(/\\times/g, '×');
+    s = s.replace(/\\le/g, '≤').replace(/\\ge/g, '≥');
+    s = s.replace(/\\ne/g, '≠');
+    s = s.replace(/\\Rightarrow/g, '=>');
+    s = s.replace(/\\rightarrow/g, '->');
+    s = s.replace(/\\circ/g, '°');
+    s = s.replace(/\\infty/g, '∞');
+
+    /* Functions — \log_2 BEFORE \log */
+    s = s.replace(/\\log_2/g, 'log_2');
+    s = s.replace(/\\log/g, 'log');
+    s = s.replace(/\\ln/g, 'ln');
+    s = s.replace(/\\cos/g, 'cos');
+    s = s.replace(/\\sin/g, 'sin');
+    s = s.replace(/\\tan/g, 'tan');
+
+    /* Powers */
+    s = s.replace(/\^2/g, '²');
+    s = s.replace(/\^3/g, '³');
+
+    /* \text{...} — repeat for nesting */
+    do {
+      prev = s;
+      s = s.replace(/\\text\{([^{}]*)\}/g, '$1');
+    } while (s !== prev);
+
+    s = s.replace(/\u2212/g, '-');
+    return s;
+  });
+}function pdfEsc(s){
+  s = cleanLatexForPdf(s);
+  let out='';
+  for (let i=0;i<s.length;i++){
+    const ch = s[i]; const code = ch.charCodeAt(0);
+    if (ch==='\\') out += '\\\\';
+    else if (ch==='(') out += '\\(';
+    else if (ch===')') out += '\\)';
+    else if (code >= 32 && code <= 126) out += ch;
+    else if (code >= 0xA0 && code <= 0xFF) out += '\\' + code.toString(8).padStart(3,'0');
+    else if (WINANSI[code] !== undefined) out += '\\' + WINANSI[code].toString(8).padStart(3,'0');
+    else out += '?';
+  }
+  return out;
+}
+function pdfStrokeColourOp(it){
+  if (it.color) {
+      return (it.color[0]/255).toFixed(3) + ' ' + (it.color[1]/255).toFixed(3) + ' ' + (it.color[2]/255).toFixed(3) + ' RG';
+  }
+  return (it.grey ? '0.58' : '0') + ' G';
+}
+function contentStream(items){
+  const ops=[];
+  for (const it of items){
+    if (it.t === 'text' || it.t === 'run'){
+      let font = 'F1';
+      if (it.bold && it.italic) font='F4';
+      else if (it.bold) font='F2';
+      else if (it.italic) font='F3';
+      if (it.color) {
+        const r = (it.color[0]/255).toFixed(3);
+        const g = (it.color[1]/255).toFixed(3);
+        const b = (it.color[2]/255).toFixed(3);
+        ops.push(r + ' ' + g + ' ' + b + ' rg');
+      } else {
+        ops.push('0 g');
+      }
+      ops.push('BT /' + font + ' ' + it.size.toFixed(2) + ' Tf ' +
+        it.x.toFixed(2) + ' ' + (PH-it.y).toFixed(2) + ' Td (' + pdfEsc(it.s) + ') Tj ET');
+    } else if (it.t === 'line'){
+      ops.push(pdfStrokeColourOp(it) + ' ' + it.w.toFixed(2) + ' w ' +
+        it.x1.toFixed(2) + ' ' + (PH-it.y1).toFixed(2) + ' m ' +
+        it.x2.toFixed(2) + ' ' + (PH-it.y2).toFixed(2) + ' l S');
+    } else if (it.t === 'polyline') {
+      if (!it.points || it.points.length < 2) continue;
+      ops.push('0 G ' + it.w.toFixed(2) + ' w');
+      const [x0, y0] = it.points[0];
+      ops.push(x0.toFixed(2) + ' ' + (PH - y0).toFixed(2) + ' m');
+      for (let i = 1; i < it.points.length; i++) {
+        const [px, py] = it.points[i];
+        ops.push(px.toFixed(2) + ' ' + (PH - py).toFixed(2) + ' l');
+      }
+      ops.push('S');
+    }
+  }
+  return ops.join('\n');
+}
+
+function assemblePDF(pagesItems){
+  const N = pagesItems.length;
+  const maxObj = 6 + 2*N;
+  const objects = []; const kidRefs = [];
+  for (let i = 0; i < N; i++) kidRefs.push((8 + 2*i) + ' 0 R');
+  objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2] = '<< /Type /Pages /Kids [' + kidRefs.join(' ') + '] /Count ' + N + ' >>';
+  objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
+  objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
+  for (let i = 0; i < N; i++){
+    const stream = contentStream(pagesItems[i]);
+    const streamObj = 7 + 2*i;
+    const pageObj = 8 + 2*i;
+    objects[streamObj] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+    objects[pageObj] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+      '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+      '/Contents ' + streamObj + ' 0 R >>';
+  }
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+  for (let i = 1; i <= maxObj; i++){ offsets[i] = out.length;
+    out += i + ' 0 obj\n' + objects[i] + '\nendobj\n'; }
+  const xrefPos = out.length;
+  out += 'xref\n0 ' + (maxObj+1) + '\n0000000000 65535 f \n';
+  for (let i = 1; i <= maxObj; i++)
+    out += String(offsets[i]).padStart(10,'0') + ' 00000 n \n';
+  out += 'trailer\n<< /Size ' + (maxObj+1) + ' /Root 1 0 R >>\nstartxref\n' + xrefPos + '\n%%EOF\n';
+  return out;
+}
+function downloadPDF(pagesItems, filename){
+  const pdfStr = assemblePDF(pagesItems);
+  const bytes = new Uint8Array(pdfStr.length);
+  for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+  const blob = new Blob([bytes], {type:'application/pdf'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* ============================================================
+   TOPIC BANK — coordinate geometry
+   ============================================================ */
+
+/* -------- S18: Implicit Differentiation -------- */
+
+const tImplicitProduct = {
+  id: 'implicit-product', strand: 'S18', difficulty: 3,
+  gen(){
+    const k = pick([2, 3]);
+    const a = pick([1, 2]);
+    const b = pick([4, 5, 6]);
+    
+    // Equation: y sin(kx) + a/x + y^2 = b
+    const eqStr = 'y \\sin ' + k + 'x + \\frac{' + a + '}{x} + y^2 = ' + b;
+    
+    // Derivatives
+    const d1 = '\\sin ' + k + 'x \\frac{dy}{dx} + ' + k + 'y \\cos ' + k + 'x';
+    const d2 = '-\\frac{' + a + '}{x^2}';
+    const d3 = '2y \\frac{dy}{dx}';
+    
+    // Numerator and Denominator for final answer
+    const numStr = a + ' - ' + k + 'x^2 y \\cos ' + k + 'x';
+    const denStr = 'x^2(\\sin ' + k + 'x + 2y)';
+    const finalAns = '\\frac{dy}{dx} = \\frac{' + numStr + '}{' + denStr + '}';
+
+    return Q('imp1|' + k + '|' + a + '|' + b,
+      [ T('Given that $' + eqStr + '$, find an expression for $\\frac{dy}{dx}$ in terms of $x$ and $y$.') ],
+      [{ text: '$' + finalAns + '$' }],
+      [ T('Differentiate each term with respect to $x$:'),
+        T('**Term 1 ($y \\sin ' + k + 'x$)**: Use the product rule $\\frac{d}{dx}(uv) = u\'v + uv\'$.'),
+        T('$\\frac{d}{dx}(y \\sin ' + k + 'x) = \\frac{dy}{dx} \\sin ' + k + 'x + y \\cdot ' + k + '\\cos ' + k + 'x = \\sin ' + k + 'x \\frac{dy}{dx} + ' + k + 'y \\cos ' + k + 'x$ **[M1]**'),
+        T('**Term 2 ($\\frac{' + a + '}{x}$)**: Rewrite as $' + mono(a, 'x^{-1}', true) + '$ and differentiate.'),
+        T('$\\frac{d}{dx}(' + mono(a, 'x^{-1}', true) + ') = ' + mono(-a, 'x^{-2}', true) + ' = -\\frac{' + a + '}{x^2}$ **[B1]**'),
+        T('**Term 3 ($y^2$)**: Use the chain rule.'),
+        T('$\\frac{d}{dx}(y^2) = 2y \\frac{dy}{dx}$ **[B1]**'),
+        T('**RHS ($' + b + '$)**: The derivative of a constant is 0.'),
+        T('Equating the sum of derivatives to 0:'),
+        T('$\\sin ' + k + 'x \\frac{dy}{dx} + ' + k + 'y \\cos ' + k + 'x - \\frac{' + a + '}{x^2} + 2y \\frac{dy}{dx} = 0$ **[A1]**'),
+        T('Collect the $\\frac{dy}{dx}$ terms on the left and move the others to the right:'),
+        T('$\\frac{dy}{dx}(\\sin ' + k + 'x + 2y) = \\frac{' + a + '}{x^2} - ' + k + 'y \\cos ' + k + 'x$ **[M1]**'),
+        T('Multiply the numerator and denominator by $x^2$ to simplify:'),
+        T('$' + finalAns + '$ **[A1]**') ]);
+  }
+};
+
+const tImplicitMixedRules = {
+  id: 'implicit-mixed-rules', strand: 'S18', difficulty: 3,
+  gen(){
+    const a = pick([1, 2]);
+    const k = pick([2, 3]);
+    
+    // Equation: e^{ay} + x ln y = cos(kx)
+    const eqStr = 'e^{' + (a === 1 ? '' : a) + 'y} + x \\ln y = \\cos ' + k + 'x';
+    
+    // Derivatives
+    const d1 = a === 1 ? 'e^y \\frac{dy}{dx}' : a + 'e^{' + a + 'y} \\frac{dy}{dx}';
+    const d2 = '\\ln y + \\frac{x}{y} \\frac{dy}{dx}';
+    const d3 = '-' + k + '\\sin ' + k + 'x';
+
+    return Q('imp2|' + a + '|' + k,
+      [ T('A curve has equation $' + eqStr + '$. Find $\\frac{dy}{dx}$ in terms of $x$ and $y$.') ],
+      [{ text: '$\\frac{dy}{dx} = \\frac{-' + k + 'y\\sin ' + k + 'x - y\\ln y}{' + (a === 1 ? 'y' : a + 'y') + 'e^{' + (a === 1 ? '' : a) + 'y} + x}$' }],
+      [ T('Differentiate each term implicitly with respect to $x$:'),
+        T('**Term 1 ($e^{' + (a === 1 ? '' : a) + 'y}$)**: Use the chain rule.'),
+        T('$\\frac{d}{dx}(e^{' + (a === 1 ? '' : a) + 'y}) = ' + d1 + '$ **[M1]**'),
+        T('**Term 2 ($x \\ln y$)**: Use the product rule.'),
+        T('$\\frac{d}{dx}(x \\ln y) = 1 \\cdot \\ln y + x \\cdot \\frac{1}{y} \\frac{dy}{dx} = ' + d2 + '$ **[M1]**'),
+        T('**RHS ($\\cos ' + k + 'x$)**: Differentiate using the chain rule.'),
+        T('$\\frac{d}{dx}(\\cos ' + k + 'x) = ' + d3 + '$ **[B1]**'),
+        T('Equating the derivatives:'),
+        T('$' + d1 + ' + ' + d2 + ' = ' + d3 + '$ **[A1]**'),
+        T('Collect the $\\frac{dy}{dx}$ terms on the left:'),
+        T('$\\frac{dy}{dx}\\left(' + (a === 1 ? 'e^y' : a + 'e^{' + a + 'y}') + ' + \\frac{x}{y}\\right) = -' + k + '\\sin ' + k + 'x - \\ln y$ **[M1]**'),
+        T('Multiply the numerator and denominator by $y$ to clear the fraction:'),
+        T('$\\frac{dy}{dx} = \\frac{-' + k + 'y\\sin ' + k + 'x - y\\ln y}{' + (a === 1 ? 'y' : a + 'y') + 'e^{' + (a === 1 ? '' : a) + 'y} + x}$ **[A1]**') ]);
+  }
+};
+
+const tImplicitTangent = {
+  id: 'implicit-tangent', strand: 'S18', difficulty: 3,
+  gen(){
+    let a, b, c, x0, y0, mDen;
+    do {
+      a = pick([2, 3, 4]); b = pick([1, 2]); c = pick([2, 3]);
+      x0 = pick([-2, -1, 1, 2]); y0 = pick([-2, -1, 1, 2]);
+      mDen = b*x0 + 2*c*y0;
+    } while (mDen === 0);              // tangent at P would be vertical: no gradient
+    const d = a*x0*x0 + b*x0*y0 + c*y0*y0;
+    const eqStr = polyTex([[a,'x^2'],[b,'xy'],[c,'y^2']]) + ' = ' + d;
+    const mNum = -(2*a*x0 + b*y0);
+    const m = fr(mNum, mDen);
+    const cInt = fr(y0*mDen - mNum*x0, mDen);          // c = y0 - m·x0
+    const tangentEq = 'y = ' + polyTex([[m,'x'],[cInt,'']]);
+    const shift = (v, name) => name + (v < 0 ? ' + ' + (-v) : ' - ' + v);
+
+    return Q('imp3|' + a + '|' + b + '|' + c + '|' + x0 + '|' + y0,
+      [ T('The curve $C$ has equation $' + eqStr + '$.'),
+        T('The point $P' + ptTex(x0, y0) + '$ lies on $C$.'),
+        T('Find an equation of the tangent to $C$ at $P$, giving your answer in the form $y = mx + c$.') ],
+      [{ text: '$' + tangentEq + '$' }],
+      [ T('Differentiate the equation implicitly with respect to $x$:'),
+        T('$\\frac{d}{dx}(' + mono(a,'x^2',true) + ') + \\frac{d}{dx}(' + mono(b,'xy',true) + ') + \\frac{d}{dx}(' + mono(c,'y^2',true) + ') = 0$ **[M1]**'),
+        T('$' + polyTex([[2*a,'x'],[b,'\\left(y + x' + DYDX + '\\right)'],[2*c,'y' + DYDX]]) + ' = 0$ **[A1]**'),
+        T('Substitute the coordinates of $P' + ptTex(x0, y0) + '$ to find the gradient at $P$:'),
+        T('$' + polyTex([[2*a*x0,''],[b,'\\left(' + y0 + mono(x0, DYDX, false) + '\\right)'],[2*c*y0, DYDX]]) + ' = 0$ **[M1]**'),
+        T('Expand and collect the $' + DYDX + '$ terms:  $' + mono(mDen, DYDX, true) + ' = ' + mNum + '$'),
+        T('$' + DYDX + ' = ' + fTex(m) + '$ **[A1]**'),
+        T('The equation of the tangent is $y - y_1 = m(x - x_1)$:'),
+        T('$' + shift(y0, 'y') + ' = ' + fTex(m) + '\\left(' + shift(x0, 'x') + '\\right)$ **[M1]**'),
+        T('Rearranging gives $' + tangentEq + '$. **[A1]**') ]);
+  }
+};
+
+/* ============================================================
+   S18 — Stationary points & tangent directions on conics
+   Ax^2 + Bxy + Cy^2 (+ Dx + Ey) = R
+   All pools are built once by deterministic enumeration, so a
+   seed always reproduces the same sheet.
+   ============================================================ */
+
+/* ---- exact rationals ---- */
+function fr(n, d){
+  if (d === undefined) d = 1;
+  if (d < 0){ n = -n; d = -d; }
+  const g = gcd(n, d) || 1;
+  return { n: n/g, d: d/g };
+}
+const fAdd = (a, b) => fr(a.n*b.d + b.n*a.d, a.d*b.d);
+const fMul = (a, b) => fr(a.n*b.n, a.d*b.d);
+const fDiv = (a, b) => fr(a.n*b.d, a.d*b.n);
+function fTex(a){
+  if (a.d === 1) return String(a.n);
+  return (a.n < 0 ? '-' : '') + '\\frac{' + Math.abs(a.n) + '}{' + a.d + '}';
+}
+/* One signed term: coefficient (int or fraction) times body. */
+function mono(a, body, first){
+  if (typeof a === 'number') a = fr(a);
+  if (a.n === 0) return '';
+  const neg = a.n < 0;
+  const absA = fr(Math.abs(a.n), a.d);
+  const c = (absA.n === 1 && absA.d === 1 && body) ? '' : fTex(absA);
+  if (first) return (neg ? '-' : '') + c + body;
+  return (neg ? ' - ' : ' + ') + c + body;
+}
+/* Signed sum of terms [[coef, body], ...]; zero terms are skipped. */
+function polyTex(terms){
+  let s = '';
+  for (const t of terms) s += mono(t[0], t[1], s === '');
+  return s === '' ? '0' : s;
+}
+function ptTex(x, y){ return '(' + x + ', ' + y + ')'; }
+function isqrt(n){ if (n < 0) return -1; const r = Math.round(Math.sqrt(n)); return r*r === n ? r : -1; }
+const DYDX = '\\frac{dy}{dx}';
+
+/* The curve as typeset: "... + K = 0" (form 'zero') or "... = R" (form 'eq'). */
+function conicTex(A, B, C, D, E, R, form){
+  const terms = [[A,'x^2'],[B,'xy'],[C,'y^2'],[D||0,'x'],[E||0,'y']];
+  if (form === 'zero') return polyTex(terms.concat([[-R, '']])) + ' = 0';
+  return polyTex(terms) + ' = ' + R;
+}
+function constTail(R, form){ return form === 'zero' ? mono(-R, '', false) + ' = 0' : ' = ' + R; }
+
+/* Implicit derivative of Ax^2+Bxy+Cy^2+Dx+Ey, typeset. */
+function conicDerivTex(A, B, C, D, E){
+  return polyTex([[2*A,'x'], [B,'\\left(x' + DYDX + ' + y\\right)'], [2*C,'y' + DYDX],
+                  [D||0,''], [E||0, DYDX]]) + ' = 0';
+}
+function differentiateSteps(A, B, C, D, E){
+  return [
+    T('Differentiate implicitly with respect to $x$. Product rule on the $xy$ term: $\\frac{d}{dx}(xy) = x' + DYDX + ' + y$ **[B1]**; chain rule on the $y^2$ term: $\\frac{d}{dx}(y^2) = 2y' + DYDX + '$ **[B1]**'),
+    T('$' + conicDerivTex(A, B, C, D, E) + '$ **[M1]**')
+  ];
+}
+
+/* Discriminant-style check that Ax^2+Bxy+Cy^2+Dx+Ey-R is a genuine conic. */
+function conicNonDegenerate(A, B, C, D, E, R){
+  // 4 × det [[A, B/2, D/2], [B/2, C, E/2], [D/2, E/2, -R]]
+  const det4 = 4*A*C*(-R) + B*E*D - A*E*E - C*D*D - (-R)*B*B;
+  return det4 !== 0 && (4*A*C - B*B) !== 0;
+}
+
+/* Solve the curve Ax^2+Bxy+Cy^2 = R together with the line px + qy = 0.
+   Returns { lines, pts, rel } — the working, both points, and the line as typeset. */
+function elimHom(A, B, C, R, form, p, q){
+  const L = [];
+  const elimY = (p % q === 0) || (q % p !== 0);       // y = mx  unless  x = my is cleaner
+  const m = elimY ? fr(-p, q) : fr(-q, p);
+  const u = elimY ? 'x' : 'y', w = elimY ? 'y' : 'x';
+  const rel = w + ' = ' + mono(m, u, true);
+  const sub = '\\left(' + mono(m, u, true) + '\\right)';
+  const subTerms = elimY
+    ? [[A,'x^2'], [B,'x' + sub], [C, sub + '^2']]
+    : [[A, sub + '^2'], [B, sub + 'y'], [C,'y^2']];
+  const cs = elimY ? [fr(A), fMul(fr(B), m), fMul(fr(C), fMul(m, m))]
+                   : [fMul(fr(A), fMul(m, m)), fMul(fr(B), m), fr(C)];
+  const s = fAdd(fAdd(cs[0], cs[1]), cs[2]);
+  const X = fDiv(fr(R), s);
+  const v = isqrt(X.d === 1 ? X.n : -1);
+  const other = fMul(m, fr(v));
+  L.push(T('Substitute $' + rel + '$ into the equation of the curve to eliminate $' + w + '$:'));
+  L.push(T('$' + polyTex(subTerms) + constTail(R, form) + '$ **[M1]**'));
+  L.push(T('$' + polyTex(cs.map(c => [c, u + '^2'])) + constTail(R, form) + '$'));
+  L.push(T('$' + mono(s, u + '^2', true) + ' = ' + R + ' \\Rightarrow ' + u + '^2 = ' + fTex(X) + '$ **[A1]**'));
+  L.push(T('So $' + u + ' = ' + v + '$ or $' + u + ' = ' + (-v) + '$. Using $' + rel + '$: when $' + u + ' = ' + v +
+           '$, $' + w + ' = ' + fTex(other) + '$; when $' + u + ' = ' + (-v) + '$, $' + w + ' = ' + fTex(fr(-other.n, other.d)) + '$.'));
+  let pts = elimY ? [[v, other.n], [-v, -other.n]] : [[other.n, v], [-other.n, -v]];
+  pts.sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+  return { lines: L, pts, rel, ok: v > 0 && other.d === 1 };
+}
+
+/* Integer points t·d on the line px + qy = 0, with d the primitive direction. */
+function primitiveDir(p, q){ const g = gcd(p, q) || 1; return [q/g, -p/g]; }
+function quadForm(A, B, C, x, y){ return A*x*x + B*x*y + C*y*y; }
+function bothPts(pts){ return '$' + ptTex(pts[0][0], pts[0][1]) + '$ and $' + ptTex(pts[1][0], pts[1][1]) + '$'; }
+
+/* ---------- pools (built lazily, deterministic) ---------- */
+const STAT_POOLS = {};
+function statPool(name, build){ if (!STAT_POOLS[name]) STAT_POOLS[name] = build(); return STAT_POOLS[name]; }
+
+/* A1 — exam form: hyperbola, constant on the left, "+ K = 0" */
+function poolExamHyperbola(){
+  const out = [];
+  for (const A of [1, 2, 3]) for (let B = -8; B <= 8; B++) for (const C of [-3, -2, -1, 1, 2, 3]){
+    if (B === 0 || 4*A*C - B*B >= 0) continue;
+    if ((2*A) % B !== 0 && B % (2*A) !== 0) continue;   // exam-style: integer elimination (e.g. x = -2y)
+    const d = primitiveDir(2*A, B);
+    for (let t = 1; t <= 4; t++){
+      const x = t*d[0], y = t*d[1];
+      if (Math.abs(x) > 12 || Math.abs(y) > 12) continue;
+      const R = quadForm(A, B, C, x, y);
+      if (R >= 0 || -R > 200) continue;
+      if (B*x + 2*C*y === 0) continue;
+      out.push({ A, B, C, R });
+    }
+  }
+  return out;
+}
+
+/* A2 — ellipse: greatest / least value of y (or of x) */
+function poolEllipseExtreme(){
+  const out = [];
+  for (const A of [1, 2, 3, 4]) for (let B = -6; B <= 6; B++) for (const C of [1, 2, 3, 4]){
+    if (B === 0 || 4*A*C - B*B <= 0) continue;
+    for (const mode of ['y', 'x']){
+      const p = mode === 'y' ? 2*A : B, q = mode === 'y' ? B : 2*C;
+      const d = primitiveDir(p, q);
+      for (let t = 1; t <= 3; t++){
+        const x = t*d[0], y = t*d[1];
+        if (Math.abs(x) > 10 || Math.abs(y) > 10) continue;
+        const R = quadForm(A, B, C, x, y);
+        if (R > 150) continue;
+        out.push({ A, B, C, R, mode, p, q });
+      }
+    }
+  }
+  return out;
+}
+
+/* A3 — a linear term breaks the ± symmetry */
+function poolLinearTerm(){
+  const out = [];
+  for (const A of [1, 2, 3]) for (const B of [-2, -1, 1, 2]) for (const C of [-2, -1, 1, 2, 3])
+  for (const [D, E] of [[-6,0],[-4,0],[-2,0],[2,0],[4,0],[6,0],[0,-6],[0,-4],[0,-3],[0,-2],[0,2],[0,3],[0,4],[0,6]]){
+    if (D % B !== 0) continue;
+    const m = -2*A/B, n = -D/B;
+    const s = A + B*m + C*m*m;
+    if (s === 0) continue;
+    const lin = 2*C*m*n + E*m;
+    if (lin % s !== 0) continue;
+    const sum = -lin/s;
+    for (let x1 = -6; x1 <= 6; x1++){
+      const x2 = sum - x1;
+      if (x2 <= x1 || Math.abs(x2) > 6) continue;
+      const y1 = m*x1 + n, y2 = m*x2 + n;
+      if (Math.abs(y1) > 12 || Math.abs(y2) > 12) continue;
+      if (x1 === -x2 && y1 === -y2) continue;
+      const R = C*n*n + E*n - s*x1*x2;
+      if (Math.abs(R) > 120) continue;
+      if (!conicNonDegenerate(A, B, C, D, E, R)) continue;
+      if (B*x1 + 2*C*y1 + E === 0 || B*x2 + 2*C*y2 + E === 0) continue;
+      out.push({ A, B, C, D, E, R, m, n, s, lin, x1, x2, y1, y2 });
+    }
+  }
+  return out;
+}
+
+/* B1 — unknown coefficient k found from one stationary point */
+function poolUnknownK(){
+  const out = [];
+  for (const A of [1, 2, 3]) for (const C of [1, 2, 3, 4])
+  for (let x0 = -6; x0 <= 6; x0++) for (let y0 = -6; y0 <= 6; y0++){
+    if (x0 === 0 || y0 === 0 || x0*y0 > 0) continue;
+    if ((-2*A*x0) % y0 !== 0) continue;
+    const k = -2*A*x0/y0;
+    if (k < 2 || k > 12 || k*k === 4*A*C) continue;
+    const K = A*x0*x0 - C*y0*y0;              // curve: Ax^2 + kxy + Cy^2 + K = 0
+    if (K === 0 || Math.abs(K) > 150) continue;
+    if (k*x0 + 2*C*y0 === 0) continue;
+    out.push({ A, C, k, x0, y0, R: -K });
+  }
+  return out;
+}
+
+/* B2 — for which c are there stationary points? (hyperbolas) */
+function poolSetOfC(){
+  return poolExamHyperbola().filter(o => Math.abs(o.R) <= 120);
+}
+
+/* C1 — tangents parallel to both axes on one ellipse */
+function poolBothAxes(){
+  const out = [];
+  for (const A of [1, 2, 3, 4, 5]) for (let B = -6; B <= 6; B++) for (const C of [1, 2, 3, 4, 5]){
+    if (B === 0 || 4*A*C - B*B <= 0) continue;
+    const d1 = primitiveDir(2*A, B), d2 = primitiveDir(B, 2*C);
+    const Q1 = quadForm(A, B, C, d1[0], d1[1]), Q2 = quadForm(A, B, C, d2[0], d2[1]);
+    for (let t = 1; t <= 4; t++) for (let u = 1; u <= 4; u++){
+      if (t*t*Q1 !== u*u*Q2) continue;
+      const R = t*t*Q1;
+      if (R > 200) continue;
+      const big = Math.max(Math.abs(t*d1[0]), Math.abs(t*d1[1]), Math.abs(u*d2[0]), Math.abs(u*d2[1]));
+      if (big > 10) continue;
+      out.push({ A, B, C, R });
+    }
+  }
+  return out;
+}
+
+/* C2 — tangent parallel to a given line */
+function poolParallelLine(){
+  const out = [];
+  for (const A of [1, 2, 3]) for (let B = -4; B <= 4; B++) for (const C of [-2, -1, 1, 2, 3])
+  for (const g of [-3, -2, -1, 1, 2, 3]){
+    if (B === 0 || 4*A*C - B*B === 0) continue;
+    const p = 2*A + g*B, q = B + 2*g*C;
+    if (p === 0 || q === 0) continue;
+    const d = primitiveDir(p, q);
+    const Qd = quadForm(A, B, C, d[0], d[1]);
+    if (Qd === 0) continue;
+    for (let t = 1; t <= 3; t++){
+      const x = t*d[0], y = t*d[1];
+      if (Math.abs(x) > 9 || Math.abs(y) > 9) continue;
+      const R = t*t*Qd;
+      if (Math.abs(R) > 150) continue;
+      if (B*x + 2*C*y === 0) continue;
+      out.push({ A, B, C, R, g, p, q });
+    }
+  }
+  return out;
+}
+
+/* ---------- ellipse diagram (closed polyline) ---------- */
+function ellipsePlotBlock(A, B, C, R){
+  const D = 4*A*C - B*B;
+  const xe = Math.sqrt(4*C*R/D), ye = Math.sqrt(4*A*R/D);
+  const upper = [], lower = [];
+  for (let i = 0; i <= 120; i++){
+    const x = -xe * Math.cos(Math.PI * i / 120);
+    const disc = Math.max(0, B*B*x*x - 4*C*(A*x*x - R));
+    const r = Math.sqrt(disc);
+    upper.push([x, (-B*x + r) / (2*C)]);
+    lower.push([x, (-B*x - r) / (2*C)]);
+  }
+  const loop = upper.concat(lower.reverse());
+  const xm = Math.ceil(xe * 1.35), ym = Math.ceil(ye * 1.35);
+  return { type: 'plot', polylines: [loop], xRange: [-xm, xm], yRange: [-ym, ym], maxH: 11, keepAspect: true };
+}
+
+/* ---------- generators ---------- */
+
+function genStatExam(){
+  const o = pick(statPool('examHyp', poolExamHyperbola));
+  const { A, B, C, R } = o;
+  const e = elimHom(A, B, C, R, 'zero', 2*A, B);
+  const ans = bothPts(e.pts);
+  return Q('st-exam|' + A + '|' + B + '|' + C + '|' + R,
+    [ T('Find the coordinates of the two stationary points on the curve with equation'),
+      T('$' + conicTex(A, B, C, 0, 0, R, 'zero') + '$.') ],
+    [{ text: ans }],
+    differentiateSteps(A, B, C).concat([
+      T('At a stationary point $' + DYDX + ' = 0$, so the $' + DYDX + '$ terms vanish, leaving'),
+      T('$' + polyTex([[2*A,'x'],[B,'y']]) + ' = 0$ **[A1]**')
+    ], e.lines, [
+      T('The stationary points are ' + ans + '. **[A1]**'),
+      T('(Check: the curve is unchanged when $(x, y) \\to (-x, -y)$, so the two points must be reflections of each other in $O$.)')
+    ]));
+}
+
+function genStatEllipseExtreme(){
+  const o = pick(statPool('ellExt', poolEllipseExtreme));
+  const { A, B, C, R, mode, p, q } = o;
+  const e = elimHom(A, B, C, R, 'eq', p, q);
+  const idx = mode === 'y' ? 1 : 0;
+  const hi = e.pts[0][idx] >= e.pts[1][idx] ? e.pts[0] : e.pts[1];
+  const lo = hi === e.pts[0] ? e.pts[1] : e.pts[0];
+  const v = mode;
+  const ans = 'Greatest $' + v + ' = ' + hi[idx] + '$ at $' + ptTex(hi[0], hi[1]) + '$; least $' + v + ' = ' + lo[idx] + '$ at $' + ptTex(lo[0], lo[1]) + '$';
+  const num = polyTex([[2*A,'x'],[B,'y']]), den = polyTex([[B,'x'],[2*C,'y']]);
+  const why = mode === 'y'
+    ? [ T('The greatest and least values of $y$ on a closed curve occur where the tangent is horizontal, i.e. where $' + DYDX + ' = 0$.'),
+        T('Setting $' + DYDX + ' = 0$ gives $' + num + ' = 0$ **[A1]**') ]
+    : [ T('Collect the $' + DYDX + '$ terms: $(' + den + ')' + DYDX + ' = -(' + num + ')$, so $' + DYDX + ' = -\\frac{' + num + '}{' + den + '}$.'),
+        T('The greatest and least values of $x$ occur where the tangent is vertical, i.e. where $' + DYDX + '$ is undefined: the denominator is zero.'),
+        T('$' + den + ' = 0$ **[A1]**'),
+        T('(Equivalently, differentiate with respect to $y$ and set $\\frac{dx}{dy} = 0$.)') ];
+  return Q('st-ext|' + A + '|' + B + '|' + C + '|' + R + '|' + mode,
+    [ ellipsePlotBlock(A, B, C, R),
+      T('The diagram shows the closed curve $C$ with equation $' + conicTex(A, B, C, 0, 0, R, 'eq') + '$.'),
+      T('Find the greatest and least values of $' + v + '$ on $C$, and the coordinates of the points where they occur.') ],
+    [{ text: ans }],
+    differentiateSteps(A, B, C).concat(why, e.lines, [
+      T('So the greatest value of $' + v + '$ is $' + hi[idx] + '$, at $' + ptTex(hi[0], hi[1]) + '$, and the least is $' + lo[idx] + '$, at $' + ptTex(lo[0], lo[1]) + '$. **[A1]**'),
+      T('(Because of the $xy$ term the curve is tilted, so these extreme points are not where $C$ crosses the ' + (v === 'y' ? '$y$' : '$x$') + '-axis.)')
+    ]));
+}
+
+function genStatLinearTerm(){
+  const o = pick(statPool('linTerm', poolLinearTerm));
+  const { A, B, C, D, E, R, m, n, s, lin, x1, x2, y1, y2 } = o;
+  const rel = 'y = ' + polyTex([[m,'x'],[n,'']]);
+  const sub = '\\left(' + polyTex([[m,'x'],[n,'']]) + '\\right)';
+  const c0 = C*n*n + E*n;
+  const sum = x1 + x2, prod = x1*x2;
+  const factor = (r) => r === 0 ? 'x' : '(x ' + (r > 0 ? '- ' + r : '+ ' + (-r)) + ')';
+  const ans = '$' + ptTex(x1, y1) + '$ and $' + ptTex(x2, y2) + '$';
+  const steps = differentiateSteps(A, B, C, D, E).concat([
+    T('At a stationary point $' + DYDX + ' = 0$, so every $' + DYDX + '$ term vanishes:'),
+    T('$' + polyTex([[2*A,'x'],[B,'y'],[D,'']]) + ' = 0 \\Rightarrow ' + rel + '$ **[A1]**'),
+    T('Substitute into the equation of the curve:'),
+    T('$' + polyTex([[A,'x^2'],[B,'x' + sub],[C, sub + '^2'],[D,'x'],[E, sub]]) + ' = ' + R + '$ **[M1]**'),
+    T('Expanding and collecting terms:  $' + polyTex([[s,'x^2'],[lin,'x'],[c0,'']]) + ' = ' + R + '$'),
+    T('$' + polyTex([[s,'x^2'],[lin,'x'],[c0 - R,'']]) + ' = 0$' + (s !== 1 ? '  $\\Rightarrow$  $' + polyTex([[1,'x^2'],[-sum,'x'],[prod,'']]) + ' = 0$' : '')),
+    T('$' + factor(x1) + factor(x2) + ' = 0 \\Rightarrow x = ' + x1 + '$ or $x = ' + x2 + '$ **[A1]**'),
+    T('Using $' + rel + '$: when $x = ' + x1 + '$, $y = ' + y1 + '$; when $x = ' + x2 + '$, $y = ' + y2 + '$.'),
+    T('The stationary points are ' + ans + '. **[A1]**'),
+    T('(The linear term means the curve is no longer symmetric about $O$, so the two points are not of the form $\\pm(a, b)$.)')
+  ]);
+  return Q('st-lin|' + [A,B,C,D,E,R].join('|'),
+    [ T('Find the coordinates of the stationary points on the curve with equation'),
+      T('$' + conicTex(A, B, C, D, E, R, 'eq') + '$.') ],
+    [{ text: ans }],
+    steps);
+}
+
+const tImplicitStationary = {
+  id: 'implicit-stationary', strand: 'S18', difficulty: 4,
+  gen(){
+    const v = pick([1, 1, 2, 3]);
+    if (v === 1) return genStatExam();
+    if (v === 2) return genStatEllipseExtreme();
+    return genStatLinearTerm();
+  }
+};
+
+/* ---------- unknown constants ---------- */
+
+function genStatUnknownK(){
+  const o = pick(statPool('unkK', poolUnknownK));
+  const { A, C, k, x0, y0, R } = o;
+  const form = R < 0 ? 'zero' : 'eq';
+  const curveK = polyTex([[A,'x^2'],[1,'kxy'],[C,'y^2']]) + constTail(R, form);
+  const Y = (R + A*x0*x0) / C;
+  const v = Math.abs(y0);
+  const ans = '(a) $k = ' + k + '$, $y = ' + y0 + '$   (b) $' + ptTex(-x0, -y0) + '$';
+  return Q('st-k|' + [A,C,k,x0,y0].join('|'),
+    [ T('A curve has equation'),
+      T('$' + curveK + '$,'),
+      T('where $k$ is a positive constant. The curve has a stationary point $P$ at which $x = ' + x0 + '$.'),
+      T('(a) Find $k$ and the $y$-coordinate of $P$.'),
+      T('(b) Find the coordinates of the other stationary point on the curve.') ],
+    [{ text: ans }],
+    [
+      T('(a) Differentiate implicitly with respect to $x$ (product rule on $kxy$, chain rule on $' + mono(C,'y^2',true) + '$):'),
+      T('$' + polyTex([[2*A,'x'],[1,'k\\left(x' + DYDX + ' + y\\right)'],[2*C,'y' + DYDX]]) + ' = 0$ **[B1 B1]**'),
+      T('At a stationary point $' + DYDX + ' = 0$:  $' + mono(2*A,'x',true) + ' + ky = 0$ **[M1 A1]**'),
+      T('Multiplying by $x$ gives $kxy = ' + mono(-2*A,'x^2',true) + '$. At $P$, $x = ' + x0 + '$, so $kxy = ' + (-2*A*x0*x0) + '$ — this removes $k$ from the curve equation. **[M1]**'),
+      T('$' + polyTex([[A*x0*x0,''],[-2*A*x0*x0,''],[C,'y^2']]) + constTail(R, form) + '$'),
+      T('$' + mono(C,'y^2',true) + ' = ' + (C*Y) + ' \\Rightarrow y^2 = ' + Y + ' \\Rightarrow y = \\pm ' + v + '$ **[A1]**'),
+      T('From $' + mono(2*A,'x',true) + ' + ky = 0$:  $k = -\\frac{' + 2*A + 'x}{y}$, so at $P$, $k = ' + (-2*A*x0 < 0 ? '-' : '') + '\\frac{' + Math.abs(2*A*x0) + '}{y}$.'),
+      T('For $k > 0$ we need $y = ' + y0 + '$, giving $k = ' + k + '$. (The other root, $y = ' + (-y0) + '$, gives $k = ' + (-k) + '$, which is rejected.) **[A1]**'),
+      T('(b) With $k = ' + k + '$, the stationary condition is $' + polyTex([[2*A,'x'],[k,'y']]) + ' = 0$, i.e. the stationary points lie on the line through $O$ and $P$.'),
+      T('The curve equation is unchanged when $(x, y) \\to (-x, -y)$, so the other stationary point is $' + ptTex(-x0, -y0) + '$. **[B1]**'),
+      T('(Check: $' + ptTex(-x0, -y0) + '$ satisfies $' + polyTex([[2*A,'x'],[k,'y']]) + ' = ' + (-2*A*x0 - k*y0) + '$.)')
+    ]);
+}
+
+function genStatSetOfC(){
+  const o = pick(statPool('setC', poolSetOfC));
+  const { A, B, C, R } = o;
+  const e = elimHom(A, B, C, R, 'eq', 2*A, B);
+  // Sign of the x^2 (or y^2) coefficient after substitution
+  const elimY = ((2*A) % B === 0) || (B % (2*A) !== 0);
+  const m = elimY ? fr(-2*A, B) : fr(-B, 2*A);
+  const s = elimY ? fAdd(fAdd(fr(A), fMul(fr(B), m)), fMul(fr(C), fMul(m, m)))
+                  : fAdd(fAdd(fMul(fr(A), fMul(m, m)), fMul(fr(B), m)), fr(C));
+  const u = elimY ? 'x' : 'y';
+  const cond = s.n > 0 ? 'c > 0' : 'c < 0';
+  const ans = '(a) $' + e.rel + '$   (b) $' + cond + '$   (c) ' + bothPts(e.pts);
+  const sub = '\\left(' + mono(m, u, true) + '\\right)';
+  const subTerms = elimY ? [[A,'x^2'],[B,'x' + sub],[C, sub + '^2']] : [[A, sub + '^2'],[B, sub + 'y'],[C,'y^2']];
+  return Q('st-c|' + [A,B,C,R].join('|'),
+    [ T('The curve $C$ has equation $' + polyTex([[A,'x^2'],[B,'xy'],[C,'y^2']]) + ' = c$, where $c$ is a non-zero constant.'),
+      T('(a) Show that at any stationary point on $C$, $' + e.rel + '$.'),
+      T('(b) Find the set of values of $c$ for which $C$ has stationary points.'),
+      T('(c) Given that $c = ' + R + '$, find the coordinates of the stationary points.') ],
+    [{ text: ans }],
+    [T('(a)')].concat(differentiateSteps(A, B, C), [
+      T('Setting $' + DYDX + ' = 0$:  $' + polyTex([[2*A,'x'],[B,'y']]) + ' = 0 \\Rightarrow ' + e.rel + '$, as required. **[A1]**'),
+      T('(b) Substitute into the curve:  $' + polyTex(subTerms) + ' = c$ **[M1]**'),
+      T('$' + mono(s, u + '^2', true) + ' = c \\Rightarrow ' + u + '^2 = ' + mono(fr(s.d, s.n), 'c', true) + '$ **[A1]**'),
+      T('A real solution needs $' + u + '^2 > 0$ (it cannot be $0$, since then $x = y = 0$, which is not on $C$ for $c \\neq 0$). So we need $' + cond + '$. **[A1]**'),
+      T('(For ' + (s.n > 0 ? '$c < 0$' : '$c > 0$') + ' the curve still exists — it is a hyperbola — but it has no stationary points.)'),
+      T('(c) With $c = ' + R + '$:')
+    ], e.lines.slice(1), [
+      T('The stationary points are ' + bothPts(e.pts) + '. **[A1]**')
+    ]));
+}
+
+const tImplicitStationaryUnknown = {
+  id: 'implicit-stationary-unknown', strand: 'S18', difficulty: 5,
+  gen(){ return pick([1, 2]) === 1 ? genStatUnknownK() : genStatSetOfC(); }
+};
+
+/* ---------- tangent directions ---------- */
+
+function genTangentBothAxes(){
+  const o = pick(statPool('bothAx', poolBothAxes));
+  const { A, B, C, R } = o;
+  const h = elimHom(A, B, C, R, 'eq', 2*A, B);
+  const vt = elimHom(A, B, C, R, 'eq', B, 2*C);
+  const num = polyTex([[2*A,'x'],[B,'y']]), den = polyTex([[B,'x'],[2*C,'y']]);
+  const ans = '(a) ' + bothPts(h.pts) + '   (b) ' + bothPts(vt.pts);
+  return Q('tan-ax|' + [A,B,C,R].join('|'),
+    [ ellipsePlotBlock(A, B, C, R),
+      T('The diagram shows the curve $C$ with equation $' + conicTex(A, B, C, 0, 0, R, 'eq') + '$.'),
+      T('(a) Find the coordinates of the points on $C$ at which the tangent is parallel to the $x$-axis.'),
+      T('(b) Find the coordinates of the points on $C$ at which the tangent is parallel to the $y$-axis.') ],
+    [{ text: ans }],
+    differentiateSteps(A, B, C).concat([
+      T('Collect the $' + DYDX + '$ terms:  $(' + den + ')' + DYDX + ' = -(' + num + ')$, so $' + DYDX + ' = -\\frac{' + num + '}{' + den + '}$ **[A1]**'),
+      T('(a) Tangent parallel to the $x$-axis: $' + DYDX + ' = 0$, so the numerator is zero:  $' + num + ' = 0$ **[M1]**')
+    ], h.lines, [
+      T('Points: ' + bothPts(h.pts) + '. **[A1]**'),
+      T('(b) Tangent parallel to the $y$-axis: $' + DYDX + '$ is undefined, so the denominator is zero:  $' + den + ' = 0$ **[M1]**')
+    ], vt.lines, [
+      T('Points: ' + bothPts(vt.pts) + '. **[A1]**'),
+      T('(These four points are where the curve touches its bounding box — compare them with the diagram.)')
+    ]));
+}
+
+function genTangentParallelLine(){
+  const o = pick(statPool('parLine', poolParallelLine));
+  const { A, B, C, R, g, p, q } = o;
+  const form = R < 0 ? 'zero' : 'eq';
+  const e = elimHom(A, B, C, R, form, p, q);
+  // Line a x + b y = c with gradient g = -a/b; pick a constant that is not one of the tangents
+  const bL = pick([1, 2]), aL = -g*bL;
+  const tangentConsts = e.pts.map(([x, y]) => bL*y + aL*x);       // a x + b y at the points
+  let cL = pick([3, 5, 7, -3, -5, -7]);
+  for (const alt of [3, 5, 7, -3, -5, -7, 11]) { if (!tangentConsts.includes(cL)) break; cL = alt; }
+  const lineTex = polyTex([[aL,'x'],[bL,'y']]) + ' = ' + cL;
+  const num = polyTex([[2*A,'x'],[B,'y']]), den = polyTex([[B,'x'],[2*C,'y']]);
+  const relTex = polyTex([[p,'x'],[q,'y']]) + ' = 0';
+  const ans = bothPts(e.pts);
+  return Q('tan-par|' + [A,B,C,R,g,bL].join('|'),
+    [ T('A curve has equation $' + conicTex(A, B, C, 0, 0, R, form) + '$.'),
+      T('Find the coordinates of the points on the curve at which the tangent is parallel to the line $' + lineTex + '$.') ],
+    [{ text: ans }],
+    [ T('The line $' + lineTex + '$ can be written $y = ' + polyTex([[g,'x'],[fr(cL, bL),'']]) + '$, so its gradient is $' + g + '$. **[B1]**') ]
+    .concat(differentiateSteps(A, B, C), [
+      T('So $' + DYDX + ' = -\\frac{' + num + '}{' + den + '}$.'),
+      T('Set $' + DYDX + ' = ' + g + '$:  $-(' + num + ') = ' + (g === 1 ? '' : g === -1 ? '-' : g) + '(' + den + ')$ **[M1]**'),
+      T('$' + relTex + '$ **[A1]**')
+    ], e.lines, [
+      T('The tangent is parallel to the line at ' + ans + '. **[A1]**'),
+      T('(Check: at each point, $' + den + ' \\neq 0$, so the gradient really is defined there.)')
+    ]));
+}
+
+const tImplicitTangentDirection = {
+  id: 'implicit-tangent-direction', strand: 'S18', difficulty: 4,
+  gen(){ return pick([1, 2]) === 1 ? genTangentBothAxes() : genTangentParallelLine(); }
+};
+
+/* -------- S18: Implicit Differentiation — find gradient at a point --------
+   Five structurally distinct variants:
+     V1  (x+y)^2 = xy^2,  x=1          — the classic exam form
+     V2  (x+y)^2 = x^2 y + c,  x=1      — two branches, find y first
+     V3  xy^2 + x^2 y = c,  y=1         — product rule on both terms, find x first
+     V4  sin(x+y) = ax - y,  x=0        — trig chain rule
+     V5  e^{kxy} = x^2 + y,  x=0        — exp + product rule
+-------------------------------------------------------------------------- */
+
+function genImplicitFindPointV1(){
+  return Q('imp5-v1',
+    [ T('A curve has equation $(x+y)^2 = xy^2$.'),
+      T('Find the gradient of the curve at the point where $x = 1$.') ],
+    [{ text: '$\\frac{dy}{dx} = -\\frac{3}{8}$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('LHS: by the chain rule on $(x+y)^2$,  $\\frac{d}{dx}(x+y)^2 = 2(x+y)\\left(1 + \\frac{dy}{dx}\\right)$ **[M1]**'),
+      T('The coefficient is $k = 2$ **[A1]**'),
+      T('RHS: by the product rule on $x \\cdot y^2$ (with the chain rule on $y^2$),  $\\frac{d}{dx}(xy^2) = y^2 + x \\cdot 2y\\frac{dy}{dx} = y^2 + 2xy\\frac{dy}{dx}$ **[B1 — the $2y\\frac{dy}{dx}$ term from differentiating $y^2$; M1 — the $2xy\\frac{dy}{dx}$ product-rule term]**'),
+      T('Equating the two sides:  $2(x+y)\\left(1 + \\frac{dy}{dx}\\right) = y^2 + 2xy\\frac{dy}{dx}$.'),
+      T('Step 2 — Find the $y$-coordinate when $x = 1$.'),
+      T('Substitute $x = 1$ into the curve equation:  $(1 + y)^2 = 1^2 \\cdot y^2 = y^2$. **[M1]**'),
+      T('$1 + 2y + y^2 = y^2 \\Rightarrow 1 + 2y = 0 \\Rightarrow y = -\\frac{1}{2}$.'),
+      T('So the point of interest is $\\left(1, -\\frac{1}{2}\\right)$.'),
+      T('Step 3 — Substitute $\\left(1, -\\frac{1}{2}\\right)$ into the differentiated equation.'),
+      T('$2\\left(1 - \\frac{1}{2}\\right)\\left(1 + \\frac{dy}{dx}\\right) = \\left(-\\frac{1}{2}\\right)^2 + 2(1)\\left(-\\frac{1}{2}\\right)\\frac{dy}{dx}$ **[M1]**'),
+      T('$2 \\cdot \\frac{1}{2}\\left(1 + \\frac{dy}{dx}\\right) = \\frac{1}{4} - \\frac{dy}{dx}$'),
+      T('$1 + \\frac{dy}{dx} = \\frac{1}{4} - \\frac{dy}{dx}$'),
+      T('Step 4 — Solve for $\\frac{dy}{dx}$.'),
+      T('$2\\frac{dy}{dx} = \\frac{1}{4} - 1 = -\\frac{3}{4}$'),
+      T('$\\frac{dy}{dx} = -\\frac{3}{8}$ **[A1]**'),
+      T(''),
+      T('(Decimal check: $\\frac{dy}{dx} = -0.375$, matching the mark scheme.)')
+    ]);
+}
+
+function genImplicitFindPointV2(){
+  const c = pick([1, 3, 7]);
+  // (1+y)^2 = y + c  =>  y^2 + y + (1-c) = 0
+  // Roots y1 + y2 = -1,  y1·y2 = 1-c
+  // Solution y' satisfies y' = -2/(1+2y).
+  const data = {
+    1: { y1: 0,  y2: -1, g1: '-2',              g2: '2'              },
+    3: { y1: 1,  y2: -2, g1: '-\\frac{2}{3}',   g2: '\\frac{2}{3}'   },
+    7: { y1: 2,  y2: -3, g1: '-\\frac{2}{5}',   g2: '\\frac{2}{5}'   }
+  }[c];
+  const { y1, y2, g1, g2 } = data;
+
+  const eqStr = '(x+y)^2 = x^2 y + ' + c;
+  const y1Str = nStr(y1);
+  const y2Str = nStr(y2);
+
+  return Q('imp5-v2|' + c,
+    [ T('A curve has equation $' + eqStr + '$.'),
+      T('Find the gradients of the curve at the points where $x = 1$.') ],
+    [{ text: 'At $y = ' + y1Str + '$: $\\frac{dy}{dx} = ' + g1 + '$;   at $y = ' + y2Str + '$: $\\frac{dy}{dx} = ' + g2 + '$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('LHS: by the chain rule on $(x+y)^2$,  $\\frac{d}{dx}(x+y)^2 = 2(x+y)\\left(1 + \\frac{dy}{dx}\\right)$ **[M1]**'),
+      T('RHS: by the product rule on $x^2 y$,  $\\frac{d}{dx}(x^2 y) = 2xy + x^2 \\frac{dy}{dx}$ **[B1 for $2xy$; M1 for $x^2\\frac{dy}{dx}$]**'),
+      T('Equating:  $2(x+y)\\left(1 + \\frac{dy}{dx}\\right) = 2xy + x^2\\frac{dy}{dx}$ **[A1 — the coefficient 2 is correct]**'),
+      T('Step 2 — Find the $y$-coordinates when $x = 1$.'),
+      T('Substitute $x = 1$ into the curve equation:  $(1 + y)^2 = 1^2 \\cdot y + ' + c + ' = y + ' + c + '$. **[M1]**'),
+      T('$1 + 2y + y^2 = y + ' + c + '$'),
+      T('$' + polyTex([[1,'y^2'],[1,'y'],[1 - c,'']]) + ' = 0$'),
+      T('Factoring or solving the quadratic gives $y = ' + y1Str + '$ or $y = ' + y2Str + '$.'),
+      T('Step 3 — Substitute $x = 1$ and each value of $y$ into the derivative, and solve for $\\frac{dy}{dx}$.'),
+      T('Branch $y = ' + y1Str + '$.  $2(1' + mono(y1, '', false) + ')\\left(1 + \\frac{dy}{dx}\\right) = 2(1)(' + y1Str + ') + 1^2 \\frac{dy}{dx}$ **[M1]**'),
+      T('$' + (2*(1+y1)) + '\\left(1 + \\frac{dy}{dx}\\right) = ' + (2*y1) + ' + \\frac{dy}{dx}$'),
+      T('Collect $\\frac{dy}{dx}$ terms:  $(1 + 2(' + y1Str + ')) \\frac{dy}{dx} = -2$'),
+      T('$\\frac{dy}{dx} = ' + g1 + '$'),
+      T('Branch $y = ' + y2Str + '$.  $2(1' + mono(y2, '', false) + ')\\left(1 + \\frac{dy}{dx}\\right) = 2(1)(' + y2Str + ') + 1^2 \\frac{dy}{dx}$ **[M1]**'),
+      T('Collect $\\frac{dy}{dx}$ terms:  $(1 + 2(' + y2Str + ')) \\frac{dy}{dx} = -2$'),
+      T('$\\frac{dy}{dx} = ' + g2 + '$ **[A1]**')
+    ]);
+}
+
+function genImplicitFindPointV3(){
+  const c = pick([6, 12]);
+  // x y^2 + x^2 y = c, at y=1: x^2 + x - c = 0
+  // c=6 : x = 2 or -3;  y'(at y=1) = -(1+2x) / (x(2+x))
+  // c=12: x = 3 or -4;  y'(at y=1) = -(1+2x) / (x(2+x))
+  const data = {
+    6:  { x1: 2,  x2: -3, g1: '-\\frac{5}{8}',  g2: '\\frac{5}{3}'  },
+    12: { x1: 3,  x2: -4, g1: '-\\frac{7}{15}', g2: '\\frac{7}{8}'  }
+  }[c];
+  const { x1, x2, g1, g2 } = data;
+
+  const eqStr = 'xy^2 + x^2 y = ' + c;
+  const x1Str = nStr(x1);
+  const x2Str = nStr(x2);
+
+  return Q('imp5-v3|' + c,
+    [ T('A curve has equation $' + eqStr + '$.'),
+      T('Find the gradients of the curve at the points where $y = 1$.') ],
+    [{ text: 'At $x = ' + x1Str + '$: $\\frac{dy}{dx} = ' + g1 + '$;   at $x = ' + x2Str + '$: $\\frac{dy}{dx} = ' + g2 + '$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('Product rule on $xy^2$:  $\\frac{d}{dx}(xy^2) = y^2 + x \\cdot 2y\\frac{dy}{dx}$ **[M1]**'),
+      T('Product rule on $x^2 y$:  $\\frac{d}{dx}(x^2 y) = 2xy + x^2\\frac{dy}{dx}$ **[M1]**'),
+      T('So the differentiated equation is  $y^2 + 2xy\\frac{dy}{dx} + 2xy + x^2\\frac{dy}{dx} = 0$ **[A1 — fully correct]**'),
+      T('Step 2 — Find the $x$-coordinates when $y = 1$.'),
+      T('Substitute $y = 1$ into the curve equation:  $x \\cdot 1^2 + x^2 \\cdot 1 = ' + c + '$. **[M1]**'),
+      T('$x^2 + x - ' + c + ' = 0$'),
+      T('Factorising gives $x = ' + x1Str + '$ or $x = ' + x2Str + '$.'),
+      T('Step 3 — Substitute each point into the derivative and solve for $\\frac{dy}{dx}$.'),
+      T('Branch $x = ' + x1Str + '$.  At $(' + x1Str + ', 1)$:  $1 + 2(' + x1Str + ')y\' + 2(' + x1Str + ') + (' + x1Str + ')^2 y\' = 0$ **[M1]**'),
+      T('$1 + ' + (2*x1) + ' + ' + (2*x1 + x1*x1) + ' \\frac{dy}{dx} = 0$'),
+      T('$\\frac{dy}{dx} = ' + g1 + '$'),
+      T('Branch $x = ' + x2Str + '$.  At $(' + x2Str + ', 1)$:  $1 + 2(' + x2Str + ')y\' + 2(' + x2Str + ') + (' + x2Str + ')^2 y\' = 0$ **[M1]**'),
+      T('$\\frac{dy}{dx} = ' + g2 + '$ **[A1]**')
+    ]);
+}
+
+function genImplicitFindPointV4(){
+  const a = pick([2, 3, 4]);
+  // sin(x+y) = a x - y, at x=0: sin(y) = -y, so y = 0 (unique).
+  // Diff: cos(x+y)(1+y') = a - y'. At (0,0): 1+y' = a - y' => y' = (a-1)/2.
+  const grad = (a - 1) / 2;
+  const gradStr = gradientStr(grad);
+  const eqStr = '\\sin(x+y) = ' + (a === 1 ? '' : a) + 'x - y';
+
+  return Q('imp5-v4|' + a,
+    [ T('A curve has equation $' + eqStr + '$.'),
+      T('Find the gradient of the curve at the point where $x = 0$.') ],
+    [{ text: '$\\frac{dy}{dx} = ' + gradStr + '$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('LHS: by the chain rule on $\\sin(x+y)$:  $\\frac{d}{dx}\\sin(x+y) = \\cos(x+y)\\left(1 + \\frac{dy}{dx}\\right)$ **[M1]**'),
+      T('RHS: $\\frac{d}{dx}(' + (a === 1 ? '' : a) + 'x - y) = ' + a + ' - \\frac{dy}{dx}$ **[B1]**'),
+      T('Equating:  $\\cos(x+y)\\left(1 + \\frac{dy}{dx}\\right) = ' + a + ' - \\frac{dy}{dx}$ **[A1]**'),
+      T('Step 2 — Find the $y$-coordinate when $x = 0$.'),
+      T('Substitute $x = 0$ into the curve equation:  $\\sin(y) = ' + (a === 1 ? '' : a) + '(0) - y = -y$. **[M1]**'),
+      T('Since $\\sin y = -y$ forces $\\sin y = y = 0$ (as $|\\sin y| \\leq |y|$ with equality only at $y = 0$),  $y = 0$.'),
+      T('So the point of interest is $(0, 0)$.'),
+      T('Step 3 — Substitute $(0, 0)$ into the differentiated equation.'),
+      T('$\\cos(0)\\left(1 + \\frac{dy}{dx}\\right) = ' + a + ' - \\frac{dy}{dx}$ **[M1]**'),
+      T('$1 + \\frac{dy}{dx} = ' + a + ' - \\frac{dy}{dx}$'),
+      T('Step 4 — Solve for $\\frac{dy}{dx}$.'),
+      T('$2\\frac{dy}{dx} = ' + a + ' - 1 \\Rightarrow \\frac{dy}{dx} = ' + gradStr + '$. **[A1]**')
+    ]);
+}
+
+function genImplicitFindPointV5(){
+  const k = pick([1, 2, 3]);
+  // e^{kxy} = x^2 + y, at x=0: y=1.
+  // Diff: e^{kxy} k (y + x y') = 2x + y'. At (0,1): k = y'.
+  const eqStr = 'e^{' + (k === 1 ? 'xy' : k + 'xy') + '} = x^2 + y';
+
+  return Q('imp5-v5|' + k,
+    [ T('A curve has equation $' + eqStr + '$.'),
+      T('Find the gradient of the curve at the point where $x = 0$.') ],
+    [{ text: '$\\frac{dy}{dx} = ' + k + '$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('LHS: by the chain rule on $e^{' + (k === 1 ? '' : k) + 'xy}$, using the product rule on $' + (k === 1 ? '' : k) + 'xy$:'),
+      T('$\\frac{d}{dx}e^{' + (k === 1 ? '' : k) + 'xy} = e^{' + (k === 1 ? '' : k) + 'xy} \\cdot ' + k + '\\left(y + x\\frac{dy}{dx}\\right)$ **[M1 — chain rule; M1 — product rule on $' + (k === 1 ? '' : k) + 'xy$]**'),
+      T('RHS: $\\frac{d}{dx}(x^2 + y) = 2x + \\frac{dy}{dx}$ **[B1]**'),
+      T('Equating:  $e^{' + (k === 1 ? '' : k) + 'xy} \\cdot ' + k + '\\left(y + x\\frac{dy}{dx}\\right) = 2x + \\frac{dy}{dx}$ **[A1]**'),
+      T('Step 2 — Find the $y$-coordinate when $x = 0$.'),
+      T('Substitute $x = 0$ into the curve equation:  $e^{0} = 0 + y$, so $y = 1$. **[M1]**'),
+      T('Step 3 — Substitute $(0, 1)$ into the differentiated equation.'),
+      T('$e^{0} \\cdot ' + k + '\\left(1 + 0\\right) = 0 + \\frac{dy}{dx}$ **[M1]**'),
+      T('$' + k + ' = \\frac{dy}{dx}$ **[A1]**')
+    ]);
+}
+
+const tImplicitFindPoint = {
+  id: 'implicit-find-point', strand: 'S18', difficulty: 3,
+  gen(){
+    // Weighted pick: variant 1 (the exam-style) appears a little more often.
+    const v = pick([1, 1, 2, 3, 4, 5]);
+    if (v === 1) return genImplicitFindPointV1();
+    if (v === 2) return genImplicitFindPointV2();
+    if (v === 3) return genImplicitFindPointV3();
+    if (v === 4) return genImplicitFindPointV4();
+    return genImplicitFindPointV5();
+  }
+};
+
+/* ============================================================
+   S18 — genuinely challenging extensions (difficulty 5)
+   ============================================================ */
+
+/* -------- Second derivative -------- */
+
+function genSecondDerivativeCircle(){
+  const r = pick([2, 3, 4, 5]);
+  const r2 = r * r;
+  return Q('sd-v1|' + r,
+    [ T('A curve has equation $x^2 + y^2 = ' + r2 + '$.'),
+      T('It is given that $\\frac{dy}{dx} = -\\frac{x}{y}$.'),
+      T('Find $\\frac{d^2y}{dx^2}$ in terms of $y$ only.') ],
+    [{ text: '$\\frac{d^2y}{dx^2} = -\\frac{' + r2 + '}{y^3}$' }],
+    [
+      T('Step 1 — Differentiate $\\frac{dy}{dx} = -\\frac{x}{y}$ again with respect to $x$, using the quotient rule on $-\\frac{x}{y}$.'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{\\frac{d}{dx}(x) \\cdot y - x \\cdot \\frac{d}{dx}(y)}{y^2} = -\\frac{y - x\\frac{dy}{dx}}{y^2}$ **[M1 — quotient rule]**'),
+      T('Step 2 — Substitute $\\frac{dy}{dx} = -\\frac{x}{y}$.'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{y - x\\left(-\\frac{x}{y}\\right)}{y^2} = -\\frac{y + \\frac{x^2}{y}}{y^2}$ **[M1 — substitution]**'),
+      T('Multiply numerator and denominator by $y$ to clear the fraction:'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{y^2 + x^2}{y^3}$ **[A1]**'),
+      T('Step 3 — Use the curve equation $x^2 + y^2 = ' + r2 + '$ to replace $x^2 + y^2$ with ' + r2 + ':'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{' + r2 + '}{y^3}$ **[A1]**')
+    ]);
+}
+
+function genSecondDerivativeHyperbola(){
+  const c = pick([1, 2, 3, 4, 6]);
+  return Q('sd-v2|' + c,
+    [ T('A curve has equation $xy = ' + c + '$.'),
+      T('(a) Given that $\\frac{dy}{dx} = -\\frac{y}{x}$, find $\\frac{d^2y}{dx^2}$ in terms of $x$ and $y$, and hence show that $x\\frac{d^2y}{dx^2} + 2\\frac{dy}{dx} = 0$.'),
+      T('(b) Hence write down $\\frac{d^2y}{dx^2}$ in terms of $x$ only.') ],
+    [{ text: '(a) $\\frac{d^2y}{dx^2} = \\frac{2y}{x^2}$   (b) $\\frac{d^2y}{dx^2} = \\frac{' + (2*c) + '}{x^3}$' }],
+    [
+      T('(a) Step 1 — Differentiate $\\frac{dy}{dx} = -\\frac{y}{x}$ again with respect to $x$, using the quotient rule.'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{\\frac{dy}{dx} \\cdot x - y \\cdot 1}{x^2} = -\\frac{x\\frac{dy}{dx} - y}{x^2}$ **[M1 — quotient rule]**'),
+      T('Step 2 — Substitute $\\frac{dy}{dx} = -\\frac{y}{x}$.'),
+      T('$\\frac{d^2y}{dx^2} = -\\frac{x\\left(-\\frac{y}{x}\\right) - y}{x^2} = -\\frac{-y - y}{x^2} = \\frac{2y}{x^2}$ **[M1 — substitution; A1]**'),
+      T('Step 3 — Verify the identity.'),
+      T('$x\\frac{d^2y}{dx^2} + 2\\frac{dy}{dx} = x \\cdot \\frac{2y}{x^2} + 2\\left(-\\frac{y}{x}\\right) = \\frac{2y}{x} - \\frac{2y}{x} = 0$ **[A1 — verified]**'),
+      T('(b) Step 1 — From $xy = ' + c + '$, write $y = \\frac{' + c + '}{x}$.'),
+      T('Step 2 — Substitute into the result from part (a).'),
+      T('$\\frac{d^2y}{dx^2} = \\frac{2\\left(\\frac{' + c + '}{x}\\right)}{x^2} = \\frac{' + (2*c) + '}{x^3}$ **[A1]**')
+    ]);
+}
+
+const tImplicitSecondDerivative = {
+  id: 'implicit-second-derivative', strand: 'S18', difficulty: 5,
+  gen(){
+    return pick([1, 1, 2]) === 1 ? genSecondDerivativeCircle() : genSecondDerivativeHyperbola();
+  }
+};
+
+/* -------- Stationary points AND their nature -------- */
+
+function genStationaryNatureV1(){
+  return Q('sn-v1',
+    [ T('A curve has equation $x^2 + xy + y^2 = 3$.'),
+      T('(a) Find the coordinates of the stationary points on the curve.'),
+      T('(b) Determine the nature of each stationary point, using the second derivative.') ],
+    [{ text: '(a) $(1, -2)$ and $(-1, 2)$.  (b) $(1, -2)$ is a minimum; $(-1, 2)$ is a maximum.' }],
+    [
+      T('(a) Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$2x + y + x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ **[M1]**'),
+      T('Collecting: $(x + 2y)\\frac{dy}{dx} = -(2x + y)$, so $\\frac{dy}{dx} = -\\frac{2x + y}{x + 2y}$ **[A1]**'),
+      T('Step 2 — At a stationary point, $\\frac{dy}{dx} = 0$, so $2x + y = 0$, i.e. $y = -2x$. **[M1]**'),
+      T('Step 3 — Substitute $y = -2x$ into the original curve equation.'),
+      T('$x^2 + x(-2x) + (-2x)^2 = 3 \\Rightarrow x^2 - 2x^2 + 4x^2 = 3 \\Rightarrow 3x^2 = 3 \\Rightarrow x = \\pm 1$ **[M1]**'),
+      T('When $x = 1$, $y = -2$; when $x = -1$, $y = 2$. So the stationary points are $(1, -2)$ and $(-1, 2)$. **[A1]**'),
+      T('(b) Step 1 — Differentiate $2x + y + x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ again implicitly with respect to $x$.'),
+      T('$2 + \\frac{dy}{dx} + \\frac{dy}{dx} + x\\frac{d^2y}{dx^2} + 2\\left(\\frac{dy}{dx}\\right)^2 + 2y\\frac{d^2y}{dx^2} = 0$ **[M1]**'),
+      T('Simplify: $2 + 2\\frac{dy}{dx} + 2\\left(\\frac{dy}{dx}\\right)^2 + (x + 2y)\\frac{d^2y}{dx^2} = 0$ **[A1]**'),
+      T('Step 2 — At any stationary point, $\\frac{dy}{dx} = 0$, so this reduces to $2 + (x + 2y)\\frac{d^2y}{dx^2} = 0$, giving $\\frac{d^2y}{dx^2} = -\\frac{2}{x + 2y}$ **[A1]**'),
+      T('Step 3 — Evaluate $\\frac{d^2y}{dx^2}$ at each stationary point.'),
+      T('At $(1, -2)$: $\\frac{d^2y}{dx^2} = -\\frac{2}{1 + 2(-2)} = -\\frac{2}{-3} = \\frac{2}{3} > 0$, so $(1, -2)$ is a **minimum**. **[M1; A1]**'),
+      T('At $(-1, 2)$: $\\frac{d^2y}{dx^2} = -\\frac{2}{-1 + 2(2)} = -\\frac{2}{3} < 0$, so $(-1, 2)$ is a **maximum**. **[A1]**')
+    ]);
+}
+
+function genStationaryNatureV2(){
+  return Q('sn-v2',
+    [ T('A curve has equation $x^2 - xy + y^2 = 3$.'),
+      T('(a) Find the coordinates of the stationary points on the curve.'),
+      T('(b) Determine the nature of each stationary point, using the second derivative.') ],
+    [{ text: '(a) $(1, 2)$ and $(-1, -2)$.  (b) $(1, 2)$ is a maximum; $(-1, -2)$ is a minimum.' }],
+    [
+      T('(a) Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$2x - y - x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ **[M1]**'),
+      T('Rearranging: $(x - 2y)\\frac{dy}{dx} = 2x - y$, so $\\frac{dy}{dx} = \\frac{2x - y}{x - 2y}$ **[A1]**'),
+      T('Step 2 — At a stationary point, $\\frac{dy}{dx} = 0$, so $2x - y = 0$, i.e. $y = 2x$. **[M1]**'),
+      T('Step 3 — Substitute $y = 2x$ into the original curve equation.'),
+      T('$x^2 - x(2x) + (2x)^2 = 3 \\Rightarrow x^2 - 2x^2 + 4x^2 = 3 \\Rightarrow 3x^2 = 3 \\Rightarrow x = \\pm 1$ **[M1]**'),
+      T('When $x = 1$, $y = 2$; when $x = -1$, $y = -2$. So the stationary points are $(1, 2)$ and $(-1, -2)$. **[A1]**'),
+      T('(b) Step 1 — Differentiate $2x - y - x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ again implicitly with respect to $x$.'),
+      T('$2 - \\frac{dy}{dx} - \\frac{dy}{dx} - x\\frac{d^2y}{dx^2} + 2\\left(\\frac{dy}{dx}\\right)^2 + 2y\\frac{d^2y}{dx^2} = 0$ **[M1]**'),
+      T('Simplify: $2 - 2\\frac{dy}{dx} + 2\\left(\\frac{dy}{dx}\\right)^2 + (-x + 2y)\\frac{d^2y}{dx^2} = 0$ **[A1]**'),
+      T('Step 2 — At any stationary point, $\\frac{dy}{dx} = 0$, so this reduces to $2 + (-x + 2y)\\frac{d^2y}{dx^2} = 0$, giving $\\frac{d^2y}{dx^2} = \\frac{2}{x - 2y}$ **[A1]**'),
+      T('Step 3 — Evaluate at each point.'),
+      T('At $(1, 2)$: $\\frac{d^2y}{dx^2} = \\frac{2}{1 - 4} = -\\frac{2}{3} < 0$, so $(1, 2)$ is a **maximum**. **[M1; A1]**'),
+      T('At $(-1, -2)$: $\\frac{d^2y}{dx^2} = \\frac{2}{-1 + 4} = \\frac{2}{3} > 0$, so $(-1, -2)$ is a **minimum**. **[A1]**')
+    ]);
+}
+
+function genStationaryNatureV3(){
+  return Q('sn-v3',
+    [ T('A curve has equation $x^2 + 2xy + 2y^2 = 1$.'),
+      T('(a) Find the coordinates of the stationary points on the curve.'),
+      T('(b) Determine the nature of each stationary point, using the second derivative.') ],
+    [{ text: '(a) $(1, -1)$ and $(-1, 1)$.  (b) $(1, -1)$ is a minimum; $(-1, 1)$ is a maximum.' }],
+    [
+      T('(a) Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$2x + 2y + 2x\\frac{dy}{dx} + 4y\\frac{dy}{dx} = 0$ **[M1]**'),
+      T('Collecting: $(2x + 4y)\\frac{dy}{dx} = -(2x + 2y)$, so $\\frac{dy}{dx} = -\\frac{x + y}{x + 2y}$ **[A1]**'),
+      T('Step 2 — At a stationary point, $\\frac{dy}{dx} = 0$, so $x + y = 0$, i.e. $y = -x$. **[M1]**'),
+      T('Step 3 — Substitute $y = -x$ into the original curve equation.'),
+      T('$x^2 + 2x(-x) + 2(-x)^2 = 1 \\Rightarrow x^2 - 2x^2 + 2x^2 = 1 \\Rightarrow x^2 = 1 \\Rightarrow x = \\pm 1$ **[M1]**'),
+      T('When $x = 1$, $y = -1$; when $x = -1$, $y = 1$. So the stationary points are $(1, -1)$ and $(-1, 1)$. **[A1]**'),
+      T('(b) Step 1 — Differentiate $2x + 2y + 2x\\frac{dy}{dx} + 4y\\frac{dy}{dx} = 0$ again implicitly with respect to $x$.'),
+      T('$2 + 2\\frac{dy}{dx} + 2\\frac{dy}{dx} + 2x\\frac{d^2y}{dx^2} + 4\\left(\\frac{dy}{dx}\\right)^2 + 4y\\frac{d^2y}{dx^2} = 0$ **[M1]**'),
+      T('Simplify: $2 + 4\\frac{dy}{dx} + 4\\left(\\frac{dy}{dx}\\right)^2 + (2x + 4y)\\frac{d^2y}{dx^2} = 0$ **[A1]**'),
+      T('Step 2 — At any stationary point, $\\frac{dy}{dx} = 0$, so this reduces to $2 + (2x + 4y)\\frac{d^2y}{dx^2} = 0$, giving $\\frac{d^2y}{dx^2} = -\\frac{1}{x + 2y}$ **[A1]**'),
+      T('Step 3 — Evaluate at each point.'),
+      T('At $(1, -1)$: $\\frac{d^2y}{dx^2} = -\\frac{1}{1 + 2(-1)} = 1 > 0$, so $(1, -1)$ is a **minimum**. **[M1; A1]**'),
+      T('At $(-1, 1)$: $\\frac{d^2y}{dx^2} = -\\frac{1}{-1 + 2(1)} = -1 < 0$, so $(-1, 1)$ is a **maximum**. **[A1]**')
+    ]);
+}
+
+/* -------- Stationary points AND their nature (variants) -------- */
+
+/* V4 — asymmetric coefficients, so stationary points aren't reflections in O */
+function genStationaryNatureV4(){
+  return Q('sn-v4',
+    [ T('A curve has equation $2x^2 + 2xy + y^2 = 2$.'),
+      T('(a) Find the coordinates of the stationary points on the curve.'),
+      T('(b) Determine the nature of each stationary point, using the second derivative.') ],
+    [{ text: '(a) $(1, -2)$ and $(-1, 2)$.  (b) $(1, -2)$ is a minimum; $(-1, 2)$ is a maximum.' }],
+    [
+      T('(a) Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$4x + 2y + 2x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ **[M1]**'),
+      T('Collecting: $(2x + 2y)\\frac{dy}{dx} = -(4x + 2y)$, so $\\frac{dy}{dx} = -\\frac{2x + y}{x + y}$ **[A1]**'),
+      T('Step 2 — At a stationary point, $\\frac{dy}{dx} = 0$, so $2x + y = 0$, i.e. $y = -2x$. **[M1]**'),
+      T('Step 3 — Substitute $y = -2x$ into the original curve equation.'),
+      T('$2x^2 + 2x(-2x) + (-2x)^2 = 2 \\Rightarrow 2x^2 - 4x^2 + 4x^2 = 2 \\Rightarrow 2x^2 = 2 \\Rightarrow x = \\pm 1$ **[M1]**'),
+      T('When $x = 1$, $y = -2$; when $x = -1$, $y = 2$. So the stationary points are $(1, -2)$ and $(-1, 2)$. **[A1]**'),
+      T('(b) Step 1 — Differentiate $4x + 2y + 2x\\frac{dy}{dx} + 2y\\frac{dy}{dx} = 0$ again implicitly with respect to $x$.'),
+      T('$4 + 2\\frac{dy}{dx} + 2\\frac{dy}{dx} + 2x\\frac{d^2y}{dx^2} + 2\\left(\\frac{dy}{dx}\\right)^2 + 2y\\frac{d^2y}{dx^2} = 0$ **[M1]**'),
+      T('Simplify: $4 + 4\\frac{dy}{dx} + 2\\left(\\frac{dy}{dx}\\right)^2 + (2x + 2y)\\frac{d^2y}{dx^2} = 0$ **[A1]**'),
+      T('Step 2 — At any stationary point, $\\frac{dy}{dx} = 0$, so this reduces to $4 + (2x + 2y)\\frac{d^2y}{dx^2} = 0$, giving $\\frac{d^2y}{dx^2} = -\\frac{2}{x + y}$ **[A1]**'),
+      T('Step 3 — Evaluate $\\frac{d^2y}{dx^2}$ at each stationary point.'),
+      T('At $(1, -2)$: $\\frac{d^2y}{dx^2} = -\\frac{2}{-1} = 2 > 0$, so $(1, -2)$ is a **minimum**. **[M1; A1]**'),
+      T('At $(-1, 2)$: $\\frac{d^2y}{dx^2} = -\\frac{2}{1} = -2 < 0$, so $(-1, 2)$ is a **maximum**. **[A1]**')
+    ]);
+}
+
+/* V5 — a linear term breaks the symmetry about O */
+function genStationaryNatureV5(){
+  return Q('sn-v5',
+    [ T('A curve has equation $x^2 + 2xy + 2y^2 - 2x = 2$.'),
+      T('(a) Find the coordinates of the stationary points on the curve.'),
+      T('(b) Determine the nature of each stationary point, using the second derivative.') ],
+    [{ text: '(a) $(0, 1)$ and $(4, -3)$.  (b) $(0, 1)$ is a maximum; $(4, -3)$ is a minimum.' }],
+    [
+      T('(a) Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$2x + 2y + 2x\\frac{dy}{dx} + 4y\\frac{dy}{dx} - 2 = 0$ **[M1]**'),
+      T('Collecting: $(2x + 4y)\\frac{dy}{dx} = 2 - 2x - 2y$, so $\\frac{dy}{dx} = \\frac{1 - x - y}{x + 2y}$ **[A1]**'),
+      T('Step 2 — At a stationary point, $\\frac{dy}{dx} = 0$, so $1 - x - y = 0$, i.e. $y = 1 - x$. **[M1]**'),
+      T('Step 3 — Substitute $y = 1 - x$ into the original curve equation.'),
+      T('$x^2 + 2x(1 - x) + 2(1 - x)^2 - 2x = 2$'),
+      T('$x^2 + 2x - 2x^2 + 2(1 - 2x + x^2) - 2x = 2$'),
+      T('$x^2 - 4x + 2 = 2 \\Rightarrow x^2 - 4x = 0 \\Rightarrow x(x - 4) = 0 \\Rightarrow x = 0$ or $x = 4$ **[M1]**'),
+      T('When $x = 0$, $y = 1$; when $x = 4$, $y = -3$. So the stationary points are $(0, 1)$ and $(4, -3)$. **[A1]**'),
+      T('(b) Step 1 — Differentiate $2x + 2y + 2x\\frac{dy}{dx} + 4y\\frac{dy}{dx} - 2 = 0$ again implicitly with respect to $x$.'),
+      T('$2 + 2\\frac{dy}{dx} + 2\\frac{dy}{dx} + 2x\\frac{d^2y}{dx^2} + 4\\left(\\frac{dy}{dx}\\right)^2 + 4y\\frac{d^2y}{dx^2} = 0$ **[M1]**'),
+      T('Simplify: $2 + 4\\frac{dy}{dx} + 4\\left(\\frac{dy}{dx}\\right)^2 + (2x + 4y)\\frac{d^2y}{dx^2} = 0$ **[A1]**'),
+      T('Step 2 — At any stationary point, $\\frac{dy}{dx} = 0$, so this reduces to $2 + (2x + 4y)\\frac{d^2y}{dx^2} = 0$, giving $\\frac{d^2y}{dx^2} = -\\frac{1}{x + 2y}$ **[A1]**'),
+      T('Step 3 — Evaluate $\\frac{d^2y}{dx^2}$ at each stationary point.'),
+      T('At $(0, 1)$: $\\frac{d^2y}{dx^2} = -\\frac{1}{0 + 2} = -\\frac{1}{2} < 0$, so $(0, 1)$ is a **maximum**. **[M1; A1]**'),
+      T('At $(4, -3)$: $\\frac{d^2y}{dx^2} = -\\frac{1}{4 - 6} = \\frac{1}{2} > 0$, so $(4, -3)$ is a **minimum**. **[A1]**')
+    ]);
+}
+
+/* Complete the topic — picks among all five variants */
+const tImplicitStationaryNature = {
+  id: 'implicit-stationary-nature', strand: 'S18', difficulty: 5,
+  gen(){
+    const v = pick([1, 1, 2, 2, 3, 3, 4, 5]);
+    if (v === 1) return genStationaryNatureV1();
+    if (v === 2) return genStationaryNatureV2();
+    if (v === 3) return genStationaryNatureV3();
+    if (v === 4) return genStationaryNatureV4();
+    return genStationaryNatureV5();
+  }
+};
+
+/* -------- Logarithmic differentiation -------- */
+
+function genLogarithmicXY(){
+  return Q('lg-v1',
+    [ T('A curve has equation $x^y = y^x$, where $x > 0$ and $y > 0$.'),
+      T('Show that $\\frac{dy}{dx} = \\frac{y(x\\ln y - y)}{x(y\\ln x - x)}$.') ],
+    [{ text: 'See proof.' }],
+    [
+      T('Step 1 — Take natural logarithms of both sides to linearise the exponents.'),
+      T('$\\ln(x^y) = \\ln(y^x)$  $\\Rightarrow$  $y\\ln x = x\\ln y$ **[M1 — taking logs and applying the power rule]**'),
+      T('Step 2 — Differentiate implicitly with respect to $x$. Apply the product rule to each side.'),
+      T('Left: $\\frac{d}{dx}(y\\ln x) = \\frac{dy}{dx}\\ln x + \\frac{y}{x}$ **[M1]**'),
+      T('Right: $\\frac{d}{dx}(x\\ln y) = \\ln y + x \\cdot \\frac{1}{y}\\frac{dy}{dx}$ **[M1]**'),
+      T('Equating: $\\frac{dy}{dx}\\ln x + \\frac{y}{x} = \\ln y + \\frac{x}{y}\\frac{dy}{dx}$ **[A1]**'),
+      T('Step 3 — Collect the $\\frac{dy}{dx}$ terms on the left.'),
+      T('$\\frac{dy}{dx}\\left(\\ln x - \\frac{x}{y}\\right) = \\ln y - \\frac{y}{x}$ **[M1]**'),
+      T('Step 4 — Solve for $\\frac{dy}{dx}$.'),
+      T('$\\frac{dy}{dx} = \\frac{\\ln y - \\frac{y}{x}}{\\ln x - \\frac{x}{y}}$'),
+      T('Step 5 — Multiply numerator and denominator by $xy$ to clear the fractions.'),
+      T('$\\frac{dy}{dx} = \\frac{xy\\ln y - y^2}{xy\\ln x - x^2} = \\frac{y(x\\ln y - y)}{x(y\\ln x - x)}$ **[A1]**'),
+      T('as required.')
+    ]);
+}
+
+function genLogarithmicConstant(){
+  const c = pick([2, 3, 5, 7]);
+  return Q('lg-v2|' + c,
+    [ T('A curve has equation $x^y = ' + c + '$, where $x > 0$.'),
+      T('Find $\\frac{dy}{dx}$ in terms of $x$ only.') ],
+    [{ text: '$\\frac{dy}{dx} = -\\frac{\\ln ' + c + '}{x(\\ln x)^2}$' }],
+    [
+      T('Step 1 — Take natural logarithms of both sides.'),
+      T('$\\ln(x^y) = \\ln ' + c + '$  $\\Rightarrow$  $y\\ln x = \\ln ' + c + '$ **[M1]**'),
+      T('Step 2 — Make $y$ the subject.'),
+      T('$y = \\frac{\\ln ' + c + '}{\\ln x}$ **[B1]**'),
+      T('Step 3 — Differentiate with respect to $x$, using the chain rule on $(\\ln x)^{-1}$.'),
+      T('$\\frac{dy}{dx} = \\ln ' + c + ' \\cdot (-1)(\\ln x)^{-2} \\cdot \\frac{1}{x}$ **[M1]**'),
+      T('$\\frac{dy}{dx} = -\\frac{\\ln ' + c + '}{x(\\ln x)^2}$ **[A1]**'),
+      T(''),
+      T('(Alternative check via implicit differentiation: differentiating $y\\ln x = \\ln ' + c + '$ gives $\\frac{dy}{dx}\\ln x + \\frac{y}{x} = 0$, so $\\frac{dy}{dx} = -\\frac{y}{x\\ln x} = -\\frac{\\ln ' + c + '}{x(\\ln x)^2}$, which agrees.)')
+    ]);
+}
+
+const tImplicitLogarithmic = {
+  id: 'implicit-logarithmic', strand: 'S18', difficulty: 5,
+  gen(){
+    return pick([1, 1, 2]) === 1 ? genLogarithmicXY() : genLogarithmicConstant();
+  }
+};
+
+/* -------- Vertical tangent (tangent parallel to y-axis) -------- */
+
+function genVerticalTangent(variant){
+  let a, b, c, yT, xLeft, xRight, xRange, yRange;
+  if (variant === 1) {
+  a = 4; b = 4; c = 4;
+  xLeft = -2; xRight = 10; yT = 2;
+  xRange = [-3, 11]; yRange = [-5, 6];      // was [-6,14],[-5,6]
+} else if (variant === 2) {
+  a = 8; b = 4; c = 1;
+  xLeft = -1; xRight = 17; yT = 2;
+  xRange = [-2, 18]; yRange = [-5, 6];      // was [-5,20],[-5,6]
+} else if (variant === 3) {
+  a = 2; b = 4; c = 16;
+  xLeft = -4; xRight = 8; yT = 2;
+  xRange = [-5, 9];  yRange = [-5, 6];      // was [-7,11],[-4,6]
+} else {
+  a = 9; b = 9; c = 9;
+  xLeft = -3; xRight = 21; yT = 3;
+  xRange = [-4, 22]; yRange = [-7, 8];      // was [-6,24],[-6,7]
+}
+
+  const twoA = 2 * a;
+  const threeB = 3 * b;
+  const bSqrt = Math.sqrt(b);                    // 2 or 3
+  const bSqrtCubed = b * bSqrt;
+  const constTerm = bSqrtCubed - threeB * bSqrt - c;
+  const rhsSquared = a * a - constTerm;
+  const sqrtRhs = Math.sqrt(rhsSquared);
+
+    const eqStr = 'x^2 + y^3 - ' + twoA + 'x - ' + threeB + 'y = ' + c;
+
+    // Exact parametrisation: x = a ± sqrt(a² − y³ + 3b·y + c).
+  // The square-root branch passes smoothly through every vertical tangent.
+  const leftPts = [], rightPts = [];
+  const yStep = (yRange[1] - yRange[0]) / 400;
+  let yLast = null;
+  for (let y = yRange[0]; y <= yRange[1]; y += yStep){
+    const disc = a*a - y*y*y + threeB*y + c;
+    if (disc < 0) break;
+    yLast = y;
+    const sq = Math.sqrt(disc);
+    const xL = a - sq, xR = a + sq;
+    if (xL >= xRange[0] && xL <= xRange[1]) leftPts.push([xL, y]);
+    if (xR >= xRange[0] && xR <= xRange[1]) rightPts.push([xR, y]);
+  }
+  // The curve crests where the discriminant hits zero. If that crest lies
+  // inside the plot area, bisect to find its exact y and append the point
+  // (a, yTop) to both polylines — otherwise the top arc shows a visible gap.
+  if (yLast !== null && yLast + yStep <= yRange[1]){
+    let yLo = yLast, yHi = yLast + yStep;
+    for (let i = 0; i < 60; i++){
+      const yMid = (yLo + yHi) / 2;
+      const dMid = a*a - yMid*yMid*yMid + threeB*yMid + c;
+      if (dMid >= 0) yLo = yMid; else yHi = yMid;
+    }
+    const yTop = yLo;
+    if (leftPts.length  >= 2) leftPts.push([a, yTop]);
+    if (rightPts.length >= 2) rightPts.push([a, yTop]);
+  }
+  const polylines = [leftPts, rightPts].filter(p => p.length >= 2);
+
+  return Q('vt|' + variant,
+      [ { type: 'plot', polylines: polylines, xRange: xRange, yRange: yRange,
+        annotations: [
+          { x: xLeft,  y: bSqrt, label: 'P', dx: -10 },
+          { x: xRight, y: bSqrt, label: 'Q', dx:   5 }
+        ] },
+      T('The diagram shows the curve with equation $' + eqStr + '$. At each of the points $P$ and $Q$ the tangent to the curve is parallel to the $y$-axis.'),
+      T('Find the coordinates of $P$ and $Q$.') ],
+    [{ text: '$P(' + xLeft + ', ' + bSqrt + ')$,  $Q(' + xRight + ', ' + bSqrt + ')$' }],
+    [
+      T('Step 1 — Differentiate implicitly with respect to $x$.'),
+      T('$2x + 3y^2 \\cdot \\frac{dy}{dx} - ' + twoA + ' - ' + threeB + '\\cdot\\frac{dy}{dx} = 0$ **[B1 for $3y^2\\frac{dy}{dx}$; B1 for the remaining terms]**'),
+      T('Collect the $\\frac{dy}{dx}$ terms: $(3y^2 - ' + threeB + ')\\frac{dy}{dx} = ' + twoA + ' - 2x$ **[M1]**'),
+      T('So $\\frac{dy}{dx} = \\dfrac{' + twoA + ' - 2x}{3y^2 - ' + threeB + '}$ **[A1]**'),
+      T('Step 2 — At $P$ and $Q$ the tangent is parallel to the $y$-axis, which means $\\frac{dy}{dx}$ is undefined. This happens when the denominator is zero.'),
+      T('$3y^2 - ' + threeB + ' = 0$ **[M1*]**'),
+      T('$y^2 = ' + b + ' \\Rightarrow y = ' + bSqrt + '$ or $y = -' + bSqrt + '$ **[A1]**'),
+      T('Step 3 — Both $P$ and $Q$ lie on the upper lobe of the curve, so substitute $y = ' + bSqrt + '$ into the original equation.'),
+      T('$x^2 + (' + bSqrt + ')^3 - ' + twoA + 'x - ' + threeB + '(' + bSqrt + ') = ' + c + '$ **[M1, dep*]**'),
+      T('$' + polyTex([[1,'x^2'],[-twoA,'x'],[constTerm,'']]) + ' = 0$'),
+      T('$x^2 - ' + twoA + 'x + ' + (a*a) + ' = ' + rhsSquared + '$'),
+      T('$(x - ' + a + ')^2 = ' + rhsSquared + '$'),
+      T('$x - ' + a + ' = \\pm ' + sqrtRhs + '$'),
+      T('$x = ' + xLeft + '$ or $x = ' + xRight + '$ **[A1]**'),
+      T('Step 4 — So $P(' + xLeft + ', ' + bSqrt + ')$ and $Q(' + xRight + ', ' + bSqrt + ')$ (in either order).')
+    ]);
+}
+
+const tVerticalTangent = {
+  id: 'implicit-vertical-tangent', strand: 'S18', difficulty: 4,
+  gen(){ return genVerticalTangent(pick([1, 2, 3, 4])); }
+};
+
+/* ============================================================
+   Plot block support — implicit curve tracer
+   ============================================================ */
+
+function traceImplicitCurve(F, xmin, xmax, ymin, ymax, numCols, numRows) {
+  // Small offset converts double roots (at vertical tangents) into sign changes.
+  // For our curves the shift is ~0.002 in y — invisible.
+  const eps = 0.008;
+  const Feff = (x, y) => F(x, y) - eps;
+
+  const segments = [];
+  let branches = [];
+  const dx = (xmax - xmin) / numCols;
+  const dy = (ymax - ymin) / numRows;
+  const matchTol = dy * 20;   // was dy * 3 — more forgiving for steep curves
+
+  for (let i = 0; i <= numCols; i++) {
+    const x = xmin + i * dx;
+
+    // Find all roots of Feff(x, ·) = 0 in [ymin, ymax]
+    const roots = [];
+    let prevY = ymin;
+    let prevF = Feff(x, prevY);
+    if (Math.abs(prevF) < 1e-10) roots.push(prevY);
+    for (let j = 1; j <= numRows; j++) {
+      const y = ymin + j * dy;
+      const currF = Feff(x, y);
+      if (Math.abs(currF) < 1e-10) {
+        roots.push(y);
+      } else if (prevF * currF < 0) {
+        let a = prevY, b = y;
+        for (let it = 0; it < 30; it++) {
+          const m = (a + b) / 2;
+          const fm = Feff(x, m);
+          if (fm === 0) { a = m; b = m; break; }
+          if (prevF * fm <= 0) b = m; else a = m;
+        }
+        roots.push((a + b) / 2);
+      }
+      prevY = y;
+      prevF = currF;
+    }
+
+    // Dedupe + sort
+    const uniq = [];
+    for (const r of roots) {
+      if (!uniq.some(u => Math.abs(u - r) < dy * 0.5)) uniq.push(r);
+    }
+    uniq.sort((a, b) => a - b);
+
+    // Nearest-neighbour branch matching (closest, not first)
+    const used = new Set();
+    const newBranches = [];
+    for (const y of uniq) {
+      let bestK = -1, bestDist = matchTol;
+      for (let k = 0; k < branches.length; k++) {
+        if (used.has(k)) continue;
+        const d = Math.abs(branches[k].lastY - y);
+        if (d < bestDist) { bestDist = d; bestK = k; }
+      }
+      if (bestK >= 0) {
+        branches[bestK].points.push([x, y]);
+        branches[bestK].lastY = y;
+        used.add(bestK);
+        newBranches.push(branches[bestK]);
+      } else {
+        newBranches.push({ lastY: y, points: [[x, y]] });
+      }
+    }
+    // Close unmatched branches
+    for (let k = 0; k < branches.length; k++) {
+      if (!used.has(k) && branches[k].points.length >= 2) {
+        segments.push(branches[k].points);
+      }
+    }
+    branches = newBranches;
+  }
+    for (const b of branches) {
+    if (b.points.length >= 2) segments.push(b.points);
+  }
+
+  // ---- Post-pass: stitch segments whose endpoints meet ----
+  // At a vertical tangent the tracer produces two separate polylines whose
+  // start (or end) points are within ~2·eps in y. Merge those into one
+  // polyline so the curve renders continuously through the tip.
+  const tolX = dx * 3;
+  const tolY = dy * 5;
+  let merged = true;
+  while (merged) {
+    merged = false;
+    outer: for (let i = 0; i < segments.length; i++) {
+      for (let j = i + 1; j < segments.length; j++) {
+        const A = segments[i], B = segments[j];
+        if (!A || !B || A.length < 2 || B.length < 2) continue;
+        const aS = A[0], aE = A[A.length-1];
+        const bS = B[0], bE = B[B.length-1];
+        const cl = (p, q) => Math.abs(p[0]-q[0]) <= tolX && Math.abs(p[1]-q[1]) <= tolY;
+        if (cl(aE, bS)) { segments[i] = A.concat(B.slice(1));                segments.splice(j,1); merged = true; break outer; }
+        if (cl(aE, bE)) { segments[i] = A.concat(B.slice(0,-1).reverse());   segments.splice(j,1); merged = true; break outer; }
+        if (cl(aS, bS)) { segments[i] = B.slice().reverse().concat(A.slice(1)); segments.splice(j,1); merged = true; break outer; }
+        if (cl(aS, bE)) { segments[i] = B.concat(A.slice(1));                segments.splice(j,1); merged = true; break outer; }
+      }
+    }
+  }
+  return segments;
+}
+
+function measurePlotBlockHeight(block, fs, maxW){
+  const xSpan = block.xRange[1] - block.xRange[0];
+  const ySpan = block.yRange[1] - block.yRange[0];
+  return Math.min(maxW * ySpan / xSpan, fs * (block.maxH || 16));
+}
+
+function drawPlotBlock(block, x, y, fs, maxW, items){
+  const [xmin, xmax] = block.xRange;
+  const [ymin, ymax] = block.yRange;
+  const xSpan = xmax - xmin;
+  const ySpan = ymax - ymin;
+  const plotH = measurePlotBlockHeight(block, fs, maxW);
+  // keepAspect: equal x/y scales, centred in the column (so ellipses are not stretched)
+  const plotW = block.keepAspect ? Math.min(maxW, plotH * xSpan / ySpan) : maxW;
+  x += (maxW - plotW) / 2;
+
+  const toScreen = (mx, my) => [
+    x + (mx - xmin) / xSpan * plotW,
+    y + plotH - (my - ymin) / ySpan * plotH
+  ];
+
+  // y-axis (at x = 0)
+  if (xmin < 0 && xmax > 0) {
+    const [sx, syB] = toScreen(0, ymin);
+    const [sx2, syT] = toScreen(0, ymax);
+    items.push({ t: 'line', x1: sx, y1: syB, x2: sx2, y2: syT, w: 0.7 });
+    items.push({ t: 'line', x1: sx - 2.5, y1: syT + 4, x2: sx, y2: syT, w: 0.6 });
+    items.push({ t: 'line', x1: sx + 2.5, y1: syT + 4, x2: sx, y2: syT, w: 0.6 });
+   items.push({ t: 'text', x: sx - 11, y: syT + 2, size: fs * 1.0, italic: true, s: 'y', noMerge: true });
+  }
+  // x-axis (at y = 0)
+  if (ymin < 0 && ymax > 0) {
+    const [sxL, sy] = toScreen(xmin, 0);
+    const [sxR, sy2] = toScreen(xmax, 0);
+    items.push({ t: 'line', x1: sxL, y1: sy, x2: sxR, y2: sy2, w: 0.7 });
+    items.push({ t: 'line', x1: sxR - 4, y1: sy - 2.5, x2: sxR, y2: sy, w: 0.6 });
+    items.push({ t: 'line', x1: sxR - 4, y1: sy + 2.5, x2: sxR, y2: sy, w: 0.6 });
+    items.push({ t: 'text', x: sxR - 8, y: sy + 7, size: fs * 1.0, italic: true, s: 'x', noMerge: true });
+  }
+
+  // Curve as polyline segments
+  // Curve as polyline segments — use pre-built polylines if the block
+  // supplies them, otherwise fall back to the implicit tracer.
+  let segs;
+  if (block.polylines) {
+    segs = block.polylines;
+  } else {
+    segs = traceImplicitCurve(block.curve, xmin, xmax, ymin, ymax, 250, 250);
+  }
+  for (const seg of segs) {
+    items.push({ t: 'polyline', points: seg.map(([mx, my]) => toScreen(mx, my)), w: 1.0 });
+  }
+
+  // Annotations (P, Q, …)
+  if (block.annotations) {
+    for (const ann of block.annotations) {
+      const [sx, sy] = toScreen(ann.x, ann.y);
+      items.push({ t: 'text', x: sx + (ann.dx || 0), y: sy - 2,
+                   size: fs * 1.0, italic: true, s: ann.label, noMerge: true });
+    }
+  }
+
+  return plotH;
+}
+
+/* Topics whose worked solutions are rendered in the Answers PDF.
+   Add topic ids here as each is verified. */
+const SOLUTION_TOPICS = [
+  'implicit-product',
+  'implicit-mixed-rules',
+  'implicit-tangent',
+  'implicit-stationary',
+  'implicit-stationary-unknown',
+  'implicit-tangent-direction',
+  'implicit-find-point',
+  'implicit-second-derivative',
+  'implicit-stationary-nature',
+  'implicit-logarithmic',
+  'implicit-vertical-tangent',
+  'implicit-stationary-nature'
+];
+
+/* ============================================================
+   Registry
+   ============================================================ */
+
+const TOPICS = [
+  tImplicitProduct,
+  tImplicitMixedRules,
+  tImplicitTangent,
+  tImplicitStationary,
+  tImplicitStationaryUnknown,
+  tImplicitTangentDirection,
+  tImplicitFindPoint,
+  tImplicitSecondDerivative,
+  tImplicitStationaryNature,
+  tImplicitLogarithmic,
+  tVerticalTangent
+];
+
+const STRAND_LABEL = {
+  S18: 'Implicit Differentiation'
+};
+
+/* ============================================================
+   Composition — fill 2 pages
+   ============================================================ */
+const DISABLED_KEY = 'a2-implicit-diff-disabled-v1';
+const DEFAULT_DISABLED = [];
+
+function loadDisabled(){
+  try {
+    const raw = localStorage.getItem(DISABLED_KEY);
+    if (!raw) return new Set(DEFAULT_DISABLED);
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set(DEFAULT_DISABLED);
+    const known = new Set(TOPICS.map(t=>t.id));
+    return new Set(arr.filter(id => known.has(id)));
+  } catch(e) { return new Set(DEFAULT_DISABLED); }
+}
+function saveDisabled(s){ try { localStorage.setItem(DISABLED_KEY, JSON.stringify(Array.from(s))); } catch(e){} }
+
+function activeTopics(){
+  const off = loadDisabled();
+  return TOPICS.filter(t => !off.has(t.id));
+}
+
+function strandOrder(topics){
+  const byStrand = {};
+  for (const t of shuffle(topics.slice())) (byStrand[t.strand]=byStrand[t.strand]||[]).push(t);
+  const strands = Object.keys(byStrand).filter(s => byStrand[s].length > 0);
+  const order = [];
+  while (order.length < topics.length){
+    for (const s of strands){
+      if (byStrand[s].length > 0) order.push(byStrand[s].shift());
+    }
+  }
+  return order;
+}
+
+function generateSheet(){
+  const usedKeys = new Set();
+  const usedTopics = new Set();
+  const out = [];
+  const order = strandOrder(activeTopics());
+  for (const topic of order){
+    if (usedTopics.has(topic.id)) continue;
+    let cand = null;
+    for (let t = 0; t < 20; t++){
+      let c;
+      try {
+        c = topic.gen();
+      } catch (err) {
+        console.error('Generator failed: ' + topic.id, err);
+        c = null;
+        break;
+      }
+      if (c && !usedKeys.has(c.key) && c.blocks.length > 0){ cand = c; break; }
+    }
+    if (!cand) continue;
+
+    cand.difficulty = topic.difficulty || 1;
+    cand.topicId   = topic.id;      // <— add this line
+
+    const trial = out.concat([cand]).sort((a, b) => a.difficulty - b.difficulty);
+    const testPages = layoutSheet({ title:'Test', questions: trial, revealState: false });
+    if (testPages.length > 2) continue;   // would spill onto page 3 — try a shorter topic
+    out.push(cand);
+    usedTopics.add(topic.id);
+    usedKeys.add(cand.key);
+    if (out.length >= 20) break;
+  }
+
+  out.sort((a, b) => a.difficulty - b.difficulty);
+
+  if (out.length === 0){
+    out.push(Q('fallback', [T('No questions could be generated. Try clicking "Generate New" or check the Topics panel.')],
+      [{ text: 'N/A' }], null));
+  }
+
+  return out;
+}
+
+/* ============================================================
+   HTML renderer (with KaTeX)
+   ============================================================ */
+function esc(s){
+  const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'};
+  return String(s).replace(/[&<>"]/g, function(c){ return map[c]; });
+}
+function renderMath(text) {
+  if (!text.includes('$')) return esc(text);
+  if (typeof katex === 'undefined') return esc(text);
+  const parts = text.split(/(\$[^$]*\$)/);
+  let html = '';
+  for (let p of parts) {
+    if (p.length >= 2 && p.startsWith('$') && p.endsWith('$')) {
+      try {
+        html += katex.renderToString(p.slice(1, -1), { throwOnError: false, displayMode: false });
+      } catch(e) {
+        html += esc(p);
+      }
+    } else {
+      html += esc(p);
+    }
+  }
+  return html;
+}
+
+/* Like renderMath, but **...** becomes bold (used for mark annotations in solutions). */
+function renderRich(text){
+  const parts = String(text).split(/(\$[^$]*\$)/);
+  let html = '', bold = false;
+  for (const p of parts){
+    if (p.length >= 2 && p[0] === '$' && p[p.length-1] === '$'){ html += renderMath(p); continue; }
+    const segs = p.split('**');
+    for (let i = 0; i < segs.length; i++){
+      if (i > 0){ html += bold ? '</strong>' : '<strong>'; bold = !bold; }
+      html += esc(segs[i]);
+    }
+  }
+  if (bold) html += '</strong>';
+  return html;
+}
+
+function drawHTML(pagesItems){
+  const pagesEl = document.getElementById('pages');
+  pagesEl.innerHTML = '';
+  for (const items of pagesItems){
+    const wrap = document.createElement('div');
+    wrap.className = 'page-wrap';
+    const pg = document.createElement('div');
+    pg.className = 'page';
+    const parts = [];
+
+    const grouped = [];
+    let currentGroup = null;
+    for (const it of items) {
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer') {
+                if (currentGroup
+    		&& currentGroup.t === it.t
+    		&& Math.abs(currentGroup.y - it.y) < 1
+    		&& !it.noMerge && !currentGroup.noMerge
+   		&& currentGroup.size === it.size
+    		&& JSON.stringify(currentGroup.color || null) === JSON.stringify(it.color || null)) {
+  		currentGroup.s += it.s;
+        } else {
+          if (currentGroup) grouped.push(currentGroup);
+          currentGroup = { t: it.t, x: it.x, y: it.y, size: it.size, s: it.s, color: it.color, noMerge: it.noMerge };
+          }
+      } else {
+        if (currentGroup) { grouped.push(currentGroup); currentGroup = null; }
+        grouped.push(it);
+      }
+    }
+    if (currentGroup) grouped.push(currentGroup);
+
+    for (const it of grouped){
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer'){
+        const top = it.y - it.size * 0.755;
+        const cls = it.t === 'answer' ? 'tx ans' : 'tx';
+        let style = 'left:' + it.x.toFixed(2) + 'pt;top:' + top.toFixed(2) +
+                    'pt;font-size:' + it.size.toFixed(2) + 'pt;';
+        if (it.bold)   style += 'font-weight:700;';
+        if (it.italic) style += 'font-style:italic;';
+        if (it.color)  style += 'color:rgb(' + it.color[0] + ',' + it.color[1] + ',' + it.color[2] + ');';
+        parts.push('<span class="' + cls + '" style="' + style + '">' + renderMath(it.s) + '</span>');
+      } else if (it.t === 'line' || it.t === 'answer-line') {
+        let color = it.grey ? '#94a3b8' : '#000';
+        if (it.color) color = `rgb(${it.color[0]}, ${it.color[1]}, ${it.color[2]})`;
+        const cls = it.t === 'answer-line' ? 'ans' : '';
+        parts.push(
+          '<svg class="' + cls + '" ' +
+          'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+          'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+          '<line x1="'+it.x1.toFixed(2)+'" y1="'+it.y1.toFixed(2)+
+          '" x2="'+it.x2.toFixed(2)+'" y2="'+it.y2.toFixed(2)+
+          '" stroke="'+color+'" stroke-width="'+it.w.toFixed(2)+'"/></svg>');
+            } else if (it.t === 'polyline') {
+        const pts = it.points.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+        parts.push(
+          '<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+          'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+          '<polyline points="' + pts + '" fill="none" stroke="#000" stroke-width="' + it.w.toFixed(2) + '"/></svg>');
+      }
+    }
+    pg.innerHTML = parts.join('');
+    wrap.appendChild(pg);
+    pagesEl.appendChild(wrap);
+  }
+}
+
+/* ============================================================
+   UI wiring
+   ============================================================ */
+const titleInput = document.getElementById('titleInput');
+const seedInput  = document.getElementById('seedInput');
+const pagesEl    = document.getElementById('pages');
+const revealBtn = document.getElementById('revealBtn');
+
+let currentQuestions = [];
+let lastSheetPages = [];
+let lastAnswerPages = [];
+let revealState = false;
+
+function sheetTitle(){ return titleInput.value.trim() || 'Implicit Differentiation — Revision'; }
+
+function renderSheet(){
+  const sx = window.scrollX, sy = window.scrollY;
+  lastSheetPages = layoutSheet({ title: sheetTitle(), questions: currentQuestions, revealState: revealState });
+  lastAnswerPages = layoutCompactAnswers({ title: sheetTitle(), questions: currentQuestions, seed: seedInput.value });
+  drawHTML(lastSheetPages);
+  pagesEl.classList.toggle('revealed', revealState);
+  fitPage();
+  window.scrollTo(sx, sy);
+}
+function regenerate(){ currentQuestions = generateSheet(); renderSheet(); }
+function fitPage(){
+  const vp = document.getElementById('viewport');
+  const pw = 210 * 96 / 25.4;
+  const ph = 297 * 96 / 25.4;
+  const avail = vp.clientWidth - 40;
+  const z = Math.max(0.22, Math.min(1, avail / pw));
+  document.querySelectorAll('.page-wrap').forEach(w => {
+    w.style.width = (pw*z)+'px'; w.style.height = (ph*z)+'px';
+  });
+  document.querySelectorAll('.page').forEach(p => {
+    p.style.transform = 'scale('+z+')';
+  });
+}
+function applySeed(){
+  const s = parseInt(seedInput.value, 10);
+  rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+}
+function getSeedFromURL(){
+  const p = new URLSearchParams(window.location.search).get('seed');
+  if (p === null) return null;
+  const n = parseInt(p, 10);
+  return isNaN(n) ? null : n;
+}
+function setSeedInURL(seed){
+  try { const url = new URL(window.location.href); url.searchParams.set('seed', seed);
+    window.history.replaceState({}, '', url); } catch(e){}
+}
+function dateSeed(){
+  const d = new Date();
+  return parseInt(d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') +
+    String(d.getDate()).padStart(2,'0') + String(d.getHours()).padStart(2,'0') +
+    String(d.getMinutes()).padStart(2,'0') + String(d.getSeconds()).padStart(2,'0'), 10);
+}
+function safeFilename(s){ return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+
+revealBtn.addEventListener('click', () => {
+  revealState = !revealState;
+  revealBtn.textContent = revealState ? '🙈 Hide answers' : '👁 Reveal answers';
+  revealBtn.classList.toggle('reveal-on', revealState);
+  renderSheet();
+});
+
+document.getElementById('regenBtn').addEventListener('click', () => {
+  seedInput.value = dateSeed(); applySeed(); regenerate(); setSeedInURL(seedInput.value);
+});
+document.getElementById('dlBtn').addEventListener('click', () => {
+  if (!lastSheetPages.length) return;
+  downloadPDF(lastSheetPages, 'implicit-diff-'+safeFilename(sheetTitle())+'-'+seedInput.value+'.pdf');
+});
+document.getElementById('dlAnsBtn').addEventListener('click', () => {
+  printAnswersHTML();
+});
+document.getElementById('printBtn').addEventListener('click', () => window.print());
+seedInput.addEventListener('change', () => { applySeed(); regenerate(); setSeedInURL(seedInput.value); });
+titleInput.addEventListener('input', renderSheet);
+window.addEventListener('resize', fitPage);
+
+/* Topics panel */
+function buildTopicsPanel(){
+  const body = document.getElementById('tpBody');
+  body.innerHTML = '';
+  const off = loadDisabled();
+  const byStrand = {};
+  for (const t of TOPICS) (byStrand[t.strand]=byStrand[t.strand]||[]).push(t);
+  Object.keys(byStrand).sort().forEach(s => {
+    const head = document.createElement('div');
+    head.className = 'tp-strand';
+    head.textContent = (STRAND_LABEL[s]||s) + ' ('+byStrand[s].length+')';
+    body.appendChild(head);
+    byStrand[s].forEach(t => {
+      const row = document.createElement('label');
+      row.className = 'tp-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = !off.has(t.id);
+      cb.addEventListener('change', () => {
+        const cur = loadDisabled();
+        if (cb.checked) cur.delete(t.id); else cur.add(t.id);
+        saveDisabled(cur); refreshCount(); scheduleRegen();
+      });
+      const name = document.createElement('span');
+      name.className = 'name'; name.textContent = t.id;
+      row.appendChild(cb); row.appendChild(name); body.appendChild(row);
+    });
+  });
+  refreshCount();
+}
+function refreshCount(){
+  const off = loadDisabled();
+  document.getElementById('tpCount').textContent =
+    (TOPICS.length - off.size) + ' of ' + TOPICS.length + ' topics enabled';
+}
+let regenTimer = null;
+function scheduleRegen(){ if (regenTimer) clearTimeout(regenTimer);
+  regenTimer = setTimeout(regenerate, 120); }
+
+function openTopicsPanel(){
+  buildTopicsPanel();
+  document.getElementById('topicsPanel').classList.add('open');
+  document.getElementById('topicsPanel').setAttribute('aria-hidden','false');
+  document.getElementById('backdrop').classList.add('open');
+}
+function closeTopicsPanel(){
+  document.getElementById('topicsPanel').classList.remove('open');
+  document.getElementById('topicsPanel').setAttribute('aria-hidden','true');
+  document.getElementById('backdrop').classList.remove('open');
+}
+document.getElementById('topicsBtn').addEventListener('click', openTopicsPanel);
+document.getElementById('tpClose').addEventListener('click', closeTopicsPanel);
+document.getElementById('backdrop').addEventListener('click', closeTopicsPanel);
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeTopicsPanel(); });
+document.getElementById('tpAll').addEventListener('click', () => {
+  saveDisabled(new Set()); buildTopicsPanel(); scheduleRegen();
+});
+document.getElementById('tpNone').addEventListener('click', () => {
+  saveDisabled(new Set(TOPICS.map(t => t.id))); buildTopicsPanel(); scheduleRegen();
+});
+document.getElementById('tpReset').addEventListener('click', () => {
+  try { localStorage.removeItem(DISABLED_KEY); } catch(e){}
+  buildTopicsPanel(); scheduleRegen();
+});
+
+function printAnswersHTML(){
+  if (!currentQuestions || currentQuestions.length === 0) return;
+
+  /* Absolute URLs so KaTeX loads even when the parent page is file:// */
+  const katexCssURL = new URL('katex/katex.min.css', document.baseURI).href;
+  const katexJsURL  = new URL('katex/katex.min.js',  document.baseURI).href;
+
+  const escHtml = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  /* Build one entry per question, with KaTeX-rendered answer + solution */
+  let entriesHTML = '';
+  for (let i = 0; i < currentQuestions.length; i++){
+    const q = currentQuestions[i];
+    const showSolution =
+      SOLUTION_TOPICS.includes(q.topicId) &&
+      Array.isArray(q.solution) && q.solution.length > 0;
+
+    const answerHTML = (q.answers || []).map(a => renderRich(a.text)).join('&emsp;&emsp;');
+
+    let entry = '<div class="qa-entry">';
+    entry += '<span class="qa-num">' + (i+1) + '.</span>';
+    entry += '<div class="qa-body">';
+    if (answerHTML) entry += '<div class="qa-answer">' + answerHTML + '</div>';
+
+    if (showSolution){
+      entry += '<div class="qa-sol-label">Solution:</div>';
+      for (const b of q.solution){
+        if (b.type === 'text'){
+          entry += '<div class="qa-sol-step">' + renderRich(b.text) + '</div>';
+        }
+      }
+    }
+    entry += '</div></div>';
+    entriesHTML += entry;
+  }
+
+  const html = '<!DOCTYPE html>\n' +
+    '<html lang="en">\n' +
+    '<head>\n' +
+    '<meta charset="utf-8">\n' +
+    '<title>' + escHtml(sheetTitle()) + ' — Answers</title>\n' +
+    '<link rel="stylesheet" href="' + katexCssURL + '">\n' +
+    '<script defer src="' + katexJsURL + '"><\/script>\n' +
+    '<style>\n' +
+    '  @page { size: A4; margin: 15mm; }\n' +
+    '  html, body { margin: 0; padding: 0; }\n' +
+    '  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 11pt; line-height: 1.55; color: #000; }\n' +
+    '  h1 { font-size: 16pt; text-align: center; margin: 0 0 6mm 0; font-weight: 700; }\n' +
+    '  .qa-entry { display: flex; gap: 6pt; margin-bottom: 10pt; page-break-inside: avoid; break-inside: avoid; }\n' +
+    '  .qa-num { font-weight: 700; flex: 0 0 24pt; text-align: right; }\n' +
+    '  .qa-body { flex: 1; min-width: 0; }\n' +
+    '  .qa-answer { font-weight: 600; margin-bottom: 2pt; }\n' +
+    '  .qa-sol-label { font-weight: 700; font-size: 0.92em; color: #444; margin-top: 4pt; }\n' +
+    '  .qa-sol-step { margin: 1pt 0; }\n' +
+    '  .katex { font-size: 1.03em; }\n' +
+    '  @media screen {\n' +
+    '    body { background: #eef2f7; }\n' +
+    '    .print-bar { position: sticky; top: 0; z-index: 10; padding: 12px 16px; background: #0f172a; color: #fff; display: flex; justify-content: center; gap: 12px; }\n' +
+    '    .print-bar button { padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 700; }\n' +
+    '    .print-bar button:hover { background: #1d4ed8; }\n' +
+    '    .qa-container { max-width: 180mm; margin: 20px auto; background: #fff; padding: 15mm; box-shadow: 0 4px 20px rgba(15,23,42,.15); border-radius: 4px; }\n' +
+    '  }\n' +
+    '  @media print {\n' +
+    '    .print-bar { display: none !important; }\n' +
+    '    body { background: #fff; }\n' +
+    '    .qa-container { max-width: none; margin: 0; padding: 0; box-shadow: none; border-radius: 0; }\n' +
+    '  }\n' +
+    '</style>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<div class="print-bar"><button onclick="window.print()">🖨️ Print / Save as PDF</button></div>\n' +
+    '<div class="qa-container">\n' +
+    '<h1>' + escHtml(sheetTitle()) + ' — Answers</h1>\n' +
+    entriesHTML +
+    '</div>\n' +
+    '</body>\n' +
+    '</html>';
+
+  const w = window.open('', '_blank');
+  if (!w){
+    /* Popup blocked — fall back to a blob URL */
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+/* Boot */
+function boot(){
+  const urlSeed = getSeedFromURL();
+  seedInput.value = (urlSeed !== null) ? urlSeed : Date.now() % 100000;
+  applySeed();
+  regenerate();
+  setSeedInURL(seedInput.value);
+  fitPage();
+}
+if (document.readyState === 'complete') boot();
+else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
