@@ -1180,17 +1180,16 @@ window.BANKS.standardForm = {
 /* ============================================================
    REVERSE PERCENTAGES — context bank
    ------------------------------------------------------------
-   Used by the 'reverse-pct' topic.  Two families of context:
-   reductions (the final value is lower than the original) and
-   increases (the final value is higher).
+   Used by the 'reverse-pct' topic.  Reductions (the final value
+   is lower than the original) and increases (the final value is
+   higher).  Count and bare-number families are included so that
+   worksheets can mix prices with non-money contexts.
 
-   Each family holds:
-     items     — nouns to slot into the {item} / {Item} slots.
-     templates — sentences with placeholders:
-                   {item}  — noun, lower-case
-                   {Item}  — noun, capitalised (start of sentence)
-                   {pct}   — percentage change (a number)
-                   {final} — final value, already money-formatted
+   Placeholders:
+     {item}   noun, lower-case
+     {Item}   noun, capitalised (start of sentence)
+     {pct}    percentage change (a number)
+     {final}  final value, already formatted
    ============================================================ */
 window.BANKS = window.BANKS || {};
 window.BANKS.reversePercent = {
@@ -1199,13 +1198,25 @@ window.BANKS.reversePercent = {
     items: [
       'jacket', 'coat', 'pair of shoes', 'pair of trainers', 'laptop',
       'phone', 'watch', 'camera', 'bicycle', 'sofa', 'armchair', 'TV',
-      'rucksack', 'hoodie', 'dress', 'desk', 'bookcase', 'guitar'
+      'rucksack', 'hoodie', 'dress', 'desk', 'bookcase', 'guitar',
+      'smart watch', 'games console', 'wireless speaker', 'pair of headphones',
+      'tablet', 'office chair', 'dining table', 'kettle', 'toaster',
+      'microwave', 'vacuum cleaner', 'wardrobe', 'rug', 'electric guitar',
+      'digital camera', 'mountain bike', 'winter coat', 'pair of jeans',
+      'handbag', 'electric scooter', 'treadmill', 'rowing machine',
+      'coffee machine', 'air fryer', 'blender', 'food processor',
+      'garden bench', 'patio heater', 'electric bike', 'drone',
+      'projector', 'soundbar', 'gaming chair', 'bedside table'
     ],
     templates: [
       'In a sale, the price of a {item} is reduced by {pct}%. The sale price is {final}. Work out the original price.',
-      '{Item} is in a sale with {pct}% off. The sale price is {final}. Work out the price before the sale.',
+      'A {item} is in a sale with {pct}% off. The sale price is {final}. Work out the price before the sale.',
       'The price of a {item} is reduced by {pct}% in a sale. The sale price is {final}. Work out the original price.',
-      'A shop reduces the price of a {item} by {pct}%. The new price is {final}. Work out the price before the reduction.'
+      'A shop reduces the price of a {item} by {pct}%. The new price is {final}. Work out the price before the reduction.',
+      'In a sale, a {item} has {pct}% off. Its sale price is {final}. Work out the price before the sale.',
+      'The price of a {item} falls by {pct}% to {final}. Work out the original price.',
+      'After a {pct}% discount, a {item} costs {final}. Work out the price before the discount.',
+      'A {item} is sold for {final} after a {pct}% reduction. Work out its original price.'
     ]
   },
 
@@ -1213,14 +1224,180 @@ window.BANKS.reversePercent = {
     items: [
       'train ticket', 'bus fare', 'phone contract', 'gym membership',
       'insurance policy', 'season ticket', 'utility bill', 'subscription',
-      'haircut', 'car service', 'repair', 'cleaning service'
+      'haircut', 'car service', 'repair', 'cleaning service',
+      'train fare', 'bus pass', 'electricity bill', 'gas bill',
+      'water bill', 'broadband package', 'car insurance policy', 'home insurance policy',
+      'swimming lesson', 'piano lesson', 'childcare bill', 'delivery charge',
+      'mobile phone bill', 'gym class', 'garden service', 'boiler service',
+      'storage unit', 'parking permit', 'music lesson', 'tennis lesson',
+      'driving lesson', 'dog grooming', 'window cleaning', 'tutoring session',
+      'car MOT', 'house survey', 'waste collection', 'museum entry',
+      'leisure centre pass', 'cinema ticket', 'theatre ticket',
+      'wedding venue hire', 'photography session'
     ],
     templates: [
       'The price of a {item} is increased by {pct}%. The new price is {final}. Work out the original price.',
-      'A {item} rises in price by {pct}%. The new price is {final}. Work out the price before the increase.',
+      'The price of a {item} rises by {pct}%. The new price is {final}. Work out the price before the increase.',
       'A company adds {pct}% to the price of a {item}. The new price is {final}. Work out the price before the increase.',
-      'The price of a {item} goes up by {pct}%. The new price is {final}. Work out the original price.'
+      'The price of a {item} goes up by {pct}%. The new price is {final}. Work out the original price.',
+      'The price of a {item} increases by {pct}% to {final}. Work out the original price.',
+      'A {item} now costs {final} after a {pct}% increase. Work out the price before the increase.',
+      'After a {pct}% price rise, a {item} costs {final}. Work out the price before the rise.',
+      'The cost of a {item} rises by {pct}% to {final}. Work out the original cost.'
     ]
+  },
+
+  countIncrease: [
+    { unit: 'students', text: 'The number of students at a school increased by {pct}%. There are now {final} students. Work out the number of students before the increase.' },
+    { unit: 'members', text: 'The number of members of a gym increased by {pct}% to {final}. Work out the number of members before the increase.' },
+    { unit: 'people', text: 'The population of a village increased by {pct}%. The population is now {final}. Work out the population before the increase.' },
+    { unit: 'followers', text: 'The number of followers of an online channel increased by {pct}% to {final}. Work out the number of followers before the increase.' },
+    { unit: 'tickets', text: 'The number of tickets sold for a concert increased by {pct}%. {final} tickets were sold. Work out the number of tickets sold before the increase.' },
+    { unit: 'people', text: 'The number of people working for a company increased by {pct}% to {final}. Work out the number of people before the increase.' },
+    { unit: 'books', text: 'The number of books in a library increased by {pct}% to {final}. Work out the number of books before the increase.' },
+    { unit: 'visitors', text: 'The number of visitors to a museum increased by {pct}%. There were {final} visitors. Work out the number of visitors before the increase.' },
+    { unit: 'subscribers', text: 'The number of subscribers to a magazine increased by {pct}% to {final}. Work out the number of subscribers before the increase.' },
+    { unit: 'cars', text: 'The number of cars produced by a factory increased by {pct}%. The factory produced {final} cars. Work out the number produced before the increase.' },
+    { unit: 'trees', text: 'The number of trees in a woodland increased by {pct}% to {final}. Work out the number of trees before the increase.' },
+    { unit: 'pupils', text: 'The number of pupils at a school increased by {pct}%. There are now {final} pupils. Work out the number of pupils before the increase.' }
+  ],
+
+  countDecrease: [
+    { unit: 'students', text: 'The number of students at a school decreased by {pct}%. There are now {final} students. Work out the number of students before the decrease.' },
+    { unit: 'members', text: 'The number of members of a gym decreased by {pct}% to {final}. Work out the number of members before the decrease.' },
+    { unit: 'people', text: 'The population of a village decreased by {pct}%. The population is now {final}. Work out the population before the decrease.' },
+    { unit: 'followers', text: 'The number of followers of an online channel decreased by {pct}% to {final}. Work out the number of followers before the decrease.' },
+    { unit: 'tickets', text: 'The number of tickets sold for a concert decreased by {pct}%. {final} tickets were sold. Work out the number of tickets sold before the decrease.' },
+    { unit: 'people', text: 'The number of people working for a company decreased by {pct}% to {final}. Work out the number of people before the decrease.' },
+    { unit: 'books', text: 'The number of books in a library decreased by {pct}% to {final}. Work out the number of books before the decrease.' },
+    { unit: 'visitors', text: 'The number of visitors to a museum decreased by {pct}%. There were {final} visitors. Work out the number of visitors before the decrease.' },
+    { unit: 'subscribers', text: 'The number of subscribers to a magazine decreased by {pct}% to {final}. Work out the number of subscribers before the decrease.' },
+    { unit: 'cars', text: 'The number of cars produced by a factory decreased by {pct}%. The factory produced {final} cars. Work out the number produced before the decrease.' },
+    { unit: 'trees', text: 'The number of trees in a woodland decreased by {pct}% to {final}. Work out the number of trees before the decrease.' },
+    { unit: 'pupils', text: 'The number of pupils at a school decreased by {pct}%. There are now {final} pupils. Work out the number of pupils before the decrease.' }
+  ],
+
+  bareIncrease: [
+    { text: 'A number is increased by {pct}% to {final}. Work out the original number.' },
+    { text: 'A value is increased by {pct}% and becomes {final}. Work out the original value.' },
+    { text: 'After a {pct}% increase, an amount is {final}. Work out the amount before the increase.' },
+    { text: 'A quantity is increased by {pct}%, giving {final}. Work out the original quantity.' }
+  ],
+
+  bareDecrease: [
+    { text: 'A number is decreased by {pct}% to {final}. Work out the original number.' },
+    { text: 'A value is reduced by {pct}% to {final}. Work out the original value.' },
+    { text: 'After a {pct}% decrease, an amount is {final}. Work out the amount before the decrease.' },
+    { text: 'A quantity is reduced by {pct}%, giving {final}. Work out the original quantity.' }
+  ],
+
+  /* ----------------------------------------------------------
+     CALCULATOR REVERSE PERCENTAGES
+     ----------------------------------------------------------
+     Percentages chosen so that the multiplier is awkward for
+     mental arithmetic (e.g. 1.06, 0.86, 1.175).  The worksheet
+     expects the pupil to undo the change by dividing by the
+     decimal multiplier.
+
+       {pct}   percentage change, possibly with one decimal
+       {final} final value, already formatted
+       {rate}  VAT rate for the VAT family
+     ---------------------------------------------------------- */
+  calculator: {
+    percentages: [
+      4.5, 6, 7, 8, 9, 11, 12.5, 13, 14, 15, 16, 17.5,
+      18, 21, 22, 23, 27, 32, 37.5, 42
+    ],
+
+    decrease: {
+      items: [
+        'winter coat', 'leather jacket', 'mountain bike', 'electric scooter',
+        'dining table', 'upright freezer', 'dishwasher', 'tumble dryer',
+        'electric guitar', 'digital piano', 'sewing machine', '3D printer',
+        'air conditioner', 'fridge freezer', 'wooden desk', 'bed frame',
+        'garden shed', 'patio set', 'robot vacuum', 'coffee machine',
+        'studio headphones', 'road bike', 'electric keyboard', 'lawn mower'
+      ],
+      templates: [
+        'A {item} is reduced by {pct}% in a sale. The sale price is {final}. Work out the original price.',
+        'The price of a {item} falls by {pct}% to {final}. Work out the price before the reduction.',
+        'In a sale, a {item} has {pct}% off. Its sale price is {final}. Work out the price before the sale.',
+        'A shop reduces the price of a {item} by {pct}%. The new price is {final}. Work out the original price.',
+        'After a {pct}% discount, a {item} costs {final}. Work out the price before the discount.'
+      ]
+    },
+
+    increase: {
+      items: [
+        'train fare', 'season ticket', 'gas bill', 'electricity bill',
+        'car insurance policy', 'home insurance policy', 'boiler service',
+        'childcare bill', 'music lesson', 'tennis lesson', 'gym membership',
+        'phone contract', 'broadband package', 'storage unit',
+        'parking permit', 'waste collection', 'dog grooming', 'house survey',
+        'car service', 'theatre ticket', 'wedding venue hire',
+        'photography session', 'tutoring session', 'leisure centre pass',
+        'digger hire', 'plant hire', 'tool hire', 'restaurant meal',
+        'hotel room', 'coach trip'
+      ],
+      templates: [
+        'The price of a {item} is increased by {pct}%. The new price is {final}. Work out the price before the increase.',
+        'The price of a {item} rises by {pct}% to {final}. Work out the original price.',
+        'A company adds {pct}% to the price of a {item}. The new price is {final}. Work out the original price.',
+        'The cost of a {item} goes up by {pct}%. The new cost is {final}. Work out the cost before the increase.',
+        'After a {pct}% increase, a {item} costs {final}. Work out the original cost.'
+      ]
+    },
+
+    countIncrease: [
+      { unit: 'students', text: 'The number of students at a college increased by {pct}% to {final}. Work out the number of students before the increase.' },
+      { unit: 'members', text: 'The number of members of a sports club increased by {pct}%. There are now {final} members. Work out the number before the increase.' },
+      { unit: 'visitors', text: 'The number of visitors to a castle increased by {pct}% to {final}. Work out the number of visitors before the increase.' },
+      { unit: 'followers', text: 'The number of followers of an online channel increased by {pct}% to {final}. Work out the number of followers before the increase.' },
+      { unit: 'tickets', text: 'Ticket sales for a festival increased by {pct}%. {final} tickets were sold. Work out the number sold before the increase.' },
+      { unit: 'cars', text: 'The number of cars produced by a factory increased by {pct}% to {final}. Work out the number produced before the increase.' },
+      { unit: 'trees', text: 'The number of trees in a woodland increased by {pct}%. There are now {final} trees. Work out the number before the increase.' },
+      { unit: 'subscribers', text: 'The number of subscribers to a service increased by {pct}% to {final}. Work out the number before the increase.' }
+    ],
+
+    countDecrease: [
+      { unit: 'students', text: 'The number of students at a college decreased by {pct}% to {final}. Work out the number of students before the decrease.' },
+      { unit: 'members', text: 'The number of members of a sports club decreased by {pct}%. There are now {final} members. Work out the number before the decrease.' },
+      { unit: 'visitors', text: 'The number of visitors to a castle decreased by {pct}% to {final}. Work out the number of visitors before the decrease.' },
+      { unit: 'followers', text: 'The number of followers of an online channel decreased by {pct}% to {final}. Work out the number of followers before the decrease.' },
+      { unit: 'tickets', text: 'Ticket sales for a festival decreased by {pct}%. {final} tickets were sold. Work out the number sold before the decrease.' },
+      { unit: 'cars', text: 'The number of cars produced by a factory decreased by {pct}% to {final}. Work out the number produced before the decrease.' },
+      { unit: 'trees', text: 'The number of trees in a woodland decreased by {pct}%. There are now {final} trees. Work out the number before the decrease.' },
+      { unit: 'subscribers', text: 'The number of subscribers to a service decreased by {pct}% to {final}. Work out the number before the decrease.' }
+    ],
+
+    bareIncrease: [
+      { text: 'A number is increased by {pct}% to {final}. Work out the original number.' },
+      { text: 'A value is increased by {pct}% and becomes {final}. Work out the original value.' },
+      { text: 'After a {pct}% increase, an amount is {final}. Work out the amount before the increase.' },
+      { text: 'A quantity is increased by {pct}%, giving {final}. Work out the original quantity.' }
+    ],
+
+    bareDecrease: [
+      { text: 'A number is decreased by {pct}% to {final}. Work out the original number.' },
+      { text: 'A value is reduced by {pct}% to {final}. Work out the original value.' },
+      { text: 'After a {pct}% decrease, an amount is {final}. Work out the amount before the decrease.' },
+      { text: 'A quantity is reduced by {pct}%, giving {final}. Work out the original quantity.' }
+    ],
+
+    vat: {
+      rates: [17.5, 20],
+      items: [
+        'camera', 'amplifier', 'printer', 'monitor', 'tablet', 'laptop',
+        'projector', 'games console', 'smart speaker', 'widescreen TV',
+        'photocopier', 'coffee machine', 'dishwasher', 'microwave',
+        'electric drill', 'garden furniture set'
+      ],
+      templates: [
+        'The price of a {item} is {final} including VAT at {rate}%. Work out the price excluding VAT.',
+        'A {item} is advertised at {final} including VAT at {rate}%. Calculate the price before VAT is added.',
+        'A {item} costs {final} including VAT at {rate}%. Work out the price of the {item} without VAT.'
+      ]
+    }
   }
 };
 

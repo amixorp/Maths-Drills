@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reverse Percentages — Worksheet Generator</title>
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#64748b;
+    --accent:#2563eb;
+    --accent-dark:#1d4ed8;
+    --page-bg:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    background:var(--page-bg);
+    color:var(--ink);
+    font-size:16px;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+  .toolbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; align-items:center; gap:12px;
+    padding:12px 20px;
+    background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(15,23,42,.25);
+    font-size:14px;
+  }
+  .tb-title{font-weight:800; font-size:15px; letter-spacing:.3px; white-space:nowrap}
+  .toolbar label{display:flex; align-items:center; gap:6px; color:#e2e8f0; white-space:nowrap}
+  .toolbar input[type=number],
+  .toolbar input[type=text],
+  .toolbar select{
+    padding:7px 9px; border-radius:8px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit;
+  }
+  .toolbar input[type=number]{width:118px}
+  .toolbar input[type=text]{width:195px}
+  .toolbar button{
+    padding:8px 15px; border-radius:9px; border:1px solid #334155;
+    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
+    cursor:pointer; white-space:nowrap;
+  }
+  .toolbar button:hover{background:#334155}
+  .toolbar button.primary{background:var(--accent); border-color:var(--accent)}
+  .toolbar button.primary:hover{background:var(--accent-dark)}
+  .toolbar button.reveal-on{background:#15803d; border-color:#16a34a}
+  .toolbar button.reveal-on:hover{background:#166534}
+
+  .viewport{padding:28px 0 6px;}
+  .pages{
+    display:flex; flex-direction:column; align-items:center; gap:24px;
+  }
+  .page-wrap{
+    position:relative; overflow:hidden;
+  }
+  .page{
+    position:absolute; top:0; left:0;
+    width:210mm; height:297mm;
+    background:#fff;
+    box-shadow:0 6px 26px rgba(15,23,42,.16);
+    transform-origin:top left;
+    font-family:Helvetica,Arial,sans-serif;
+    color:#000;
+  }
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .ans{visibility:hidden; color:var(--accent); font-weight:700;}
+  .pages.revealed .ans{visibility:visible;}
+
+  .hint{
+    text-align:center; color:var(--muted);
+    font-size:13px; line-height:1.5;
+    padding:4px 16px 34px;
+  }
+  .hint kbd{background:#e2e8f0; border-radius:5px; padding:1px 6px; font-family:inherit; font-size:12px;}
+
+  @page{ size:A4; margin:0; }
+  @media print{
+    body{background:#fff}
+    .no-print{display:none !important}
+    .viewport{padding:0 !important;}
+    .pages{display:block;}
+    .page-wrap{
+      width:auto !important;
+      height:auto !important;
+      overflow:visible !important;
+      page-break-after:always;
+      break-after:page;
+    }
+    .page-wrap:last-child{page-break-after:auto; break-after:auto;}
+    .page{
+      position:relative !important;
+      transform:none !important;
+      width:210mm !important;
+      height:296.9mm !important;
+      box-shadow:none !important;
+    }
+    .pages .ans{ visibility: hidden !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar no-print">
+  <span class="tb-title">📐 Reverse Percentages</span>
+
+  <label>Sheet title
+    <input id="titleInput" type="text" value="Reverse Percentages (Mixed)" spellcheck="false">
+  </label>
+
+  <label>Seed
+    <input id="seedInput" type="number" min="0" step="1" value="">
+  </label>
+
+  <label>Currency
+    <select id="curSel">
+      <option value="£" selected>£</option>
+      <option value="$">$</option>
+      <option value="€">€</option>
+    </select>
+  </label>
+
+  <label>Question mix
+    <select id="mixSel">
+      <option value="both" selected>Both (mixed)</option>
+      <option value="calc">Calculator only</option>
+      <option value="noncalc">Non-calculator only</option>
+    </select>
+  </label>
+
+  <button id="revealBtn">👁 Reveal answers</button>
+  <button id="regenBtn" class="primary">🎲 Generate New</button>
+  <button id="dlBtn">⬇️ Worksheet PDF</button>
+  <button id="dlAnsBtn">🧾 Answers + Solutions</button>
+  <button id="printBtn">🖨️ Print</button>
+</div>
+
+<div class="viewport" id="viewport">
+  <div class="pages" id="pages"></div>
+</div>
+
+<p class="hint no-print">
+  <b>Reveal answers</b> shows them inline on screen — nothing downloads, and they're never printed.<br>
+  <b>Worksheet PDF</b> saves the questions only. <b>Answers + Solutions</b> opens a new tab with every answer and full worked solution, plus a Print button.<br>
+  Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd> to open with answers shown.
+</p>
+
+<script src="../banks.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  if (!window.BANKS) window.BANKS = {};
+  if (!window.BANKS.proportion) {
+    window.BANKS.proportion = {
+      contexts: [
+        { id:'pipe',    fracAllowed: true,
+          stem:'The mass, `m` kg, of a length of pipe is directly proportional to its length, `l` m.',
+          Asym:'m', Bsym:'l', k:[2,12], B0:[2,9],  B1:[2,12], B2:[2,12] },
+        { id:'tap',     fracAllowed: false,
+          stem:'The volume, `V` litres, of water that comes out of a tap is directly proportional to the time, `T` minutes, for which the tap is turned on.',
+          Asym:'V', Bsym:'T', k:[10,60], B0:[2,6], B1:[2,8],  B2:[2,8] },
+        { id:'paint',   fracAllowed: true,
+          stem:'The quantity, `P` litres, of paint needed to cover a wall is directly proportional to the area, `A` m\u00B2, of the wall.',
+          Asym:'P', Bsym:'A', k:[2,5],  B0:[4,12], B1:[4,15], B2:[4,15] },
+        { id:'shadow',  fracAllowed: true,
+          stem:'The length, `L` m, of a shadow is directly proportional to the height, `H` m, of the object casting it.',
+          Asym:'L', Bsym:'H', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'current', fracAllowed: false,
+          stem:'The electric current, `I` amps, in a lamp is directly proportional to the voltage, `V` volts.',
+          Asym:'I', Bsym:'V', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'spring',  fracAllowed: true,
+          stem:'The extension, `e` cm, of a spring is directly proportional to the force, `F` newtons, applied to it.',
+          Asym:'e', Bsym:'F', k:[2,8],  B0:[2,8],  B1:[2,10], B2:[2,10] },
+        { id:'flour',   fracAllowed: false,
+          stem:'The mass, `m` g, of flour needed for a recipe is directly proportional to the number of people, `n`, the recipe is for.',
+          Asym:'m', Bsym:'n', k:[30,90], B0:[2,8], B1:[2,10], B2:[2,10] }
+      ],
+      rates: [
+        { noun:'olive oil',     unit:'ml' },
+        { noun:'sunflower oil', unit:'ml' },
+        { noun:'orange juice',  unit:'ml' },
+        { noun:'honey',         unit:'g'  },
+        { noun:'flour',         unit:'g'  },
+        { noun:'rice',          unit:'g'  },
+        { noun:'coffee beans',  unit:'g'  }
+      ]
+    };
+  }
+  const PROP     = window.BANKS.proportion;
+  const CONTEXTS = PROP.contexts || [];
+  const RATES    = PROP.rates || [];
+
+  let rng = Math.random;
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const pick = a => a[Math.floor(rng() * a.length)];
+  const ri   = (a, b) => a + Math.floor(rng() * (b - a + 1));
+  function weightedPick(pairs) {
+    let total = 0;
+    for (const p of pairs) total += p[1];
+    let r = rng() * total;
+    for (const p of pairs) {
+      r -= p[1];
+      if (r <= 0) return p[0];
+    }
+    return pairs[pairs.length - 1][0];
+  }
+
+  const W_REG = [
+    278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    278,278,584,584,584,556,1015,
+    667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    278,278,278,469,556,333,
+    556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,
+    334,260,334,584
+  ];
+  const W_BOLD = [
+    278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,
+    556,556,556,556,556,556,556,556,556,556,
+    333,333,584,584,584,611,975,
+    722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,
+    333,278,333,584,556,333,
+    556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,
+    389,280,389,584
+  ];
+  function textWidth(str, size, bold) {
+    const t = bold ? W_BOLD : W_REG;
+    let w = 0;
+    for (let i = 0; i < str.length; i++) {
+      const c = str.charCodeAt(i);
+      if (c === 96) continue;
+      w += (c >= 32 && c <= 126) ? t[c - 32] : 556;
+    }
+    return w * size / 1000;
+  }
+
+  function parseRuns(text) {
+    const runs = [];
+    let i = 0;
+    while (i < text.length) {
+      const tick = text.indexOf('`', i);
+      const frac = text.indexOf('\\frac{', i);
+      if (tick === -1 && frac === -1) {
+        if (i < text.length) runs.push({ kind:'text', text: text.slice(i), italic: false });
+        break;
+      }
+      const isFrac = (frac !== -1) && (tick === -1 || frac < tick);
+      const next = isFrac ? frac : tick;
+      if (next > i) runs.push({ kind:'text', text: text.slice(i, next), italic: false });
+      if (!isFrac) {
+        const close = text.indexOf('`', next + 1);
+        if (close === -1) {
+          runs.push({ kind:'text', text: text.slice(next), italic: false });
+          break;
+        }
+        runs.push({ kind:'text', text: text.slice(next + 1, close), italic: true });
+        i = close + 1;
+      } else {
+        const open1  = text.indexOf('{', next);
+        const close1 = open1 === -1 ? -1 : text.indexOf('}', open1);
+        const open2  = close1 === -1 ? -1 : text.indexOf('{', close1);
+        const close2 = open2 === -1 ? -1 : text.indexOf('}', open2);
+        if (open1 === -1 || close1 === -1 || open2 === -1 || close2 === -1) {
+          runs.push({ kind:'text', text: text.slice(next), italic: false });
+          break;
+        }
+        runs.push({ kind:'frac',
+                    num: text.slice(open1 + 1, close1),
+                    den: text.slice(open2 + 1, close2) });
+        i = close2 + 1;
+      }
+    }
+    const merged = [];
+    for (const r of runs) {
+      const last = merged[merged.length - 1];
+      if (r.kind === 'text' && last && last.kind === 'text' && last.italic === r.italic) {
+        last.text += r.text;
+      } else {
+        merged.push(r);
+      }
+    }
+    return merged.filter(r => r.kind === 'frac' || r.text.length > 0);
+  }
+
+  function textToTokens(text) {
+    const runs = parseRuns(text);
+    const tokens = [];
+    let pendingSpace = false;
+    for (const r of runs) {
+      if (r.kind === 'frac') {
+        tokens.push({ kind:'frac', num: r.num, den: r.den, space: pendingSpace });
+        pendingSpace = false;
+        continue;
+      }
+      const parts = r.text.split(/(\s+)/);
+      for (const p of parts) {
+        if (p === '') continue;
+        if (/^\s+$/.test(p)) { pendingSpace = true; continue; }
+        tokens.push({ kind:'word', word: p, italic: r.italic, space: pendingSpace });
+        pendingSpace = false;
+      }
+    }
+    return tokens;
+  }
+
+  function tokenWidth(tok, size, bold) {
+    if (tok.kind === 'frac') {
+      const sub = size * 0.7;
+      const nw = textWidth(tok.num, sub, bold);
+      const dw = textWidth(tok.den, sub, bold);
+      return Math.max(nw, dw) + 0.20 * size;
+    }
+    return textWidth(tok.word, size, bold);
+  }
+
+  function wrapTokens(tokens, size, bold, maxW) {
+    const lines = [];
+    let cur = [];
+    let curW = 0;
+    for (const tok of tokens) {
+      const spaceW = (tok.space && cur.length) ? textWidth(' ', size, bold) : 0;
+      const w = spaceW + tokenWidth(tok, size, bold);
+      if (cur.length && curW + w > maxW) {
+        lines.push(cur);
+        cur = [{ kind: tok.kind, num: tok.num, den: tok.den,
+                 word: tok.word, italic: tok.italic, space: false }];
+        curW = tokenWidth(tok, size, bold);
+      } else {
+        cur.push(tok);
+        curW += w;
+      }
+    }
+    if (cur.length) lines.push(cur);
+    return lines;
+  }
+
+  function lineToRuns(lineTokens) {
+    const runs = [];
+    for (let i = 0; i < lineTokens.length; i++) {
+      const tok = lineTokens[i];
+      const prefix = (i === 0) ? '' : (tok.space ? ' ' : '');
+      if (tok.kind === 'frac') {
+        runs.push({ kind:'frac', num: tok.num, den: tok.den, prefix });
+      } else {
+        const last = runs[runs.length - 1];
+        if (last && last.kind === 'text' && last.italic === tok.italic) {
+          last.text += prefix + tok.word;
+        } else {
+          runs.push({ kind:'text', text: prefix + tok.word, italic: tok.italic });
+        }
+      }
+    }
+    return runs;
+  }
+
+  function emitRuns(runs, x0, y, size, items, variant) {
+    const textType = (variant === 'answer') ? 'answer'      : 'run';
+    const barType  = (variant === 'answer') ? 'answer-line' : 'line';
+    let rx = x0;
+    for (const run of runs) {
+      if (run.kind === 'frac') {
+        if (run.prefix) rx += textWidth(' ', size, false);
+        const sub    = size * 0.7;
+        const nw     = textWidth(run.num, sub, false);
+        const dw     = textWidth(run.den, sub, false);
+        const innerW = Math.max(nw, dw);
+        const totalW = innerW + 0.20 * size;
+        const barW   = innerW + 0.08 * size;
+        items.push({ t: textType, x: rx + (totalW - nw)/2,
+                     y: y - 0.18 * size, size: sub,
+                     bold: false, italic: false, s: run.num });
+        items.push({ t: barType,
+                     x1: rx + (totalW - barW)/2, y1: y - 0.12 * size,
+                     x2: rx + (totalW + barW)/2, y2: y - 0.12 * size,
+                     w: 0.5 });
+        items.push({ t: textType, x: rx + (totalW - dw)/2,
+                     y: y + 0.44 * size, size: sub,
+                     bold: false, italic: false, s: run.den });
+        rx += totalW;
+      } else {
+        items.push({ t: textType, x: rx, y: y, size: size,
+                     bold: false, italic: run.italic, s: run.text });
+        rx += textWidth(run.text, size, false);
+      }
+    }
+    return rx;
+  }
+
+  /* ============================================================
+     QUESTION GENERATION
+     ============================================================ */
+  const ital = s => '`' + s + '`';
+
+  const VAR_PAIRS = [
+    ['A','B'], ['C','D'], ['E','F'], ['P','Q'], ['R','S'],
+    ['G','H'], ['K','L'], ['M','N'], ['T','U'], ['V','W'],
+    ['x','y'], ['p','q'], ['u','v'], ['m','n'], ['a','b']
+  ];
+
+  const FRAC_KS = [
+    { n:1, d:2 }, { n:1, d:3 }, { n:2, d:3 }, { n:1, d:4 },
+    { n:3, d:4 }, { n:1, d:5 }, { n:3, d:5 }, { n:4, d:5 },
+    { n:1, d:6 }, { n:5, d:6 }, { n:3, d:2 }, { n:5, d:4 },
+    { n:4, d:3 }
+  ];
+  const FRAC_KS_PROPER = FRAC_KS.filter(f => f.n < f.d);
+
+  function coreInt(ranges) {
+    const k = ri(ranges.kMin, ranges.kMax);
+    const B0 = ri(ranges.B0Min, ranges.B0Max);
+    const A0 = k * B0;
+    let B1; do { B1 = ri(ranges.B1Min, ranges.B1Max); } while (B1 === B0);
+    const A1 = k * B1;
+    let B2; do { B2 = ri(ranges.B2Min, ranges.B2Max); } while (B2 === B0 || B2 === B1);
+    const A2 = k * B2;
+    return { isFrac:false, k, B0, B1, B2, A0, A1, A2 };
+  }
+
+  function coreFrac() {
+    const { n, d } = pick(FRAC_KS);
+    const pool = [];
+    for (let m = 1; m * d <= 12; m++) pool.push(m * d);
+    if (pool.length < 3) return null;
+    const chosen = [];
+    for (let i = 0; i < 3; i++) {
+      const idx = Math.floor(rng() * pool.length);
+      chosen.push(pool.splice(idx, 1)[0]);
+    }
+    const [B0, B1, B2] = chosen;
+    return { isFrac:true, n, d, B0, B1, B2,
+             A0: B0 * n / d, A1: B1 * n / d, A2: B2 * n / d };
+  }
+
+  function coreFracInRange(ranges) {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const f = pick(FRAC_KS_PROPER);
+      const { n, d } = f;
+      const B0 = randMultipleInRange(d, ranges.B0Min, ranges.B0Max);
+      const B1 = randMultipleInRange(d, ranges.B1Min, ranges.B1Max);
+      const B2 = randMultipleInRange(d, ranges.B2Min, ranges.B2Max);
+      if (B0 === null || B1 === null || B2 === null) continue;
+      if (B0 === B1 || B1 === B2 || B0 === B2) continue;
+      return { isFrac:true, n, d, B0, B1, B2,
+               A0: B0 * n / d, A1: B1 * n / d, A2: B2 * n / d };
+    }
+    return null;
+  }
+
+  function randMultipleInRange(d, lo, hi) {
+    const first = Math.ceil(lo / d) * d;
+    const last  = Math.floor(hi / d) * d;
+    if (first > last) return null;
+    const count = Math.floor((last - first) / d) + 1;
+    return first + d * Math.floor(rng() * count);
+  }
+
+  function genBare() {
+    const data = (rng() < 0.25 ? coreFrac() : null) ||
+                 coreInt({ kMin:2, kMax:12, B0Min:2, B0Max:9,
+                           B1Min:2, B1Max:12, B2Min:2, B2Max:12 });
+    const [vA, vB] = pick(VAR_PAIRS);
+    const As = ital(vA), Bs = ital(vB);
+    const formula = data.isFrac
+      ? As + ' = \\frac{' + data.n + '}{' + data.d + '}' + Bs
+      : As + ' = ' + data.k + Bs;
+    return {
+      key: 'bare|' + vA + vB + '|' +
+           (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      theme: 'bare:' + vA + vB,
+      blocks: [
+        { type:'text', text: As + ' is directly proportional to ' + Bs + '.' },
+        { type:'text', text:'When ' + As + ' = ' + data.A0 + ', ' + Bs + ' = ' + data.B0 + '.' },
+        { type:'text', text:'(a)  Find a formula for ' + As + ' in terms of ' + Bs + '.' },
+        { type:'text', text:'(b)  Find the value of ' + As + ' when ' + Bs + ' = ' + data.B1 + '.' },
+        { type:'text', text:'(c)  Find the value of ' + Bs + ' when ' + As + ' = ' + data.A2 + '.' }
+      ],
+      answers: [
+        { blockIndex:2, text: formula },
+        { blockIndex:3, text: As + ' = ' + data.A1 },
+        { blockIndex:4, text: Bs + ' = ' + data.B2 }
+      ]
+    };
+  }
+
+  function genContext() {
+    if (!CONTEXTS.length) return genBare();
+    const ctx = pick(CONTEXTS);
+    let data = null;
+    if (ctx.fracAllowed && rng() < 0.20) {
+      data = coreFracInRange({
+        B0Min: ctx.B0[0], B0Max: ctx.B0[1],
+        B1Min: ctx.B1[0], B1Max: ctx.B1[1],
+        B2Min: ctx.B2[0], B2Max: ctx.B2[1]
+      });
+    }
+    if (!data) {
+      data = coreInt({
+        kMin:  ctx.k[0],  kMax:  ctx.k[1],
+        B0Min: ctx.B0[0], B0Max: ctx.B0[1],
+        B1Min: ctx.B1[0], B1Max: ctx.B1[1],
+        B2Min: ctx.B2[0], B2Max: ctx.B2[1]
+      });
+    }
+    const As = ital(ctx.Asym), Bs = ital(ctx.Bsym);
+    const formula = data.isFrac
+      ? As + ' = \\frac{' + data.n + '}{' + data.d + '}' + Bs
+      : As + ' = ' + data.k + Bs;
+    return {
+      key: 'ctx|' + ctx.id + '|' +
+           (data.isFrac ? 'f' + data.n + '/' + data.d : data.k) + '|' + data.B0,
+      theme: 'ctx:' + ctx.id,
+      blocks: [
+        { type:'text', text: ctx.stem },
+        { type:'text', text: 'When ' + As + ' = ' + data.A0 + ', ' + Bs + ' = ' + data.B0 + '.' },
+        { type:'text', text: '(a)  Find a formula for ' + As + ' in terms of ' + Bs + '.' },
+        { type:'text', text: '(b)  Find the value of ' + As + ' when ' + Bs + ' = ' + data.B1 + '.' },
+        { type:'text', text: '(c)  Find the value of ' + Bs + ' when ' + As + ' = ' + data.A2 + '.' }
+      ],
+      answers: [
+        { blockIndex:2, text: formula },
+        { blockIndex:3, text: As + ' = ' + data.A1 },
+        { blockIndex:4, text: Bs + ' = ' + data.B2 }
+      ]
+    };
+  }
+
+  /* A "standard" is either the bare or the contextual version of the
+     (a)/(b)/(c) directly-proportional exercise. */
+  function genStandard() {
+    return (rng() < 0.55) ? genBare() : genContext();
+  }
+
+  function genTable() {
+    const k = pick([2,3,4,5,6,7,8,9,10]);
+    const pool = [2,3,4,5,6,7,8,9,10,11,12];
+    const xs = [];
+    while (xs.length < 3) {
+      const v = pick(pool);
+      if (!xs.includes(v)) xs.push(v);
+    }
+    const ys = xs.map(x => k * x);
+
+    const xRow = ['`x`', String(xs[0]), String(xs[1]), String(xs[2])];
+    const yRow = ['`y`', String(ys[0]), String(ys[1]), String(ys[2])];
+
+    function shuffled() {
+      const a = [0, 1, 2];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        const t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    if (rng() < 0.5) {
+      const cols = shuffled().slice(0, 2);
+      for (const i of cols) yRow[i+1] = '';
+    } else {
+      const xcol = ri(0, 2);
+      let ycol;
+      do { ycol = ri(0, 2); } while (ycol === xcol);
+      xRow[xcol+1] = '';
+      yRow[ycol+1] = '';
+    }
+
+    const missing = [];
+    for (let i = 0; i < 3; i++) {
+      if (xRow[i+1] === '') missing.push('`x` = ' + xs[i]);
+      if (yRow[i+1] === '') missing.push('`y` = ' + ys[i]);
+    }
+
+    const key = 'tbl|' + k + '|' + xs.join(',') + '|' +
+                xRow.map(v => v === '' ? '_' : v).join(',') + '|' +
+                yRow.map(v => v === '' ? '_' : v).join(',');
+
+    return {
+      key: key,
+      blocks: [
+        { type:'text', text:'`y` is directly proportional to `x`.' },
+        { type:'text', text:'Complete the table.' },
+        { type:'table', cols:4, rows: [ xRow, yRow ]}
+      ],
+      answers: [
+        { blockIndex:2, text: missing.join(', ') }
+      ]
+    };
+  }
+
+  /* ---- Flagpole figure data ----------------------------------------- */
+  const FP_K_POOL = [
+    { p:1, q:1 }, { p:3, q:2 }, { p:2, q:1 }, { p:5, q:2 },
+    { p:1, q:2 }, { p:5, q:4 }, { p:7, q:4 }, { p:3, q:4 },
+    { p:4, q:3 }, { p:3, q:5 }, { p:4, q:5 }, { p:7, q:5 },
+    { p:8, q:5 }
+  ];
+  function fpStepFor(q) {
+    if (q === 1 || q === 2) return 0.2;
+    if (q === 3) return 0.3;
+    if (q === 4) return 0.4;
+    if (q === 5) return 0.5;
+    return 0.1;
+  }
+  function fpRound2(x) { return Math.round(x * 100) / 100; }
+  function fpFmt(x) { return String(fpRound2(x)); }
+  function genFlagpole() {
+    const kObj = pick(FP_K_POOL);
+    const { p, q } = kObj;
+    const step = fpStepFor(q);
+
+    const minH = Math.ceil(1.2 / step) * step;
+    const maxH = Math.floor(6.0 / step) * step;
+    const nSteps = Math.round((maxH - minH) / step) + 1;
+
+    const heights = [];
+    let guard = 0;
+    while (heights.length < 3 && guard++ < 200) {
+      const idx = Math.floor(rng() * nSteps);
+      const h = fpRound2(minH + idx * step);
+      if (h > 0 && !heights.includes(h)) heights.push(h);
+    }
+    while (heights.length < 3) heights.push(fpRound2(heights[heights.length-1] + step));
+
+    const shadows = heights.map(h => fpRound2(p * h / q));
+
+    const fullIdx = ri(0, 2);
+    const others = [0, 1, 2].filter(i => i !== fullIdx);
+    if (rng() < 0.5) others.reverse();
+    const hMissingIdx = others[0];
+    const sMissingIdx = others[1];
+
+    const poles = [];
+    for (let i = 0; i < 3; i++) {
+      const hUnknown = (i === hMissingIdx);
+      const sUnknown = (i === sMissingIdx);
+      poles.push({
+        label: ['A','B','C'][i],
+        height: heights[i],
+        heightLabel: hUnknown ? '?' : fpFmt(heights[i]) + ' m',
+        shadow: shadows[i],
+        shadowLabel: sUnknown ? '?' : fpFmt(shadows[i]) + ' m',
+        heightUnknown: hUnknown,
+        shadowUnknown: sUnknown
+      });
+    }
+
+    const hLabel = poles[hMissingIdx].label;
+    const sLabel = poles[sMissingIdx].label;
+
+    return {
+      key: 'fp|' + p + '/' + q + '|' + heights.join(',') + '|' + hMissingIdx + sMissingIdx,
+      theme: 'flagpole',
+      blocks: [
+        { type:'text', text:'The diagram shows three flagpoles and their shadows. The length of each shadow is directly proportional to the height of the flagpole.' },
+        { type:'flagpole', poles: poles },
+        { type:'text', text:'(a)  Find the height of flagpole ' + hLabel + '.' },
+        { type:'text', text:'(b)  Find the length of the shadow of flagpole ' + sLabel + '.' }
+      ],
+      answers: [
+        { blockIndex: 2, text: fpFmt(heights[hMissingIdx]) + ' m' },
+        { blockIndex: 3, text: fpFmt(shadows[sMissingIdx]) + ' m' }
+      ]
+    };
+  }
+
+  /* ---- Graph reading questions ------------------------------------- */
+  const GRAPH_VAR_PAIRS = [
+    ['y','x'], ['y','x'], ['y','x'], ['y','x'],
+    ['P','Q'], ['A','B'], ['M','N'], ['R','S'],
+    ['T','V'], ['p','q'], ['u','v'], ['m','n'],
+    ['C','D'], ['E','F'], ['G','H'], ['K','L']
+  ];
+  const GRAPH_INT_KS  = [2, 3, 4, 5, 6];
+  const GRAPH_FRAC_KS = [
+    { n:1, d:3 }, { n:2, d:3 }, { n:1, d:4 }, { n:3, d:4 },
+    { n:1, d:5 }, { n:2, d:5 }, { n:3, d:5 }, { n:4, d:5 },
+    { n:1, d:2 }, { n:3, d:2 }, { n:5, d:2 }, { n:5, d:3 },
+    { n:5, d:4 }, { n:4, d:3 }, { n:7, d:4 }, { n:7, d:5 }
+  ];
+
+  function genGraph(index) {
+    const pair = pick(GRAPH_VAR_PAIRS);
+    const vA = pair[0], vB = pair[1];          /* vA on y-axis, vB on x-axis */
+
+    const pFrac = Math.max(0.12, Math.min(0.70, (index - 2) * 0.07 + 0.10));
+
+    let kObj, pointX, pointY, isInt;
+    if (rng() < pFrac) {
+      const f = pick(GRAPH_FRAC_KS);
+      const n = f.n, d = f.d;
+      const mLo = Math.max(1, Math.ceil(2 / d));
+      const mHi = Math.max(mLo, Math.min(Math.floor(10 / d),
+                                         Math.floor(20 / n)));
+      const m   = ri(mLo, mHi);
+      pointX = d * m;          /* so pointY = (n/d) * pointX is an integer */
+      pointY = n * m;
+      kObj = { n: n, d: d };
+      isInt = false;
+    } else {
+      const k = pick(GRAPH_INT_KS);
+      pointX = ri(2, 4);
+      pointY = k * pointX;
+      kObj = { n: k, d: 1 };
+      isInt = true;
+    }
+
+    const As = ital(vA), Bs = ital(vB);
+    const formula = isInt
+      ? As + ' = ' + kObj.n + Bs
+      : As + ' = \\frac{' + kObj.n + '}{' + kObj.d + '}' + Bs;
+
+    return {
+      key: 'graph|' + vA + vB + '|' + kObj.n + '/' + kObj.d + '|' + pointX,
+      theme: 'graph:' + vA + vB,
+      blocks: [
+        { type:'graph', labelY: vA, labelX: vB, k: kObj,
+          pointX: pointX, pointY: pointY },
+        { type:'text', text: 'Write down an equation for ' + As +
+                             ' in terms of ' + Bs + '.' }
+      ],
+      answers: [
+        { blockIndex: 1, text: formula }
+      ]
+    };
+  }
+
+  const GENS = {
+    bare: genBare, context: genContext, table: genTable,
+    flagpole: genFlagpole, graph: genGraph, standard: genStandard
+  };
+
+  /* ============================================================
+     SHEET COMPOSITION
+     ------------------------------------------------------------
+     Sections, in order:
+       1. 2–3 graph questions
+       2. At least 5 "standard" questions (bare or context)
+       3. Exactly 3 table questions
+       4. 20 % chance of a flagpole at the end
+       5. Extra standards inserted into slot 2 until the sheet
+          would overflow onto a third page.
+     ============================================================ */
+  function generateSetToFillTwoPages(fs) {
+    const out    = [];
+    const seen   = new Set();
+    const themes = new Set();
+
+    function tryGen(kind) {
+      for (let tries = 0; tries < 500; tries++) {
+        const cand = GENS[kind](out.length);
+        if (seen.has(cand.key)) continue;
+        if (cand.theme && themes.has(cand.theme)) continue;
+        seen.add(cand.key);
+        if (cand.theme) themes.add(cand.theme);
+        return cand;
+      }
+      return null;
+    }
+
+    /* 1. Graphs */
+    const nGraphs = ri(2, 3);
+    for (let i = 0; i < nGraphs; i++) {
+      const q = tryGen('graph');
+      if (q) out.push(q);
+    }
+
+    /* 2. Standards — remember where the filler block will start */
+    const N_STD_MIN = 5;
+    for (let i = 0; i < N_STD_MIN; i++) {
+      const q = tryGen('standard');
+      if (q) out.push(q);
+    }
+    const stdEnd = out.length;
+
+    /* 3. Tables */
+    for (let i = 0; i < 3; i++) {
+      const q = tryGen('table');
+      if (q) out.push(q);
+    }
+
+    /* 4. Optional flagpole at the end */
+    if (rng() < 0.20) {
+      const q = tryGen('flagpole');
+      if (q) out.push(q);
+    }
+
+    /* 5. Extra standards to fill the two pages, inserted just
+          before the tables. Re-layout each time to check fit. */
+    let insertPos = stdEnd;
+    let safety = 0;
+    while (safety++ < 40) {
+      const q = tryGen('standard');
+      if (!q) break;
+      out.splice(insertPos, 0, q);
+      insertPos++;
+      const testPages = layoutSheet({ title: 'Test', questions: out });
+      if (testPages.length > 2) {
+        out.splice(insertPos - 1, 1);
+        break;
+      }
+    }
+
+    return out;
+  }
+
+  /* ============================================================
+     REVERSE PERCENTAGE GENERATION
+     ------------------------------------------------------------
+     Every percentage change is a multiple of 10, so the final
+     value is a whole number of tens.  The method is:
+       10% = final value ÷ (number of tens)
+       100% = 10% × 10
+     ============================================================ */
+  const RP = window.BANKS.reversePercent || {};
+  const RP_DEC      = RP.decrease || { items: ['item'], templates: ['A {item} is reduced by {pct}% to {final}. Work out the original price.'] };
+  const RP_INC      = RP.increase || { items: ['item'], templates: ['A {item} is increased by {pct}% to {final}. Work out the original price.'] };
+  const RP_COUNT_INC = RP.countIncrease || [];
+  const RP_COUNT_DEC = RP.countDecrease || [];
+  const RP_BARE_INC  = RP.bareIncrease || [];
+  const RP_BARE_DEC  = RP.bareDecrease || [];
+
+  const RP_CALC      = RP.calculator || {};
+  const CALC_PCTS    = (RP_CALC.percentages && RP_CALC.percentages.length)
+                       ? RP_CALC.percentages
+                       : [6, 8, 9, 11, 12.5, 13, 14, 16, 17.5, 18, 22, 27, 32, 37.5];
+  const CALC_DEC     = RP_CALC.decrease || RP_DEC;
+  const CALC_INC     = RP_CALC.increase || RP_INC;
+  const CALC_COUNT_INC = RP_CALC.countIncrease || RP_COUNT_INC;
+  const CALC_COUNT_DEC = RP_CALC.countDecrease || RP_COUNT_DEC;
+  const CALC_BARE_INC  = RP_CALC.bareIncrease || RP_BARE_INC;
+  const CALC_BARE_DEC  = RP_CALC.bareDecrease || RP_BARE_DEC;
+  const CALC_VAT     = RP_CALC.vat || null;
+
+  const RP_PCT_DEC = [10, 20, 30, 40, 50, 60];
+  const RP_PCT_INC = [10, 20, 30, 40, 50, 60];
+
+  const NICE_TENS = [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200
+  ];
+
+  function fmtInt(n) {
+    return Math.round(n).toLocaleString('en-GB');
+  }
+  function fmtMoney(n, cur) {
+    return cur + fmtInt(n);
+  }
+  function fmtMoneyCalc(n, cur) {
+    const r = Math.round(n * 100) / 100;
+    if (Math.abs(r - Math.round(r)) < 1e-9) return cur + fmtInt(r);
+    const parts = r.toFixed(2).split('.');
+    return cur + Number(parts[0]).toLocaleString('en-GB') + '.' + parts[1];
+  }
+  function fmtPct(p) {
+    return String(Number(p.toFixed(2)));
+  }
+  function gcd(a, b) {
+    while (b) { const t = a % b; a = b; b = t; }
+    return a;
+  }
+  function lcm(a, b) {
+    return (a / gcd(a, b)) * b;
+  }
+  function calcFraction(pct, type) {
+    const tenths = Math.round(pct * 10);
+    const num = (type === 'decrease') ? (1000 - tenths) : (1000 + tenths);
+    const den = 1000;
+    const g = gcd(num, den);
+    return { num: num / g, den: den / g };
+  }
+  function calcMultiplier(pct, type) {
+    return (type === 'decrease') ? (100 - pct) / 100 : (100 + pct) / 100;
+  }
+  function fmtMultiplier(m) {
+    return String(Number(m.toFixed(4)));
+  }
+  function pickUnused(list, used) {
+    if (!list || !list.length) return null;
+    const free = list.filter(x => !used.has(x));
+    const pool = free.length ? free : list;
+    return pool[Math.floor(rng() * pool.length)];
+  }
+  function fillRP(tpl, data) {
+    let s = tpl;
+    if (data.item !== undefined) {
+      const item = data.item;
+      const vowelSound = /^[aeiou]/i.test(item) && !/^(uni|use|usu|utili|eu|one)/i.test(item);
+      const article = vowelSound ? 'an' : 'a';
+      const Article = article.charAt(0).toUpperCase() + article.slice(1);
+      s = s.replace(/\b(a|A) \{item\}/g, function (m, a) {
+        return (a === 'A' ? Article : article) + ' ' + item;
+      });
+      s = s.replace(/\{item\}/g, item);
+      s = s.replace(/\{Item\}/g, item.charAt(0).toUpperCase() + item.slice(1));
+    }
+    s = s.replace(/\{pct\}/g, String(data.pct));
+    if (data.rate !== undefined) s = s.replace(/\{rate\}/g, String(data.rate));
+    s = s.replace(/\{final\}/g, String(data.final));
+    return s;
+  }
+  function rpTens(pct, type) {
+    return type === 'decrease' ? 10 - pct / 10 : 10 + pct / 10;
+  }
+  function rpPercentLeft(pct, type) {
+    return type === 'decrease' ? 100 - pct : 100 + pct;
+  }
+  function rpVisual(type, pct, percent, divisor, top, mid, bottom, answer) {
+    return {
+      type: type,
+      pct: pct,
+      percent: percent,
+      divisor: divisor,
+      top: top,
+      mid: mid,
+      bottom: bottom,
+      rightTop: percent + '%',
+      rightMid: '10%',
+      rightBottom: '100%',
+      answer: answer
+    };
+  }
+  function pickTenForRange(lo, hi) {
+    const lowTen = lo / 10, highTen = hi / 10;
+    const pool = NICE_TENS.filter(v => v >= lowTen && v <= highTen);
+    if (pool.length) return pool[Math.floor(rng() * pool.length)];
+    const first = Math.ceil(lo / 10);
+    const last = Math.floor(hi / 10);
+    return first + Math.floor(rng() * Math.max(1, last - first + 1));
+  }
+  function moneyRangeFor(item, type) {
+    const s = item.toLowerCase();
+    let lo = 30, hi = 250;
+    if (/bus fare|delivery charge/.test(s)) {
+      lo = 5; hi = 40;
+    } else if (/haircut|piano lesson|swimming lesson|music lesson|tennis lesson|driving lesson|gym class|tutoring session/.test(s)) {
+      lo = 10; hi = 80;
+    } else if (/cleaning service|garden service|window cleaning|dog grooming|waste collection/.test(s)) {
+      lo = 20; hi = 150;
+    } else if (/train ticket|train fare|bus pass|phone contract|gym membership|subscription|broadband package|mobile phone bill|storage unit|parking permit|repair|theatre ticket|cinema ticket|museum entry|leisure centre pass/.test(s)) {
+      lo = 20; hi = 300;
+    } else if (/insurance|utility bill|electricity bill|gas bill|water bill|season ticket|car service|boiler service|childcare bill|house survey|car mot|venue hire|photography session/.test(s)) {
+      lo = 80; hi = 800;
+    } else if (type === 'decrease') {
+      if (/laptop|phone|watch|camera|bicycle|bike|sofa|armchair|tv|tablet|games console|mountain bike|electric scooter|wardrobe|dining table|office chair|freezer|dishwasher|dryer|piano|sewing machine|printer|shed|patio set|lawn mower|robot vacuum|air conditioner|bed frame|coffee machine/.test(s)) {
+        lo = 100; hi = 800;
+      } else if (/guitar|desk|bookcase|vacuum cleaner|microwave|rug|wireless speaker|headphones|electric guitar|soundbar|projector|gaming chair|bedside table|air fryer|blender|food processor|garden bench|patio heater|drone/.test(s)) {
+        lo = 40; hi = 400;
+      } else {
+        lo = 20; hi = 200;
+      }
+    } else {
+      lo = 20; hi = 200;
+    }
+    return [lo, hi];
+  }
+  function pickMoneyOriginal(item, type) {
+    const r = moneyRangeFor(item, type);
+    return 10 * pickTenForRange(r[0], r[1]);
+  }
+  function countRangeFor(entry) {
+    const t = entry.text.toLowerCase();
+    let lo = 100, hi = 800;
+    if (t.indexOf('students') !== -1) { lo = 200; hi = 1500; }
+    else if (t.indexOf('pupils') !== -1) { lo = 200; hi = 1500; }
+    else if (t.indexOf('members') !== -1) { lo = 80; hi = 900; }
+    else if (t.indexOf('village') !== -1) { lo = 200; hi = 2000; }
+    else if (t.indexOf('company') !== -1) { lo = 60; hi = 1200; }
+    else if (t.indexOf('followers') !== -1) { lo = 100; hi = 2000; }
+    else if (t.indexOf('tickets') !== -1) { lo = 50; hi = 1200; }
+    else if (t.indexOf('books') !== -1) { lo = 200; hi = 2000; }
+    else if (t.indexOf('visitors') !== -1) { lo = 100; hi = 1500; }
+    else if (t.indexOf('subscribers') !== -1) { lo = 100; hi = 2000; }
+    else if (t.indexOf('cars') !== -1) { lo = 100; hi = 2000; }
+    else if (t.indexOf('trees') !== -1) { lo = 100; hi = 2000; }
+    return [lo, hi];
+  }
+  function pickCountOriginal(entry) {
+    const r = countRangeFor(entry);
+    return 10 * pickTenForRange(r[0], r[1]);
+  }
+
+  function genMoneyRP(type, usedItems, usedTemplates) {
+    const family = (type === 'decrease') ? RP_DEC : RP_INC;
+    const pct = pick((type === 'decrease') ? RP_PCT_DEC : RP_PCT_INC);
+    const N = rpTens(pct, type);
+    const percent = rpPercentLeft(pct, type);
+
+    const item = pickUnused(family.items, usedItems) || 'item';
+    const tpl  = pickUnused(family.templates, usedTemplates) ||
+                 'The price of a {item} changes by {pct}% to {final}. Work out the original price.';
+    usedItems.add(item);
+    usedTemplates.add(tpl);
+
+    const original = pickMoneyOriginal(item, type);
+    const ten = original / 10;
+    const final = N * ten;
+
+    const cur = currencySymbol();
+    const finalText    = fmtMoney(final, cur);
+    const tenText      = fmtMoney(ten, cur);
+    const originalText = fmtMoney(original, cur);
+    const label = (type === 'decrease') ? 'sale price' : 'new price';
+
+    return {
+      key: 'money|' + type + '|' + item + '|' + pct + '|' + original,
+      theme: 'money:' + type,
+      blocks: [{ type: 'text', text: fillRP(tpl, { item, pct, final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      visual: rpVisual(type, pct, percent, N, finalText, tenText, originalText, originalText),
+      solution: [
+        'The ' + label + ' is ' + percent + '% of the original, so ' + percent + '% = ' + finalText + '.',
+        '10% = ' + finalText + ' ÷ ' + N + ' = ' + tenText + ', so 100% = ' + tenText + ' × 10 = ' + originalText + '.'
+      ]
+    };
+  }
+
+  function genCountRP(type, usedTemplates) {
+    const list = (type === 'decrease') ? RP_COUNT_DEC : RP_COUNT_INC;
+    if (!list.length) return genBareRP(type, new Set());
+    const entry = pickUnused(list, usedTemplates) || list[0];
+    usedTemplates.add(entry);
+
+    const pct = pick((type === 'decrease') ? RP_PCT_DEC : RP_PCT_INC);
+    const N = rpTens(pct, type);
+    const percent = rpPercentLeft(pct, type);
+    const original = pickCountOriginal(entry);
+    const ten = original / 10;
+    const final = N * ten;
+
+    const finalText    = fmtInt(final);
+    const tenText      = fmtInt(ten);
+    const originalText = fmtInt(original) + ' ' + entry.unit;
+
+    return {
+      key: 'count|' + type + '|' + entry.text + '|' + pct + '|' + original,
+      theme: 'count:' + type,
+      blocks: [{ type: 'text', text: fillRP(entry.text, { pct, final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      visual: rpVisual(type, pct, percent, N, finalText, tenText,
+                       fmtInt(original), originalText),
+      solution: [
+        'The number now is ' + percent + '% of the original, so ' + percent + '% = ' + finalText + '.',
+        '10% = ' + finalText + ' ÷ ' + N + ' = ' + tenText + ', so 100% = ' + tenText + ' × 10 = ' + originalText + '.'
+      ]
+    };
+  }
+
+  function genBareRP(type, usedTemplates) {
+    const list = (type === 'decrease') ? RP_BARE_DEC : RP_BARE_INC;
+    const entry = (list.length ? (pickUnused(list, usedTemplates) || list[0]) : { text: 'A number is changed by {pct}% to {final}. Work out the original number.' });
+    usedTemplates.add(entry);
+
+    const pct = pick((type === 'decrease') ? RP_PCT_DEC : RP_PCT_INC);
+    const N = rpTens(pct, type);
+    const percent = rpPercentLeft(pct, type);
+    const original = 10 * pickTenForRange(30, 800);
+    const ten = original / 10;
+    const final = N * ten;
+
+    const finalText    = fmtInt(final);
+    const tenText      = fmtInt(ten);
+    const originalText = fmtInt(original);
+
+    return {
+      key: 'bare|' + type + '|' + pct + '|' + original + '|' + entry.text,
+      theme: 'bare:' + type,
+      blocks: [{ type: 'text', text: fillRP(entry.text, { pct, final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      visual: rpVisual(type, pct, percent, N, finalText, tenText, originalText, originalText),
+      solution: [
+        'The new value is ' + percent + '% of the original, so ' + percent + '% = ' + finalText + '.',
+        '10% = ' + finalText + ' ÷ ' + N + ' = ' + tenText + ', so 100% = ' + tenText + ' × 10 = ' + originalText + '.'
+      ]
+    };
+  }
+
+  function calcMoneyOriginal(frac, lo, hi) {
+    /* Choose the original as a whole number of pounds (so the answer
+       looks like a real price) while keeping the final value exact to
+       the nearest penny.  The original in pence must be a multiple of
+       both the multiplier's denominator and 100. */
+    const unit = lcm(frac.den, 100);
+    let first = Math.ceil((lo * 100) / unit);
+    let last  = Math.floor((hi * 100) / unit);
+    if (first > last) { first = Math.max(1, Math.round((lo * 100) / unit)); last = first; }
+    const k = first + Math.floor(rng() * (last - first + 1));
+    const cents = unit * k;
+    return { original: cents / 100, final: (cents * frac.num) / frac.den / 100 };
+  }
+  function calcIntegerOriginal(frac, lo, hi) {
+    let first = Math.ceil(lo / frac.den);
+    let last  = Math.floor(hi / frac.den);
+    if (first > last) { first = Math.max(1, Math.round(lo / frac.den)); last = first; }
+    const k = first + Math.floor(rng() * (last - first + 1));
+    const original = frac.den * k;
+    return { original: original, final: (original * frac.num) / frac.den };
+  }
+  function calcSolutionLines(type, pct, finalText, originalText) {
+    const percent = rpPercentLeft(pct, type);
+    const mult = fmtMultiplier(calcMultiplier(pct, type));
+    return [
+      '100% ' + (type === 'decrease' ? '-' : '+') + ' ' + fmtPct(pct) + '% = ' +
+        fmtPct(percent) + '%, so the multiplier is ' + mult + '.',
+      'Original = ' + finalText + ' ÷ ' + mult + ' = ' + originalText + '.'
+    ];
+  }
+
+  function genCalcMoneyRP(type, usedItems, usedTemplates) {
+    const family = (type === 'decrease') ? CALC_DEC : CALC_INC;
+    const pct = pick(CALC_PCTS);
+    const frac = calcFraction(pct, type);
+    const item = pickUnused(family.items, usedItems) || 'item';
+    const tpl = pickUnused(family.templates, usedTemplates) ||
+                'A {item} changes by {pct}% to {final}. Work out the original price.';
+    usedItems.add(item);
+    usedTemplates.add(tpl);
+
+    const range = moneyRangeFor(item, type);
+    const data = calcMoneyOriginal(frac, range[0], range[1]);
+    const cur = currencySymbol();
+    const finalText = fmtMoneyCalc(data.final, cur);
+    const originalText = fmtMoneyCalc(data.original, cur);
+
+    return {
+      key: 'calcMoney|' + type + '|' + item + '|' + pct + '|' + data.original,
+      theme: 'calcMoney:' + type,
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(tpl, { item: item, pct: fmtPct(pct), final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      solution: calcSolutionLines(type, pct, finalText, originalText)
+    };
+  }
+
+  function genCalcCountRP(type, usedTemplates) {
+    const list = (type === 'decrease') ? CALC_COUNT_DEC : CALC_COUNT_INC;
+    const entry = (list.length ? (pickUnused(list, usedTemplates) || list[0])
+                               : { unit: 'people',
+                                   text: 'A number changes by {pct}% to {final}. Work out the number before the change.' });
+    usedTemplates.add(entry);
+
+    const pct = pick(CALC_PCTS);
+    const frac = calcFraction(pct, type);
+    const range = countRangeFor(entry);
+    const data = calcIntegerOriginal(frac, range[0], range[1]);
+    const finalText = fmtInt(data.final);
+    const originalText = fmtInt(data.original);
+
+    return {
+      key: 'calcCount|' + type + '|' + entry.text + '|' + pct + '|' + data.original,
+      theme: 'calcCount:' + type,
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(entry.text, { pct: fmtPct(pct), final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText + ' ' + entry.unit }],
+      solution: calcSolutionLines(type, pct, finalText, originalText + ' ' + entry.unit)
+    };
+  }
+
+  function genCalcBareRP(type, usedTemplates) {
+    const list = (type === 'decrease') ? CALC_BARE_DEC : CALC_BARE_INC;
+    const entry = (list.length ? (pickUnused(list, usedTemplates) || list[0])
+                               : { text: 'A number changes by {pct}% to {final}. Work out the original number.' });
+    usedTemplates.add(entry);
+
+    const pct = pick(CALC_PCTS);
+    const frac = calcFraction(pct, type);
+    const data = calcIntegerOriginal(frac, 50, 1600);
+    const finalText = fmtInt(data.final);
+    const originalText = fmtInt(data.original);
+
+    return {
+      key: 'calcBare|' + type + '|' + pct + '|' + data.original + '|' + entry.text,
+      theme: 'calcBare:' + type,
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(entry.text, { pct: fmtPct(pct), final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      solution: calcSolutionLines(type, pct, finalText, originalText)
+    };
+  }
+
+  function genCalcVAT(usedItems, usedTemplates) {
+    if (!CALC_VAT || !CALC_VAT.items || !CALC_VAT.items.length) {
+      return genCalcMoneyRP('increase', usedItems, usedTemplates);
+    }
+    const ratePool = (CALC_VAT.rates && CALC_VAT.rates.length) ? CALC_VAT.rates : [17.5];
+    const rate = pick(ratePool);
+    const frac = calcFraction(rate, 'increase');
+    const item = pickUnused(CALC_VAT.items, usedItems) || CALC_VAT.items[0];
+    const tpl = pickUnused(CALC_VAT.templates, usedTemplates) ||
+                'A {item} costs {final} including VAT at {rate}%. Work out the price excluding VAT.';
+    usedItems.add(item);
+    usedTemplates.add(tpl);
+
+    const range = moneyRangeFor(item, 'increase');
+    const data = calcMoneyOriginal(frac, range[0], range[1]);
+    const cur = currencySymbol();
+    const finalText = fmtMoneyCalc(data.final, cur);
+    const originalText = fmtMoneyCalc(data.original, cur);
+    const percent = rpPercentLeft(rate, 'increase');
+    const mult = fmtMultiplier(calcMultiplier(rate, 'increase'));
+
+    return {
+      key: 'calcVAT|' + item + '|' + rate + '|' + data.original,
+      theme: 'calcVAT',
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(tpl, { item: item, rate: fmtPct(rate), final: finalText }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      solution: [
+        '100% + ' + fmtPct(rate) + '% = ' + fmtPct(percent) +
+          '%, so the multiplier is ' + mult + '.',
+        'Price excluding VAT = ' + finalText + ' ÷ ' + mult + ' = ' + originalText + '.'
+      ]
+    };
+  }
+
+  const RP_PLANS = {
+    both: [
+      'calcMoneyDec', 'moneyDec', 'calcMoneyInc', 'countInc', 'moneyDec',
+      'calcVAT', 'moneyInc', 'calcCountDec', 'moneyDec', 'calcBareDec',
+      'moneyInc', 'calcMoneyDec', 'countDec', 'moneyDec', 'calcCountInc',
+      'bareInc', 'moneyInc', 'calcBareInc', 'moneyDec', 'moneyInc'
+    ],
+    calc: [
+      'calcMoneyDec', 'calcMoneyInc', 'calcCountInc', 'calcMoneyDec', 'calcBareDec',
+      'calcVAT', 'calcMoneyInc', 'calcCountDec', 'calcMoneyDec', 'calcBareInc',
+      'calcMoneyInc', 'calcMoneyDec', 'calcCountInc', 'calcMoneyDec', 'calcMoneyInc',
+      'calcCountDec', 'calcBareDec', 'calcMoneyDec', 'calcMoneyInc', 'calcMoneyDec'
+    ],
+    noncalc: [
+      'moneyDec', 'moneyInc', 'countInc', 'moneyDec', 'bareDec',
+      'moneyInc', 'moneyDec', 'countDec', 'moneyInc', 'bareInc',
+      'moneyDec', 'moneyInc', 'countInc', 'moneyDec', 'moneyInc',
+      'countDec', 'bareDec', 'moneyDec', 'moneyInc', 'moneyDec'
+    ]
+  };
+
+  function generateReversePercentageSet(mode) {
+    const planKey = (mode === 'calc' || mode === 'noncalc') ? mode : 'both';
+    const plan = RP_PLANS[planKey].slice();
+    for (let i = plan.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = plan[i]; plan[i] = plan[j]; plan[j] = t;
+    }
+
+    /* Keep the calculator questions spread through the sheet rather
+       than letting them bunch together after the shuffle. */
+    const isCalcKind = function (k) { return k.indexOf('calc') === 0; };
+    for (let pass = 0; pass < 6; pass++) {
+      for (let i = 1; i < plan.length; i++) {
+        if (!(isCalcKind(plan[i]) && isCalcKind(plan[i - 1]))) continue;
+        for (let j = i + 1; j < plan.length; j++) {
+          if (isCalcKind(plan[j])) continue;
+          const t = plan[i]; plan[i] = plan[j]; plan[j] = t;
+          break;
+        }
+      }
+    }
+
+    const usedKeys = new Set();
+    const usedMoneyItems = new Set();
+    const usedMoneyTemplates = new Set();
+    const usedCountInc = new Set();
+    const usedCountDec = new Set();
+    const usedBareInc = new Set();
+    const usedBareDec = new Set();
+    const usedCalcItems = new Set();
+    const usedCalcTemplates = new Set();
+    const usedCalcCountInc = new Set();
+    const usedCalcCountDec = new Set();
+    const usedCalcBareInc = new Set();
+    const usedCalcBareDec = new Set();
+    const usedCalcVatItems = new Set();
+    const usedCalcVatTemplates = new Set();
+    const out = [];
+
+    for (const kind of plan) {
+      let q = null;
+      for (let tries = 0; tries < 120; tries++) {
+        if (kind === 'moneyDec')          q = genMoneyRP('decrease', usedMoneyItems, usedMoneyTemplates);
+        else if (kind === 'moneyInc')     q = genMoneyRP('increase', usedMoneyItems, usedMoneyTemplates);
+        else if (kind === 'countInc')     q = genCountRP('increase', usedCountInc);
+        else if (kind === 'countDec')     q = genCountRP('decrease', usedCountDec);
+        else if (kind === 'bareInc')      q = genBareRP('increase', usedBareInc);
+        else if (kind === 'bareDec')      q = genBareRP('decrease', usedBareDec);
+        else if (kind === 'calcMoneyDec') q = genCalcMoneyRP('decrease', usedCalcItems, usedCalcTemplates);
+        else if (kind === 'calcMoneyInc') q = genCalcMoneyRP('increase', usedCalcItems, usedCalcTemplates);
+        else if (kind === 'calcCountInc') q = genCalcCountRP('increase', usedCalcCountInc);
+        else if (kind === 'calcCountDec') q = genCalcCountRP('decrease', usedCalcCountDec);
+        else if (kind === 'calcBareInc')  q = genCalcBareRP('increase', usedCalcBareInc);
+        else if (kind === 'calcBareDec')  q = genCalcBareRP('decrease', usedCalcBareDec);
+        else if (kind === 'calcVAT')      q = genCalcVAT(usedCalcVatItems, usedCalcVatTemplates);
+        if (q && !usedKeys.has(q.key)) break;
+      }
+      if (q) {
+        usedKeys.add(q.key);
+        out.push(q);
+      }
+    }
+    return out;
+  }
+
+  /* ============================================================
+     LAYOUT ENGINE
+     ============================================================ */
+  const PW = 595.276;
+  const PH = 841.890;
+  const MG = 42.52;
+  const FIXED_FS = 11;
+
+  const HEADER_H      = 19 * 0.78 + 19 * 0.32 + 6 + 17 + 10.5 * 0.78 + 48;
+  const CONT_HEADER_H = 9 * 1.4 + 8 + 14;
+  const QUESTION_GAP  = 14;
+
+  const CALC_BADGE_FS   = 7;
+  const CALC_BADGE_PADX = 4;
+  const CALC_BADGE_PADY = 2;
+  const CALC_BADGE_H    = 14;
+
+  function columnRuleX() { return MG + (PW - 2 * MG) * 0.60; }
+  function promptWidth(fs) {
+    const numColW = fs * 1.6;
+    return columnRuleX() - (MG + numColW);
+  }
+
+  function layoutTable(x, y, block, fs, maxW) {
+    const cols = block.cols;
+    const rows = block.rows;
+    const colW = Math.min(fs * 4.5, maxW / cols);
+    const cellH = fs * 1.8;
+    const totalW = colW * cols;
+    const totalH = cellH * rows.length;
+
+    const boldFirstCol = block.boldFirstCol !== false;
+    const boldRowSet = new Set(block.boldRows || []);
+
+    const items = [];
+    for (let r = 0; r <= rows.length; r++) {
+      items.push({ t:'line', x1:x, y1:y + r*cellH, x2:x + totalW, y2:y + r*cellH, w:0.5 });
+    }
+    for (let c = 0; c <= cols; c++) {
+      items.push({ t:'line', x1:x + c*colW, y1:y, x2:x + c*colW, y2:y + totalH, w:0.5 });
+    }
+    for (let r = 0; r < rows.length; r++) {
+      for (let c = 0; c < cols; c++) {
+        const raw = rows[r][c];
+        if (!raw) continue;
+        const runs = parseRuns(raw);
+        const cellBold = (boldFirstCol && c === 0) || boldRowSet.has(r);
+
+        let cellW = 0;
+        for (const run of runs) {
+          if (run.kind === 'frac') {
+            const sub = fs * 0.7;
+            cellW += Math.max(textWidth(run.num, sub, cellBold),
+                              textWidth(run.den, sub, cellBold)) + 0.20 * fs;
+          } else {
+            cellW += textWidth(run.text, fs, cellBold);
+          }
+        }
+        let cx = x + c*colW + (colW - cellW) / 2;
+        const cy = y + r*cellH + cellH * 0.5 + fs * 0.35;
+        for (const run of runs) {
+          if (run.kind === 'frac') {
+            const sub = fs * 0.7;
+            const nw = textWidth(run.num, sub, cellBold);
+            const dw = textWidth(run.den, sub, cellBold);
+            const innerW = Math.max(nw, dw);
+            const totalW2 = innerW + 0.20 * fs;
+            const barW = innerW + 0.08 * fs;
+            items.push({ t:'text', x: cx + (totalW2 - nw)/2,
+                         y: cy - 0.18 * fs, size: sub, bold: cellBold,
+                         italic: false, s: run.num });
+            items.push({ t:'line',
+                         x1: cx + (totalW2 - barW)/2, y1: cy - 0.12 * fs,
+                         x2: cx + (totalW2 + barW)/2, y2: cy - 0.12 * fs,
+                         w: 0.5 });
+            items.push({ t:'text', x: cx + (totalW2 - dw)/2,
+                         y: cy + 0.44 * fs, size: sub, bold: cellBold,
+                         italic: false, s: run.den });
+            cx += totalW2;
+          } else {
+            items.push({ t:'run', x: cx, y: cy, size: fs, bold: cellBold,
+                         italic: run.italic, s: run.text });
+            cx += textWidth(run.text, fs, cellBold);
+          }
+        }
+      }
+    }
+    return { items, height: totalH };
+  }
+
+  /* ---- emitLabel -----------------------------------------------
+     Emits a text label with a white-out rectangle behind it.
+     --------------------------------------------------------------- */
+  function emitLabel(x, y, size, text, items) {
+    const padX = 2.5;
+    const padY = 1.4;
+    const w = textWidth(text, size, false);
+    const boxTop = y - size * 0.72 - padY;
+    const boxBot = y + size * 0.21 + padY;
+    items.push({
+      t: 'rect',
+      x: x - padX,
+      y: boxTop,
+      w: w + padX * 2,
+      h: boxBot - boxTop,
+      grey: 1.0
+    });
+    items.push({
+      t: 'run',
+      x: x,
+      y: y,
+      size: size,
+      bold: false,
+      italic: false,
+      s: text
+    });
+  }
+
+  /* ---- Flagpole figure --------------------------------------------- */
+  const FP_POLE_W          = 2.4;
+  const FP_POLE_HIGHLIGHT  = 0.7;
+  const FP_CAP_W           = 5.5;
+  const FP_CAP_H           = 3.0;
+  const FP_FLAG_W          = 12.0;
+  const FP_FLAG_H          = 8.0;
+  const FP_POLE_VIS_MAX    = 85;
+  const FP_SHADOW_VIS_MAX  = 100;
+  const FP_SHADOW_ANGLE    = 14 * Math.PI / 180;
+  const FP_SHADOW_THICK_B  = 3.2;
+  const FP_SHADOW_THICK_T  = 1.6;
+  const FP_SHADOW_HOOK_L   = 6;
+  const FP_SHADOW_HOOK_W   = 2.2;
+  const FP_BASE_Y_STEP     = 8;
+  const FP_FIG_W_MAX       = 300;
+  const FP_HLABEL_GAP      = 4;
+  const FP_SLABEL_GAP      = 1.3;
+  const FP_LABEL_PADX      = 2.5;
+  const FP_LABEL_PADY      = 1.4;
+
+  function layoutFlagpole(x, y, block, fs, maxW) {
+    const poles = block.poles;
+    const labelFs = fs * 0.95;
+    const items = [];
+
+    const maxH = Math.max.apply(null, poles.map(p => p.height || 0));
+    const maxS = Math.max.apply(null, poles.map(p => p.shadowUnknown ? 0 : (p.shadow || 0)));
+    if (maxH <= 0) return { items: [], height: 0 };
+
+    const FIG_W = Math.min(maxW, FP_FIG_W_MAX);
+    const baseXfracs = [0.24, 0.52, 0.80];
+
+    const cosA  = Math.cos(FP_SHADOW_ANGLE);
+    const sinA  = Math.sin(FP_SHADOW_ANGLE);
+    const perpX = sinA;
+    const perpY = cosA;
+
+    const scaleH = FP_POLE_VIS_MAX / maxH;
+    const scaleS = maxS > 0 ? FP_SHADOW_VIS_MAX / maxS : 0;
+
+    /* Pass 1 — local geometry and label positions. */
+    const geom = [];
+    let minY =  Infinity, maxY = -Infinity;
+    let minX =  Infinity, maxX = -Infinity;
+
+    for (let i = 0; i < 3; i++) {
+      const pole = poles[i];
+      const visH = pole.height * scaleH;
+      const visS = pole.shadowUnknown
+        ? FP_SHADOW_VIS_MAX * 0.65
+        : pole.shadow * scaleS;
+
+      const baseX = baseXfracs[i] * FIG_W;
+      const baseY = FP_POLE_VIS_MAX + i * FP_BASE_Y_STEP;
+      const topY  = baseY - visH;
+      const tipX  = baseX - visS * cosA;
+      const tipY  = baseY + visS * sinA;
+
+      const hText = pole.label + ': ' + pole.heightLabel;
+      const hW    = textWidth(hText, labelFs, false);
+      const hLabelX = baseX - hW / 2;
+      const hLabelY = topY - FP_CAP_H - FP_HLABEL_GAP - labelFs * 0.25;
+
+      const sText = pole.shadowLabel;
+      const sW    = textWidth(sText, labelFs, false);
+      const sMidX = (baseX + tipX) / 2;
+      const sMidY = (baseY + tipY) / 2;
+      const sLabelX = sMidX - sW / 2;
+      const sLabelY = sMidY + labelFs * FP_SLABEL_GAP;
+
+      geom.push({
+        pole, visH, visS, baseX, baseY, topY, tipX, tipY,
+        hText, hLabelX, hLabelY,
+        sText, sLabelX, sLabelY
+      });
+
+      const hTop   = hLabelY - labelFs * 0.72 - FP_LABEL_PADY;
+      const hLeft  = hLabelX - FP_LABEL_PADX;
+      const hRight = hLabelX + hW + FP_LABEL_PADX;
+      const sBot   = sLabelY + labelFs * 0.21 + FP_LABEL_PADY;
+      const sLeft  = sLabelX - FP_LABEL_PADX;
+      const sRight = sLabelX + sW + FP_LABEL_PADX;
+
+      if (hTop    < minY) minY = hTop;
+      if (sBot    > maxY) maxY = sBot;
+      if (tipY    > maxY) maxY = tipY + 4;
+      if (hLeft   < minX) minX = hLeft;
+      if (sLeft   < minX) minX = sLeft;
+      if (tipX - 6 < minX) minX = tipX - 6;
+      if (hRight  > maxX) maxX = hRight;
+      if (sRight  > maxX) maxX = sRight;
+    }
+
+    const figH = maxY - minY;
+    const offX = x - minX;
+    const offY = y - minY;
+
+    /* Pass 2a — all shadow bands. */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      const baseX = g.baseX + offX;
+      const baseY = g.baseY + offY;
+      const tipX  = g.tipX  + offX;
+      const tipY  = g.tipY  + offY;
+
+      const bh = FP_SHADOW_THICK_B / 2;
+      const th = FP_SHADOW_THICK_T / 2;
+      const hx = tipX - cosA * FP_SHADOW_HOOK_L;
+      const hy = tipY + sinA * FP_SHADOW_HOOK_L;
+
+      items.push({ t:'poly', grey: 0.62, pts: [
+        [baseX + perpX * bh, baseY + perpY * bh],
+        [tipX  + perpX * th, tipY  + perpY * th],
+        [hx    + perpX * FP_SHADOW_HOOK_W, hy + perpY * FP_SHADOW_HOOK_W],
+        [hx    - perpX * FP_SHADOW_HOOK_W, hy - perpY * FP_SHADOW_HOOK_W],
+        [tipX  - perpX * th, tipY  - perpY * th],
+        [baseX - perpX * bh, baseY - perpY * bh]
+      ]});
+    }
+
+    /* Pass 2b — all poles (body, highlight, cap, flag). */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      const baseX = g.baseX + offX;
+      const topY  = g.topY  + offY;
+      const visH  = g.visH;
+
+      items.push({ t:'rect',
+                   x: baseX - FP_POLE_W / 2, y: topY,
+                   w: FP_POLE_W, h: visH,
+                   grey: 0.18 });
+
+      items.push({ t:'rect',
+                   x: baseX - FP_POLE_W / 2, y: topY,
+                   w: FP_POLE_HIGHLIGHT, h: visH,
+                   grey: 0.72 });
+
+      items.push({ t:'rect',
+                   x: baseX - FP_CAP_W / 2, y: topY - FP_CAP_H,
+                   w: FP_CAP_W, h: FP_CAP_H,
+                   grey: 0.05 });
+
+      items.push({ t:'poly', grey: 0.10, pts: [
+        [baseX + FP_POLE_W / 2,                     topY - FP_CAP_H - 1],
+        [baseX + FP_POLE_W / 2 + FP_FLAG_W,         topY - FP_CAP_H + 1],
+        [baseX + FP_POLE_W / 2 + FP_FLAG_W,         topY - FP_CAP_H + 1 + FP_FLAG_H],
+        [baseX + FP_POLE_W / 2,                     topY - FP_CAP_H - 1 + FP_FLAG_H]
+      ]});
+    }
+
+    /* Pass 2c — all labels, on top of everything. */
+    for (let i = 0; i < 3; i++) {
+      const g = geom[i];
+      emitLabel(g.hLabelX + offX, g.hLabelY + offY, labelFs, g.hText, items);
+      emitLabel(g.sLabelX + offX, g.sLabelY + offY, labelFs, g.sText, items);
+    }
+
+    return { items, height: figH };
+  }
+
+  /* ---- Graph (read off the gradient) figure ------------------------ */
+  const G_ARROW_L   = 6.0;
+  const G_ARROW_W   = 2.5;
+  const G_AXIS_W    = 1.0;
+  const G_LINE_W    = 1.8;
+  const G_DOT_R     = 2.2;
+  const G_PLOT_H    = 116;
+  const G_MAX_PLOTW = 200;
+  const G_TOP_PAD   = 18;
+  const G_BOT_PAD   = 14;
+  const G_RIGHT_PAD = 24;
+  const G_LEFT_PAD  = 4;
+
+  /* Mapping so k = 1/3 looks shallow and k = 6 looks steep.
+     Visual slope = 1 when k = 1, so k > 1 is visibly steep and
+     k < 1 is visibly shallow. */
+  function graphVisualSlope(k) {
+    return Math.pow(k, 0.85);
+  }
+
+  function layoutGraph(x, y, block, fs, maxW) {
+    const items   = [];
+    const labelFs = fs * 0.95;
+
+    const plotW = Math.max(110, Math.min(maxW - G_LEFT_PAD - G_RIGHT_PAD,
+                                         G_MAX_PLOTW));
+    const plotH = G_PLOT_H;
+    const figH  = G_TOP_PAD + plotH + G_BOT_PAD;
+
+    const ox = x + G_LEFT_PAD;
+    const oy = y + G_TOP_PAD + plotH;
+
+    const axisTopX   = ox,          axisTopY   = oy - plotH;
+    const axisRightX = ox + plotW,  axisRightY = oy;
+
+    const AXIS_COL = [0, 0, 0];
+    const LINE_COL = [214, 26, 26];
+
+    /* axes */
+    items.push({ t:'line', x1:ox, y1:oy, x2:axisTopX, y2:axisTopY,
+                 w:G_AXIS_W, col:AXIS_COL });
+    items.push({ t:'line', x1:ox, y1:oy, x2:axisRightX, y2:axisRightY,
+                 w:G_AXIS_W, col:AXIS_COL });
+
+    /* arrow heads */
+    items.push({ t:'poly', col:AXIS_COL, pts:[
+      [axisTopX, axisTopY],
+      [axisTopX - G_ARROW_W, axisTopY + G_ARROW_L],
+      [axisTopX + G_ARROW_W, axisTopY + G_ARROW_L]
+    ]});
+    items.push({ t:'poly', col:AXIS_COL, pts:[
+      [axisRightX, axisRightY],
+      [axisRightX - G_ARROW_L, axisRightY - G_ARROW_W],
+      [axisRightX - G_ARROW_L, axisRightY + G_ARROW_W]
+    ]});
+
+    /* axis labels */
+    const yLabW = textWidth(block.labelY, labelFs, false);
+    items.push({ t:'run', x: ox - yLabW / 2, y: axisTopY - 6,
+                 size: labelFs, italic: true, s: block.labelY });
+    items.push({ t:'run', x: axisRightX + 5, y: axisRightY + 6,
+                 size: labelFs, italic: true, s: block.labelX });
+
+    /* the red line */
+    const k    = block.k.n / block.k.d;
+    const m    = graphVisualSlope(k);
+    const xLim = plotW * 0.95;
+    const yLim = plotH * 0.92;
+    let ex, ey;
+    if (m * xLim <= yLim) { ex = xLim;           ey = m * xLim; }
+    else                  { ey = yLim;           ex = yLim / m;  }
+
+    items.push({ t:'line', x1:ox, y1:oy, x2:ox + ex, y2:oy - ey,
+                 w:G_LINE_W, col:LINE_COL });
+
+    /* the marked point */
+    const tt = 0.52;
+    const px = ox + ex * tt;
+    const py = oy - ey * tt;
+
+    const dotPts = [];
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * Math.PI * 2;
+      dotPts.push([px + G_DOT_R * Math.cos(a), py + G_DOT_R * Math.sin(a)]);
+    }
+    items.push({ t:'poly', col:[0,0,0], pts:dotPts });
+
+    /* coordinate label, pushed clear of the line along the perpendicular */
+    const nrm = Math.sqrt(1 + m * m);
+    const d   = G_DOT_R + 7;
+    items.push({ t:'run',
+                 x: px + (m / nrm) * d + 3,
+                 y: py + (1 / nrm) * d,
+                 size: labelFs, bold: false,
+                 s: '(' + block.pointX + ', ' + block.pointY + ')' });
+
+    return { items: items, height: figH };
+  }
+
+  function layoutVisualSolution(x, y, vis, fs, maxW) {
+    const items = [];
+    const valFs  = fs * 1.08;
+    const opFs   = fs * 0.90;
+    const headFs = fs;
+    const contentW = Math.min(maxW, 390);
+    const x0 = x + (maxW - contentW) / 2;
+    const leftC  = x0 + contentW * 0.30;
+    const rightC = x0 + contentW * 0.76;
+
+    const headLead = (vis.type === 'decrease')
+      ? vis.pct + '% off means 100% - ' + vis.pct + '% = '
+      : 'A ' + vis.pct + '% increase means 100% + ' + vis.pct + '% = ';
+    const headBold = vis.percent + '%' + (vis.type === 'decrease' ? ' left' : '');
+    const leadW = textWidth(headLead, headFs, false);
+    const boldW = textWidth(headBold, headFs, true);
+    const headY = y + headFs * 0.78;
+    const headX = x0 + (contentW - (leadW + boldW)) / 2;
+
+    items.push({ t:'text', x: headX, y: headY, size: headFs, bold: false, s: headLead });
+    items.push({ t:'text', x: headX + leadW, y: headY, size: headFs, bold: true, s: headBold });
+
+    const topY = headY + 32;
+    const midY = topY + 34;
+    const botY = midY + 34;
+
+    function row(value, centre, yy, bold) {
+      const w = textWidth(value, valFs, !!bold);
+      items.push({ t:'text', x: centre - w / 2, y: yy, size: valFs,
+                   bold: !!bold, s: value });
+      return w;
+    }
+
+    const wTopL = row(vis.top, leftC, topY, false);
+    const wMidL = row(vis.mid, leftC, midY, false);
+    const wBotL = row(vis.bottom, leftC, botY, true);
+    const wTopR = row(vis.rightTop, rightC, topY, false);
+    const wMidR = row(vis.rightMid, rightC, midY, false);
+    const wBotR = row(vis.rightBottom, rightC, botY, true);
+
+    function arrow(x1, y1, x2, y2, side, op) {
+      const bulge = side * 18;
+      const cx = x1 + bulge;
+      const cy = (y1 + y2) / 2;
+      const pts = [];
+      for (let i = 0; i <= 14; i++) {
+        const t = i / 14;
+        const mt = 1 - t;
+        pts.push([
+          mt * mt * x1 + 2 * mt * t * cx + t * t * x2,
+          mt * mt * y1 + 2 * mt * t * cy + t * t * y2
+        ]);
+      }
+      for (let i = 0; i < pts.length - 1; i++) {
+        items.push({ t:'line', x1: pts[i][0], y1: pts[i][1],
+                     x2: pts[i + 1][0], y2: pts[i + 1][1],
+                     w: 0.7, col: [0, 0, 0] });
+      }
+      const pe = pts[pts.length - 1];
+      const pp = pts[pts.length - 2];
+      const dx = pe[0] - pp[0], dy = pe[1] - pp[1];
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const bx = pe[0] - ux * 5, by = pe[1] - uy * 5;
+      const nx = -uy, ny = ux;
+      items.push({ t:'poly', col: [0, 0, 0], pts: [
+        [pe[0], pe[1]],
+        [bx + nx * 2.2, by + ny * 2.2],
+        [bx - nx * 2.2, by - ny * 2.2]
+      ]});
+
+      const opW = textWidth(op, opFs, false);
+      const opX = (side < 0)
+        ? Math.min(x1, x2) + bulge - 5 - opW
+        : Math.max(x1, x2) + bulge + 5;
+      const opY = (y1 + y2) / 2 + opFs * 0.35;
+      items.push({ t:'text', x: opX, y: opY, size: opFs, bold: false, s: op });
+    }
+
+    const opStr = '÷' + vis.divisor;
+
+    arrow(leftC - wTopL / 2 - 1, topY + valFs * 0.25,
+          leftC - wMidL / 2 - 1, midY - valFs * 0.9, -1, opStr);
+    arrow(leftC - wMidL / 2 - 1, midY + valFs * 0.25,
+          leftC - wBotL / 2 - 1, botY - valFs * 0.9, -1, '×10');
+
+    arrow(rightC + wTopR / 2 + 1, topY + valFs * 0.25,
+          rightC + wMidR / 2 + 1, midY - valFs * 0.9, 1, opStr);
+    arrow(rightC + wMidR / 2 + 1, midY + valFs * 0.25,
+          rightC + wBotR / 2 + 1, botY - valFs * 0.9, 1, '×10');
+
+    const ansY = botY + 30;
+    const ansLabel = 'Answer: ';
+    const ansLabelW = textWidth(ansLabel, fs, false);
+    const ansValueW = textWidth(vis.answer, fs, true);
+    const ansX = x0 + (contentW - (ansLabelW + ansValueW)) / 2;
+    items.push({ t:'text', x: ansX, y: ansY, size: fs, bold: false, s: ansLabel });
+    items.push({ t:'text', x: ansX + ansLabelW, y: ansY, size: fs,
+                 bold: true, s: vis.answer });
+
+    return { items: items, height: (ansY - y) + fs * 0.5 };
+  }
+
+  function measureQuestion(q, fs) {
+    const lineH = fs * 1.42;
+    const maxW  = promptWidth(fs);
+    let h = (q.badge || q.calculator) ? CALC_BADGE_H : 0;
+    for (const b of q.blocks) {
+      if (b.type === 'text') {
+        const tokens = textToTokens(b.text);
+        const lines = wrapTokens(tokens, fs, false, maxW);
+        h += lines.length * lineH;
+      } else if (b.type === 'table') {
+        h += b.rows.length * fs * 1.8 + fs * 0.6;
+      } else if (b.type === 'flagpole') {
+        const fl = layoutFlagpole(0, 0, b, fs, maxW);
+        h += fl.height;
+      } else if (b.type === 'graph') {
+        const gl = layoutGraph(0, 0, b, fs, maxW);
+        h += gl.height + fs * 0.6;
+      }
+    }
+    return h;
+  }
+
+  function headerHint(questions) {
+    const list = questions || [];
+    const hasCalc = list.some(function (q) { return q.badge === 'CALCULATOR' || q.calculator; });
+    const hasNon  = list.some(function (q) { return !(q.badge === 'CALCULATOR' || q.calculator); });
+    if (hasCalc && hasNon) {
+      return 'No badge: the change is a multiple of 10, so find 10% then multiply by 10.  CALCULATOR: divide by the decimal multiplier.';
+    }
+    if (hasCalc) {
+      return 'Calculator: undo the percentage change by dividing by the decimal multiplier.';
+    }
+    return 'Non-calculator: every percentage change is a multiple of 10. Find 10%, then multiply by 10.';
+  }
+
+  function drawHeader(items, title, questions) {
+    const innerW = PW - 2 * MG;
+    const ts = 19;
+    const tw = textWidth(title, ts, true);
+    let bl = MG + ts * 0.78;
+    items.push({ t:'text', x: MG + Math.max(0, (innerW - tw)/2), y: bl,
+                 size: ts, bold: true, s: title });
+    let top = bl + ts * 0.32 + 6;
+    items.push({ t:'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 17;
+    const ns = 10.5;
+    bl = top + ns * 0.78;
+    items.push({ t:'text', x: MG, y: bl, size: ns, bold: false, s: 'Name:' });
+    const nlw = textWidth('Name:', ns, false);
+    items.push({ t:'line', x1: MG + nlw + 6, y1: bl + 2.2,
+                 x2: MG + innerW * 0.46, y2: bl + 2.2, w: 0.6 });
+    items.push({ t:'text', x: MG + innerW * 0.60, y: bl, size: ns, bold: false, s: 'Date:' });
+    const dlw = textWidth('Date:', ns, false);
+    items.push({ t:'line', x1: MG + innerW * 0.60 + dlw + 6, y1: bl + 2.2,
+                 x2: PW - MG, y2: bl + 2.2, w: 0.6 });
+    items.push({ t:'run', x: MG, y: bl + 18, size: 9, bold: false, italic: true,
+                 s: headerHint(questions) });
+  }
+
+  function drawContinuationHeader(items, title) {
+    items.push({ t:'text', x: MG, y: MG + 9 * 0.78, size: 9, bold: false,
+                 s: title + ' (continued)' });
+    const ruleY = MG + 9 * 1.4 + 8;
+    items.push({ t:'line', x1: MG, y1: ruleY, x2: PW - MG, y2: ruleY,
+                 w: 0.4, grey: true });
+  }
+
+  function drawQuestion(q, index, fs, qTop, items) {
+    const lineH = fs * 1.42;
+    const numColW = fs * 1.6;
+    const textX = MG + numColW;
+    const ruleX = columnRuleX();
+    const rightX = ruleX + 8;
+    const maxW = ruleX - textX;
+
+    const badgeText = q.badge || (q.calculator ? 'CALCULATOR' : null);
+    const contentTop = badgeText ? qTop + CALC_BADGE_H : qTop;
+
+    if (badgeText) {
+      const badgeW = textWidth(badgeText, CALC_BADGE_FS, true) + CALC_BADGE_PADX * 2;
+      const badgeH = CALC_BADGE_FS + CALC_BADGE_PADY * 2;
+      const badgeX = ruleX - badgeW - 2;
+      const badgeY = qTop + 1;
+      items.push({ t:'line', x1: badgeX,          y1: badgeY,          x2: badgeX + badgeW, y2: badgeY,          w: 0.7 });
+      items.push({ t:'line', x1: badgeX,          y1: badgeY + badgeH, x2: badgeX + badgeW, y2: badgeY + badgeH, w: 0.7 });
+      items.push({ t:'line', x1: badgeX,          y1: badgeY,          x2: badgeX,          y2: badgeY + badgeH, w: 0.7 });
+      items.push({ t:'line', x1: badgeX + badgeW, y1: badgeY,          x2: badgeX + badgeW, y2: badgeY + badgeH, w: 0.7 });
+      items.push({ t:'text', x: badgeX + CALC_BADGE_PADX,
+                   y: badgeY + badgeH / 2 + CALC_BADGE_FS * 0.36,
+                   size: CALC_BADGE_FS, bold: true, s: badgeText });
+    }
+
+    items.push({ t:'text', x: MG, y: contentTop + fs * 0.78,
+                 size: fs + 1, bold: true, s: (index + 1) + '.' });
+
+    const baselines = [];
+    let cursor = contentTop + fs * 0.78;
+
+    for (const block of q.blocks) {
+      if (block.type === 'text') {
+        const tokens = textToTokens(block.text);
+        const lines = wrapTokens(tokens, fs, false, maxW);
+        baselines.push(cursor);
+        for (let j = 0; j < lines.length; j++) {
+          const runs = lineToRuns(lines[j]);
+          emitRuns(runs, textX, cursor + j * lineH, fs, items, 'normal');
+        }
+        cursor += lines.length * lineH;
+      } else if (block.type === 'table') {
+        baselines.push(cursor);
+        const tableTop = cursor - fs * 0.4;
+        const tl = layoutTable(textX, tableTop, block, fs, maxW);
+        for (const it of tl.items) items.push(it);
+        cursor = tableTop + tl.height + fs * 1.0;
+      } else if (block.type === 'flagpole') {
+        baselines.push(cursor);
+        const figTop = cursor - fs * 0.4;
+        const fl = layoutFlagpole(textX, figTop, block, fs, maxW);
+        for (const it of fl.items) items.push(it);
+        cursor = figTop + fl.height + fs * 1.0;
+      } else if (block.type === 'graph') {
+        baselines.push(cursor);
+        const figTop = cursor - fs * 0.4;
+        const gl = layoutGraph(textX, figTop, block, fs, maxW);
+        for (const it of gl.items) items.push(it);
+        cursor = figTop + gl.height + fs * 1.0;
+      }
+    }
+
+    if (q.answers) {
+      for (const a of q.answers) {
+        const ay = baselines[a.blockIndex] !== undefined
+                   ? baselines[a.blockIndex]
+                   : baselines[baselines.length - 1];
+        const runs = parseRuns(a.text);
+        emitRuns(runs, rightX, ay, fs, items, 'answer');
+      }
+    }
+
+    const qBottom = cursor - lineH * 0.5;
+    items.push({ t:'line', x1: ruleX, y1: qTop + 2, x2: ruleX, y2: qBottom,
+                 w: 0.5, grey: true });
+
+    return qBottom;
+  }
+
+  function layoutSheet(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const fs = FIXED_FS;
+
+    const pages = [];
+    let items = [];
+    let y = MG;
+
+    drawHeader(items, title, questions);
+    y = MG + HEADER_H;
+
+    let placedOnPage = 0;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const qH = measureQuestion(q, fs);
+
+      if (placedOnPage > 0 && y + qH > PH - MG) {
+        pages.push(items);
+        items = [];
+        y = MG + CONT_HEADER_H;
+        drawContinuationHeader(items, title);
+        placedOnPage = 0;
+      }
+
+      if (placedOnPage > 0) {
+        items.push({ t:'line', x1: MG, y1: y - 7, x2: PW - MG, y2: y - 7,
+                     w: 0.4, grey: true });
+      }
+
+      drawQuestion(q, i, fs, y, items);
+      y += qH + QUESTION_GAP;
+      placedOnPage++;
+    }
+    if (items.length) pages.push(items);
+
+    if (pages.length > 1) {
+      for (let i = 0; i < pages.length; i++) {
+        const s = 'Page ' + (i + 1) + ' of ' + pages.length;
+        const w = textWidth(s, 8, false);
+        pages[i].push({ t:'text', x: PW - MG - w, y: PH - MG + 12,
+                        size: 8, bold: false, s: s });
+      }
+    }
+
+    return pages;
+  }
+
+  function layoutAnswerKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
+
+    const items = [];
+    const innerW = PW - 2 * MG;
+    let top = MG;
+
+    const ts = 17;
+    const heading = title + ' — Answers';
+    const tw = textWidth(heading, ts, true);
+    let bl = top + ts * 0.78;
+    items.push({ t:'text', x: MG + Math.max(0, (innerW - tw)/2), y: bl,
+                 size: ts, bold: true, s: heading });
+    top = bl + ts * 0.32 + 6;
+    items.push({ t:'line', x1: MG, y1: top, x2: PW - MG, y2: top, w: 1.1 });
+    top += 24;
+
+    const fs = 11;
+    const lineH = fs * 2.2;
+    const colW = innerW / 2;
+    const perCol = Math.ceil(questions.length / 2);
+
+    for (let i = 0; i < questions.length; i++) {
+      const col = Math.floor(i / perCol);
+      const row = i % perCol;
+      const x0 = MG + col * colW;
+      const yy = top + row * lineH + fs * 0.78;
+
+      items.push({ t:'text', x: x0, y: yy, size: fs, bold: true, s: (i + 1) + '.' });
+      const numW = textWidth((i + 1) + '.', fs, true) + 5;
+
+      const ansJoined = (questions[i].answers || []).map(a => a.text).join('   ');
+      const runs = parseRuns(ansJoined);
+      emitRuns(runs, x0 + numW, yy, fs, items, 'normal');
+    }
+
+    const note = 'Seed: ' + seed;
+    const noteSize = 8.5;
+    const noteW = textWidth(note, noteSize, false);
+    items.push({ t:'text', x: PW - MG - noteW, y: PH - MG + 2,
+                 size: noteSize, bold: false, s: note });
+
+    return [items];
+  }
+
+  function wrapText(text, size, bold, maxW) {
+    return wrapTokens(textToTokens(text), size, bold, maxW);
+  }
+
+  function workedHeader(items, title, continued, questions) {
+    const innerW = PW - 2 * MG;
+    if (!continued) {
+      const ts = 17;
+      const heading = title + ' — Answers & Worked Solutions';
+      const tw = textWidth(heading, ts, true);
+      const bl = MG + ts * 0.78;
+      items.push({ t:'text', x: MG + Math.max(0, (innerW - tw)/2), y: bl,
+                   size: ts, bold: true, s: heading });
+      const ruleY = bl + ts * 0.32 + 6;
+      items.push({ t:'line', x1: MG, y1: ruleY, x2: PW - MG, y2: ruleY, w: 1.1 });
+      items.push({ t:'run', x: MG, y: ruleY + 16, size: 9, bold: false, italic: true,
+                   s: headerHint(questions) });
+      return ruleY + 32;
+    }
+    items.push({ t:'text', x: MG, y: MG + 9 * 0.78, size: 9, bold: false,
+                 s: title + ' — Answers & Worked Solutions (continued)' });
+    const ruleY = MG + 9 * 1.4 + 8;
+    items.push({ t:'line', x1: MG, y1: ruleY, x2: PW - MG, y2: ruleY, w: 0.4, grey: true });
+    return ruleY + 14;
+  }
+
+  function layoutWorkedKey(opts) {
+    const title = opts.title;
+    const questions = opts.questions;
+    const seed = opts.seed;
+
+    const pages = [];
+    let items = [];
+    let y = workedHeader(items, title, false, questions);
+    let firstOnPage = true;
+
+    const fs = 10.5;
+    const solFs = 9.6;
+    const qLineH = fs * 1.42;
+    const sLineH = solFs * 1.4;
+    const textX = MG + 20;
+    const maxW = PW - MG - textX;
+    const gap = 8;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const qText = (q.blocks && q.blocks[0] && q.blocks[0].text) || '';
+      const qLines = wrapText(qText, fs, false, maxW);
+      const visual = q.visual || null;
+      let ansLines = [];
+      let solLines = [];
+      if (!visual) {
+        const ansText = (q.answers || []).map(function (a) { return a.text; }).join('   ');
+        ansLines = ansText ? wrapText('Answer: ' + ansText, fs, false, maxW) : [];
+        if (q.solution) {
+          for (const line of q.solution) {
+            const wrapped = wrapText(line, solFs, false, maxW);
+            for (const l of wrapped) solLines.push(l);
+          }
+        }
+      }
+      const visualH = visual
+        ? layoutVisualSolution(textX, 0, visual, fs, maxW).height
+        : 0;
+      const blockH = visual
+        ? fs * 0.78 + qLines.length * qLineH + 8 + visualH + gap
+        : fs * 0.78 + qLines.length * qLineH + 2 +
+          ansLines.length * qLineH + 4 +
+          solLines.length * sLineH + gap + sLineH;
+
+      if (!firstOnPage && y + blockH > PH - MG) {
+        pages.push(items);
+        items = [];
+        y = workedHeader(items, title, true, questions);
+        firstOnPage = true;
+      }
+
+      if (!firstOnPage) {
+        items.push({ t:'line', x1: MG, y1: y - 6, x2: PW - MG, y2: y - 6, w: 0.3, grey: true });
+      }
+      firstOnPage = false;
+
+      items.push({ t:'text', x: MG, y: y + fs * 0.78, size: fs + 0.5, bold: true, s: (i + 1) + '.' });
+
+      let cy = y + fs * 0.78;
+      for (const line of qLines) {
+        emitRuns(lineToRuns(line), textX, cy, fs, items, 'normal');
+        cy += qLineH;
+      }
+      if (visual) {
+        const vl = layoutVisualSolution(textX, cy + 8, visual, fs, maxW);
+        for (const it of vl.items) items.push(it);
+      } else {
+        cy += 2;
+        for (const line of ansLines) {
+          emitRuns(lineToRuns(line), textX, cy, fs, items, 'normal');
+          cy += qLineH;
+        }
+        cy += 4;
+        for (const line of solLines) {
+          emitRuns(lineToRuns(line), textX, cy, solFs, items, 'normal');
+          cy += sLineH;
+        }
+      }
+      y += blockH;
+    }
+    if (items.length) pages.push(items);
+
+    for (let i = 0; i < pages.length; i++) {
+      if (pages.length > 1) {
+        const s = 'Page ' + (i + 1) + ' of ' + pages.length;
+        const w = textWidth(s, 8, false);
+        pages[i].push({ t:'text', x: PW - MG - w, y: PH - MG + 12, size: 8, bold: false, s: s });
+      }
+      const note = 'Seed: ' + seed;
+      const noteSize = 8.5;
+      const noteW = textWidth(note, noteSize, false);
+      pages[i].push({ t:'text', x: PW - MG - noteW, y: PH - MG + 2,
+                      size: noteSize, bold: false, s: note });
+    }
+
+    return pages;
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c];
+    });
+  }
+  function greyToColour(g) {
+    const shade = Math.round(g * 255);
+    return 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+  }
+  function rgbColour(c) {
+    return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+  }
+
+  function itemsToParts(items) {
+    const parts = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer') {
+        const t = it.y - it.size * 0.755;
+        const cls = it.t === 'answer' ? 'tx ans' : 'tx';
+        parts.push('<span class="' + cls + '" style="left:' + it.x.toFixed(2) +
+          'pt;top:' + t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+          (it.bold ? 'font-weight:700;' : '') +
+          (it.italic ? 'font-style:italic;' : '') + '">' + esc(it.s) + '</span>');
+      } else if (it.t === 'line' || it.t === 'answer-line') {
+        const color = it.col ? rgbColour(it.col) : (it.grey ? '#94a3b8' : '#000');
+        const cls = it.t === 'answer-line' ? 'ans' : '';
+        parts.push(
+          '<svg class="' + cls + '" ' +
+          'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+          'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+          '<line x1="' + it.x1.toFixed(2) + '" y1="' + it.y1.toFixed(2) +
+          '" x2="' + it.x2.toFixed(2) + '" y2="' + it.y2.toFixed(2) +
+          '" stroke="' + color + '" stroke-width="' + it.w.toFixed(2) +
+          '" stroke-linecap="butt"/>' +
+          '</svg>');
+      } else if (it.t === 'rect') {
+        const g = it.grey !== undefined ? it.grey : 0;
+        const bg = it.col ? rgbColour(it.col) : greyToColour(g);
+        parts.push('<span style="position:absolute;left:' + it.x.toFixed(2) +
+          'pt;top:' + it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) +
+          'pt;height:' + it.h.toFixed(2) + 'pt;background:' + bg +
+          ';"></span>');
+      } else if (it.t === 'poly') {
+        const g = it.grey !== undefined ? it.grey : 0;
+        const fill = it.col ? rgbColour(it.col) : greyToColour(g);
+        const ptsStr = it.pts.map(function (p) {
+          return p[0].toFixed(2) + ',' + p[1].toFixed(2);
+        }).join(' ');
+        parts.push('<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg"><polygon points="' + ptsStr + '" fill="' + fill + '"/></svg>');
+      }
+    }
+    return parts;
+  }
+
+  function drawHTML(pagesItems) {
+    const pagesEl = document.getElementById('pages');
+    pagesEl.innerHTML = '';
+    for (const items of pagesItems) {
+      const wrap = document.createElement('div');
+      wrap.className = 'page-wrap';
+      const pg = document.createElement('div');
+      pg.className = 'page';
+      pg.innerHTML = itemsToParts(items).join('');
+      wrap.appendChild(pg);
+      pagesEl.appendChild(wrap);
+    }
+  }
+
+  function answersDocumentHTML() {
+    const title = sheetTitle();
+    let body = '';
+    for (const items of lastAnswerPages) {
+      body += '<div class="page-wrap"><div class="page">' +
+              itemsToParts(items).join('') + '</div></div>';
+    }
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>' + esc(title) + ' — Answers &amp; Worked Solutions</title>' +
+      '<style>' +
+      '*{box-sizing:border-box}' +
+      'body{margin:0;background:#eef2f7;color:#000;font-family:Helvetica,Arial,sans-serif}' +
+      '.bar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;align-items:center;gap:12px;' +
+        'padding:12px 20px;background:#0f172a;color:#f8fafc;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;' +
+        'box-shadow:0 2px 10px rgba(15,23,42,.25)}' +
+      '.bar .ttl{font-weight:800;font-size:15px;letter-spacing:.3px;margin-right:auto}' +
+      '.bar button{padding:8px 15px;border-radius:9px;border:1px solid #334155;background:#1e293b;' +
+        'color:#f8fafc;font:inherit;font-weight:700;cursor:pointer}' +
+      '.bar button:hover{background:#334155}' +
+      '.tip{text-align:center;color:#64748b;font-size:13px;padding:0 16px 34px}' +
+      '.pages{display:flex;flex-direction:column;align-items:center;gap:24px;padding:24px 0}' +
+      '.page-wrap{position:relative;overflow:hidden;width:210mm;height:297mm}' +
+      '.page{position:absolute;top:0;left:0;width:210mm;height:297mm;background:#fff;' +
+        'box-shadow:0 6px 26px rgba(15,23,42,.16);font-family:Helvetica,Arial,sans-serif;color:#000}' +
+      '.page .tx{position:absolute;white-space:pre;line-height:1;font-family:Helvetica,Arial,sans-serif}' +
+      '@page{size:A4;margin:0}' +
+      '@media print{' +
+        'body{background:#fff}' +
+        '.no-print{display:none !important}' +
+        '.pages{display:block;padding:0}' +
+        '.page-wrap{width:auto;height:auto;overflow:visible;page-break-after:always;break-after:page}' +
+        '.page-wrap:last-child{page-break-after:auto;break-after:auto}' +
+        '.page{position:relative;width:210mm;height:296.9mm;box-shadow:none}' +
+      '}' +
+      '</style></head><body>' +
+      '<div class="bar no-print">' +
+        '<span class="ttl">' + esc(title) + ' — Answers &amp; Worked Solutions</span>' +
+        '<button onclick="window.print()">🖨️ Print</button>' +
+        '<button onclick="window.close()">Close</button>' +
+      '</div>' +
+      '<div class="pages">' + body + '</div>' +
+      '<p class="tip no-print">Use <b>Print</b> to print the answers and worked solutions.</p>' +
+      '</body></html>';
+  }
+
+  function openAnswersTab() {
+    if (!lastAnswerPages.length) return;
+    const html = answersDocumentHTML();
+    const w = window.open('', '_blank');
+    if (!w) {
+      alert('Please allow pop-ups to open the answers window.');
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+  }
+
+  const WINANSI = {
+    0x20AC:0x80, 0x201A:0x82, 0x0192:0x83, 0x201E:0x84,
+    0x2026:0x85, 0x2020:0x86, 0x2021:0x87, 0x02C6:0x88,
+    0x2030:0x89, 0x0160:0x8A, 0x2039:0x8B, 0x0152:0x8C,
+    0x017D:0x8E, 0x2018:0x91, 0x2019:0x92, 0x201C:0x93,
+    0x201D:0x94, 0x2022:0x95, 0x2013:0x96, 0x2014:0x97,
+    0x02DC:0x98, 0x2122:0x99, 0x0161:0x9A, 0x203A:0x9B,
+    0x0153:0x9C, 0x017E:0x9E, 0x0178:0x9F
+  };
+  function pdfEsc(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      const code = ch.charCodeAt(0);
+      if (ch === '\\') out += '\\\\';
+      else if (ch === '(') out += '\\(';
+      else if (ch === ')') out += '\\)';
+      else if (code >= 32 && code <= 126) out += ch;
+      else if (code >= 0xA0 && code <= 0xFF) out += '\\' + code.toString(8).padStart(3, '0');
+      else if (WINANSI[code] !== undefined) out += '\\' + WINANSI[code].toString(8).padStart(3, '0');
+      else out += '?';
+    }
+    return out;
+  }
+
+  function pdfStrokeColourOp(it) {
+    if (it.col) {
+      return (it.col[0] / 255).toFixed(3) + ' ' +
+             (it.col[1] / 255).toFixed(3) + ' ' +
+             (it.col[2] / 255).toFixed(3) + ' RG';
+    }
+    return (it.grey ? '0.58' : '0') + ' G';
+  }
+  function pdfFillColourOp(it) {
+    if (it.col) {
+      return (it.col[0] / 255).toFixed(3) + ' ' +
+             (it.col[1] / 255).toFixed(3) + ' ' +
+             (it.col[2] / 255).toFixed(3) + ' rg';
+    }
+    return (it.grey !== undefined ? it.grey : 0) + ' g';
+  }
+
+  function contentStream(items) {
+    const ops = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'answer' || it.t === 'answer-line') continue;
+      if (it.t === 'text' || it.t === 'run') {
+        let font = 'F1';
+        if (it.bold && it.italic) font = 'F4';
+        else if (it.bold)         font = 'F2';
+        else if (it.italic)       font = 'F3';
+        ops.push('BT /' + font + ' ' + it.size.toFixed(2) +
+          ' Tf ' + it.x.toFixed(2) + ' ' + (PH - it.y).toFixed(2) +
+          ' Td (' + pdfEsc(it.s) + ') Tj ET');
+      } else if (it.t === 'line') {
+        ops.push(pdfStrokeColourOp(it) + ' ' + it.w.toFixed(2) + ' w ' +
+          it.x1.toFixed(2) + ' ' + (PH - it.y1).toFixed(2) + ' m ' +
+          it.x2.toFixed(2) + ' ' + (PH - it.y2).toFixed(2) + ' l S');
+      } else if (it.t === 'rect') {
+        ops.push(pdfFillColourOp(it) + ' ' + it.x.toFixed(2) + ' ' +
+          (PH - it.y - it.h).toFixed(2) + ' ' + it.w.toFixed(2) + ' ' +
+          it.h.toFixed(2) + ' re f');
+      } else if (it.t === 'poly') {
+        const pts = it.pts;
+        let s = pdfFillColourOp(it);
+        s += ' ' + pts[0][0].toFixed(2) + ' ' + (PH - pts[0][1]).toFixed(2) + ' m';
+        for (let k = 1; k < pts.length; k++) {
+          s += ' ' + pts[k][0].toFixed(2) + ' ' + (PH - pts[k][1]).toFixed(2) + ' l';
+        }
+        s += ' h f';
+        ops.push(s);
+      }
+    }
+    return ops.join('\n');
+  }
+
+  function assemblePDF(pagesItems) {
+    const N = pagesItems.length;
+    const maxObj = 6 + 2 * N;
+    const objects = [];
+
+    const kidRefs = [];
+    for (let i = 0; i < N; i++) kidRefs.push((8 + 2 * i) + ' 0 R');
+
+    objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    objects[2] = '<< /Type /Pages /Kids [' + kidRefs.join(' ') +
+                 '] /Count ' + N + ' >>';
+    objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+    objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+    objects[5] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>';
+    objects[6] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-BoldOblique /Encoding /WinAnsiEncoding >>';
+
+    for (let i = 0; i < N; i++) {
+      const stream = contentStream(pagesItems[i]);
+      const streamObj = 7 + 2 * i;
+      const pageObj   = 8 + 2 * i;
+      objects[streamObj] = '<< /Length ' + stream.length + ' >>\nstream\n' + stream + '\nendstream';
+      objects[pageObj]   = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] ' +
+                           '/Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R /F4 6 0 R >> >> ' +
+                           '/Contents ' + streamObj + ' 0 R >>';
+    }
+
+    let out = '%PDF-1.4\n';
+    const offsets = [];
+    for (let i = 1; i <= maxObj; i++) {
+      offsets[i] = out.length;
+      out += i + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xrefPos = out.length;
+    out += 'xref\n0 ' + (maxObj + 1) + '\n';
+    out += '0000000000 65535 f \n';
+    for (let i = 1; i <= maxObj; i++) {
+      out += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    }
+    out += 'trailer\n<< /Size ' + (maxObj + 1) + ' /Root 1 0 R >>\n';
+    out += 'startxref\n' + xrefPos + '\n%%EOF\n';
+    return out;
+  }
+
+  function downloadPDF(pagesItems, filename) {
+    const pdfStr = assemblePDF(pagesItems);
+    const bytes = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
+    const blob = new Blob([bytes], { type:'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+  }
+
+  const titleInput = document.getElementById('titleInput');
+  const seedInput  = document.getElementById('seedInput');
+  const curSel     = document.getElementById('curSel');
+  const mixSel     = document.getElementById('mixSel');
+  const revealBtn  = document.getElementById('revealBtn');
+  const pagesEl    = document.getElementById('pages');
+
+  let currentQuestions = [];
+  let lastSheetPages = [];
+  let lastAnswerPages = [];
+
+  function sheetTitle() {
+    const t = titleInput.value.trim();
+    return t || 'Reverse Percentages';
+  }
+  function currencySymbol() { return curSel.value || '£'; }
+
+  function renderSheet() {
+    lastSheetPages = layoutSheet({ title: sheetTitle(), questions: currentQuestions });
+    drawHTML(lastSheetPages);
+    lastAnswerPages = layoutWorkedKey({
+      title: sheetTitle(),
+      questions: currentQuestions,
+      seed: seedInput.value
+    });
+    fitPage();
+  }
+
+  function regenerate() {
+    currentQuestions = generateReversePercentageSet(mixSel.value);
+    renderSheet();
+  }
+
+  function fitPage() {
+    const vp = document.getElementById('viewport');
+    const pw = 210 * 96 / 25.4;
+    const ph = 297 * 96 / 25.4;
+    const avail = vp.clientWidth - 40;
+    const z = Math.max(0.22, Math.min(1, avail / pw));
+
+    document.querySelectorAll('.page-wrap').forEach(function (w) {
+      w.style.width  = (pw * z) + 'px';
+      w.style.height = (ph * z) + 'px';
+    });
+    document.querySelectorAll('.page').forEach(function (p) {
+      p.style.transform = 'scale(' + z + ')';
+    });
+  }
+
+  function setRevealed(on) {
+    pagesEl.classList.toggle('revealed', !!on);
+    revealBtn.textContent = on ? '🙈 Hide answers' : '👁 Reveal answers';
+    revealBtn.classList.toggle('reveal-on', !!on);
+  }
+
+  revealBtn.addEventListener('click', function () {
+    setRevealed(!pagesEl.classList.contains('revealed'));
+  });
+
+  function applySeed() {
+    const s = parseInt(seedInput.value, 10);
+    rng = mulberry32(isNaN(s) ? 1 : (s >>> 0));
+  }
+  function getSeedFromURL() {
+    const p = new URLSearchParams(window.location.search).get('seed');
+    if (p === null) return null;
+    const n = parseInt(p, 10);
+    return isNaN(n) ? null : n;
+  }
+  function getAnswersFromURL() {
+    const p = new URLSearchParams(window.location.search).get('answers');
+    return p === '1' || p === 'true';
+  }
+  function setSeedInURL(seed) {
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('seed', seed);
+      window.history.replaceState({}, '', url);
+    } catch (e) { /* ignore on file:// */ }
+  }
+  function dateSeed() {
+    const d = new Date();
+    return parseInt(
+      d.getFullYear() +
+      String(d.getMonth() + 1).padStart(2, '0') +
+      String(d.getDate()).padStart(2, '0') +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0'),
+      10
+    );
+  }
+  function safeFilename(s) {
+    return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  document.getElementById('regenBtn').addEventListener('click', function () {
+    seedInput.value = dateSeed();
+    applySeed(); regenerate(); setSeedInURL(seedInput.value);
+  });
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    if (!lastSheetPages.length) return;
+    downloadPDF(lastSheetPages, safeFilename(sheetTitle()) +
+                 '-' + seedInput.value + '.pdf');
+  });
+  document.getElementById('dlAnsBtn').addEventListener('click', openAnswersTab);
+  document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
+  seedInput.addEventListener('change', function () { applySeed(); regenerate(); setSeedInURL(seedInput.value); });
+  curSel.addEventListener('change', function () { applySeed(); regenerate(); });
+  mixSel.addEventListener('change', function () { applySeed(); regenerate(); });
+  titleInput.addEventListener('input', renderSheet);
+  window.addEventListener('resize', fitPage);
+
+  function boot() {
+    const urlSeed = getSeedFromURL();
+    seedInput.value = (urlSeed !== null) ? urlSeed : Date.now() % 100000;
+    applySeed();
+    regenerate();
+    setSeedInURL(seedInput.value);
+    fitPage();
+    if (getAnswersFromURL()) setRevealed(true);
+  }
+  if (document.readyState === 'complete') boot();
+  else window.addEventListener('load', boot, { once: true });
+
+})();
+</script>
+</body>
+</html>
