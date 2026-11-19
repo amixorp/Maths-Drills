@@ -1191,6 +1191,170 @@ window.BANKS.standardForm = {
      {pct}    percentage change (a number)
      {final}  final value, already formatted
    ============================================================ */
+/* ============================================================
+   SHARED PERCENTAGE CONTENT
+   ------------------------------------------------------------
+   A single home for percentage-change content that more than one
+   topic can use.  The reverse-percentage worksheet reads
+   `percentages.compound`; other percentage topics can reuse the
+   same narratives, rates and ranges rather than copying them.
+
+   `percentages.reverse` is attached after the reversePercent
+   bank is defined, so those pools are shared too.
+   ============================================================ */
+window.BANKS = window.BANKS || {};
+window.BANKS.percentages = {
+  compound: {
+    years: [1, 2, 3],
+    growthRates: [2, 3, 4, 5, 6, 7, 8, 10, 12, 15],
+    decayRates: [5, 8, 10, 12, 15, 18, 20, 25],
+
+    growth: [
+      { id: 'savings', unit: 'money', min: 400, max: 8000,
+        rates: [2, 3, 4, 5, 6],
+        templates: [
+          '{Name} invests some money in a savings account. The account earns compound interest at a rate of {rate}% per year. After {yearsText} the investment is worth {final}. Work out how much {Name} invested.',
+          '{Name} puts some money into a savings account that pays compound interest at {rate}% per year. After {yearsText} the account contains {final}. Work out the amount {Name} put into the account.'
+        ] },
+      { id: 'bond', unit: 'money', min: 1000, max: 15000,
+        rates: [3, 4, 5, 6, 7],
+        templates: [
+          '{Name} buys an investment bond. The value of the bond increases by {rate}% each year. After {yearsText} the bond is worth {final}. Work out the original value of the bond.',
+          '{Name} invested some money in a bond. It grows by {rate}% each year. After {yearsText} it is worth {final}. Work out how much {Name} invested.'
+        ] },
+      { id: 'antique', unit: 'money', min: 200, max: 5000,
+        rates: [5, 6, 7, 8, 10, 12],
+        templates: [
+          'The value of an antique vase increases by {rate}% each year. After {yearsText} it is worth {final}. Work out the value of the vase {yearsText} ago.',
+          '{Name} bought an antique vase as an investment. Its value has increased by {rate}% each year. After {yearsText} it is worth {final}. Work out what {Name} paid for the vase.'
+        ] },
+      { id: 'classic-car', unit: 'money', min: 5000, max: 45000,
+        rates: [4, 5, 6, 7, 8, 10],
+        templates: [
+          'The value of a classic car increases by {rate}% each year. After {yearsText} it is worth {final}. Work out the value of the car {yearsText} ago.',
+          '{Name} bought a classic car {yearsText} ago. Its value has increased by {rate}% each year and it is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'painting', unit: 'money', min: 800, max: 25000,
+        rates: [5, 6, 7, 8, 10, 12],
+        templates: [
+          'A painting increases in value by {rate}% each year. After {yearsText} it is worth {final}. Work out its value {yearsText} ago.',
+          '{Name} bought a painting {yearsText} ago. Its value has risen by {rate}% each year and it is now worth {final}. Work out the price {Name} paid.'
+        ] },
+      { id: 'watch', unit: 'money', min: 500, max: 9000,
+        rates: [4, 5, 6, 7, 8, 10],
+        templates: [
+          '{Name} bought a vintage watch {yearsText} ago. Its value has increased by {rate}% each year. It is now worth {final}. Work out what {Name} paid for the watch.',
+          'A vintage watch increases in value by {rate}% each year. After {yearsText} it is worth {final}. Work out its value {yearsText} ago.'
+        ] },
+      { id: 'comic', unit: 'money', min: 100, max: 3000,
+        rates: [5, 6, 8, 10, 12, 15],
+        templates: [
+          'A rare comic increases in value by {rate}% each year. After {yearsText} it is worth {final}. Work out its value {yearsText} ago.',
+          '{Name} bought a rare comic {yearsText} ago. It has increased in value by {rate}% each year and is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'wine', unit: 'money', min: 200, max: 4000,
+        rates: [4, 5, 6, 7, 8],
+        templates: [
+          'A case of wine increases in value by {rate}% each year. After {yearsText} it is worth {final}. Work out its value {yearsText} ago.',
+          '{Name} bought a case of wine as an investment. It has increased in value by {rate}% each year. After {yearsText} it is worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'population', unit: 'count', unitLabel: 'people', min: 800, max: 30000,
+        rates: [2, 3, 4, 5, 6, 8],
+        templates: [
+          'The population of a village increases by {rate}% each year. After {yearsText} the population is {final}. Work out the population {yearsText} ago.',
+          'The population of a town grows by {rate}% each year. After {yearsText} there are {final} people. Work out the population {yearsText} ago.'
+        ] },
+      { id: 'subscribers', unit: 'count', unitLabel: 'subscribers', min: 1000, max: 60000,
+        rates: [5, 8, 10, 12, 15, 20],
+        templates: [
+          'A YouTube channel has {final} subscribers. The number of subscribers has increased by {rate}% each year for the last {yearsText}. Work out the number of subscribers {yearsText} ago.',
+          'The number of subscribers to an app increases by {rate}% each year. After {yearsText} there are {final} subscribers. Work out the number before the increase.'
+        ] },
+      { id: 'wildlife', unit: 'count', unitLabel: 'otters', min: 500, max: 20000,
+        rates: [3, 4, 5, 6, 8],
+        templates: [
+          'The number of otters in a nature reserve increases by {rate}% each year. After {yearsText} there are {final} otters. Work out the number of otters {yearsText} ago.',
+          'A conservation project helps an otter population grow by {rate}% each year. After {yearsText} there are {final} otters. Work out the population {yearsText} ago.'
+        ] },
+      { id: 'trees', unit: 'count', unitLabel: 'trees', min: 1000, max: 40000,
+        rates: [2, 3, 4, 5, 6],
+        templates: [
+          'The number of trees in a forest increases by {rate}% each year. After {yearsText} there are {final} trees. Work out the number of trees {yearsText} ago.',
+          'A tree-planting scheme increases the number of trees in a wood by {rate}% each year. After {yearsText} there are {final} trees. Work out the number {yearsText} ago.'
+        ] }
+    ],
+
+    decay: [
+      { id: 'car', unit: 'money', min: 6000, max: 35000,
+        rates: [8, 10, 12, 15, 18, 20],
+        templates: [
+          'A car depreciates in value by {rate}% each year. After {yearsText} it is worth {final}. Work out the value of the car when it was new.',
+          '{Name} bought a car {yearsText} ago. It has depreciated by {rate}% each year and is now worth {final}. Work out what {Name} paid for the car.'
+        ] },
+      { id: 'laptop', unit: 'money', min: 400, max: 2500,
+        rates: [10, 12, 15, 18, 20, 25],
+        templates: [
+          'A laptop loses value at a rate of {rate}% each year. After {yearsText} it is worth {final}. Work out the original price of the laptop.',
+          '{Name} bought a laptop {yearsText} ago. It has lost {rate}% of its value each year and is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'phone', unit: 'money', min: 300, max: 1500,
+        rates: [12, 15, 18, 20, 25],
+        templates: [
+          'A phone depreciates by {rate}% each year. After {yearsText} it is worth {final}. Work out its original price.',
+          '{Name} bought a phone {yearsText} ago. Its value has fallen by {rate}% each year and it is now worth {final}. Work out the original price.'
+        ] },
+      { id: 'machinery', unit: 'money', min: 5000, max: 50000,
+        rates: [8, 10, 12, 15, 18, 20],
+        templates: [
+          'A machine depreciates by {rate}% each year. After {yearsText} it is worth {final}. Work out the value of the machine when it was new.',
+          'A factory buys a machine. Its value falls by {rate}% each year. After {yearsText} it is worth {final}. Work out the original value.'
+        ] },
+      { id: 'boat', unit: 'money', min: 8000, max: 60000,
+        rates: [8, 10, 12, 15, 18],
+        templates: [
+          'A boat depreciates in value by {rate}% each year. After {yearsText} it is worth {final}. Work out its value when it was new.',
+          '{Name} bought a boat {yearsText} ago. It has depreciated by {rate}% each year and is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'caravan', unit: 'money', min: 5000, max: 30000,
+        rates: [8, 10, 12, 15, 18],
+        templates: [
+          'A caravan loses value at a rate of {rate}% each year. After {yearsText} it is worth {final}. Work out the original price.',
+          '{Name} bought a caravan {yearsText} ago. It has lost {rate}% of its value each year and is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'camera', unit: 'money', min: 300, max: 3000,
+        rates: [10, 12, 15, 18, 20],
+        templates: [
+          'A camera depreciates by {rate}% each year. After {yearsText} it is worth {final}. Work out its original price.',
+          '{Name} bought a camera {yearsText} ago. Its value has fallen by {rate}% each year and it is now worth {final}. Work out the original price.'
+        ] },
+      { id: 'furniture', unit: 'money', min: 200, max: 4000,
+        rates: [8, 10, 12, 15],
+        templates: [
+          'A piece of furniture loses {rate}% of its value each year. After {yearsText} it is worth {final}. Work out its original price.',
+          '{Name} bought a piece of furniture {yearsText} ago. It has lost {rate}% of its value each year and is now worth {final}. Work out what {Name} paid.'
+        ] },
+      { id: 'fish', unit: 'count', unitLabel: 'fish', min: 1000, max: 50000,
+        rates: [3, 4, 5, 6, 8, 10],
+        templates: [
+          'The number of fish in a lake decreases by {rate}% each year. After {yearsText} there are {final} fish. Work out the number of fish {yearsText} ago.',
+          'The fish population of a lake falls by {rate}% each year. After {yearsText} there are {final} fish. Work out the population {yearsText} ago.'
+        ] },
+      { id: 'forest', unit: 'count', unitLabel: 'trees', min: 1000, max: 40000,
+        rates: [2, 3, 4, 5, 6, 8],
+        templates: [
+          'The number of trees in a forest decreases by {rate}% each year. After {yearsText} there are {final} trees. Work out the number of trees {yearsText} ago.',
+          'A disease causes the number of trees in a wood to fall by {rate}% each year. After {yearsText} there are {final} trees. Work out the number {yearsText} ago.'
+        ] },
+      { id: 'bees', unit: 'count', unitLabel: 'bees', min: 500, max: 20000,
+        rates: [5, 8, 10, 12, 15],
+        templates: [
+          'The number of bees in a hive decreases by {rate}% each year. After {yearsText} there are {final} bees. Work out the number of bees {yearsText} ago.',
+          'A bee population falls by {rate}% each year. After {yearsText} there are {final} bees. Work out the population {yearsText} ago.'
+        ] }
+    ]
+  }
+};
+
 window.BANKS = window.BANKS || {};
 window.BANKS.reversePercent = {
 
@@ -1400,6 +1564,10 @@ window.BANKS.reversePercent = {
     }
   }
 };
+
+/* Expose the reverse-percentage pools to other percentage topics
+   through the same shared namespace. */
+window.BANKS.percentages.reverse = window.BANKS.reversePercent;
 
 /* ============================================================
    REPEATED PERCENTAGE CHANGE — content bank

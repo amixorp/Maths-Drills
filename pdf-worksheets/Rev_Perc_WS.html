@@ -845,6 +845,34 @@
   const CALC_BARE_DEC  = RP_CALC.bareDecrease || RP_BARE_DEC;
   const CALC_VAT     = RP_CALC.vat || null;
 
+  const RP_PERCENTAGES = window.BANKS.percentages || {};
+  const RP_COMPOUND    = RP_PERCENTAGES.compound || RP.compound || {};
+  const COMPOUND_NAME_POOL = (function () {
+    const p = window.BANKS.people || {};
+    const pool = (p.female || []).concat(p.male || [], window.BANKS.names || []);
+    return pool.length ? pool : ['Amit', 'Maya', 'Leo', 'Priya', 'Sam'];
+  })();
+
+  const COMPOUND_FALLBACK = {
+    years: [1, 2, 3],
+    growthRates: [4, 5, 6],
+    decayRates: [10, 12, 15],
+    growth: [
+      { id: 'savings', unit: 'money', min: 500, max: 6000,
+        templates: [
+          '{Name} invests some money in a savings account. The account earns compound interest at a rate of {rate}% per year. After {yearsText} the investment is worth {final}. Work out how much {Name} invested.'
+        ] }
+    ],
+    decay: [
+      { id: 'car', unit: 'money', min: 6000, max: 30000,
+        templates: [
+          'A car depreciates in value by {rate}% each year. After {yearsText} it is worth {final}. Work out the value of the car when it was new.'
+        ] }
+    ]
+  };
+  const COMPOUND_BANK = (RP_COMPOUND.growth && RP_COMPOUND.growth.length)
+    ? RP_COMPOUND : COMPOUND_FALLBACK;
+
   const RP_PCT_DEC = [10, 20, 30, 40, 50, 60];
   const RP_PCT_INC = [10, 20, 30, 40, 50, 60];
 
@@ -887,6 +915,12 @@
   function fmtMultiplier(m) {
     return String(Number(m.toFixed(4)));
   }
+  function fmtPowerMultiplier(m) {
+    return String(Number(m.toFixed(6)));
+  }
+  function pctArticle(p) {
+    return /^(8|11|18)/.test(String(p)) ? 'an' : 'a';
+  }
   function pickUnused(list, used) {
     if (!list || !list.length) return null;
     const free = list.filter(x => !used.has(x));
@@ -908,6 +942,9 @@
     }
     s = s.replace(/\{pct\}/g, String(data.pct));
     if (data.rate !== undefined) s = s.replace(/\{rate\}/g, String(data.rate));
+    if (data.name !== undefined) s = s.replace(/\{Name\}/g, String(data.name));
+    if (data.yearsText !== undefined) s = s.replace(/\{yearsText\}/g, String(data.yearsText));
+    if (data.years !== undefined) s = s.replace(/\{years\}/g, String(data.years));
     s = s.replace(/\{final\}/g, String(data.final));
     return s;
   }
@@ -1225,17 +1262,103 @@
     };
   }
 
+  function compoundMultiplier(rate, type, years) {
+    const baseRaw = (type === 'decay') ? (100 - rate) / 100 : (100 + rate) / 100;
+    const base = Math.round(baseRaw * 1e6) / 1e6;
+    const power = Math.round(Math.pow(base, years) * 1e6) / 1e6;
+    return { base: base, power: power };
+  }
+
+  function pickCompoundContext(list, used) {
+    const free = list.filter(function (c) { return !used.has(c.id); });
+    const pool = free.length ? free : list;
+    return pool[Math.floor(rng() * pool.length)];
+  }
+
+  function genCalcCompound(type, usedContexts) {
+    let list = (type === 'decay') ? (COMPOUND_BANK.decay || [])
+                                 : (COMPOUND_BANK.growth || []);
+    const moneyOnly = list.filter(function (c) {
+      return (c.unit || 'money') === 'money';
+    });
+    if (moneyOnly.length) list = moneyOnly;
+    if (!list.length) {
+      return genCalcMoneyRP(type === 'decay' ? 'decrease' : 'increase',
+                            new Set(), new Set());
+    }
+
+    const ctx = pickCompoundContext(list, usedContexts);
+    usedContexts.add(ctx.id);
+
+    const ratePool = (ctx.rates && ctx.rates.length)
+      ? ctx.rates
+      : ((type === 'decay' ? COMPOUND_BANK.decayRates : COMPOUND_BANK.growthRates) || [4, 5, 6]);
+    const rate = pick(ratePool);
+    const yearsPool = (COMPOUND_BANK.years && COMPOUND_BANK.years.length)
+      ? COMPOUND_BANK.years : [1, 2, 3];
+    const years = pick(yearsPool);
+    const mult = compoundMultiplier(rate, type, years);
+    const yearsText = years + ' year' + (years === 1 ? '' : 's');
+
+    let principal = null, final = null;
+    for (let tries = 0; tries < 400; tries++) {
+      const p = 10 * pickTenForRange(ctx.min, ctx.max);
+      const f = Math.round(p * mult.power * 100) / 100;
+      const back = Math.round((f / mult.power) * 100) / 100;
+      if (Math.abs(back - p) < 0.005) { principal = p; final = f; break; }
+    }
+    if (principal === null) {
+      principal = 10 * pickTenForRange(ctx.min, ctx.max);
+      final = Math.round(principal * mult.power * 100) / 100;
+    }
+
+    const cur = currencySymbol();
+    const baseText = fmtPowerMultiplier(mult.base);
+    const powerText = fmtPowerMultiplier(mult.power);
+    const finalText = fmtMoneyCalc(final, cur);
+    const originalText = fmtMoneyCalc(principal, cur);
+    const name = pick(COMPOUND_NAME_POOL);
+    const tpl = pick(ctx.templates) ||
+      '{Name} invests some money at a rate of {rate}% per year compound interest. After {yearsText} the investment is worth {final}. Work out how much {Name} invested.';
+    const powerExpr = years === 1
+      ? baseText
+      : baseText + (years === 2 ? '²' : '³');
+
+    return {
+      key: 'calcCompound|' + type + '|' + ctx.id + '|' + rate + '|' + years + '|' + principal,
+      theme: 'calcCompound:' + type,
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(tpl, {
+        name: name,
+        rate: fmtPct(rate),
+        years: years,
+        yearsText: yearsText,
+        final: finalText
+      }) }],
+      answers: [{ blockIndex: 0, text: originalText }],
+      solution: [
+        'The value is multiplied by ' + baseText + ' each year (' +
+          pctArticle(rate) + ' ' + fmtPct(rate) + '% ' +
+          (type === 'decay' ? 'decrease' : 'increase') + ').',
+        years === 1
+          ? 'Multiplier = ' + powerText + '.'
+          : 'Multiplier for ' + yearsText + ' = ' + powerExpr + ' = ' + powerText + '.',
+        'Original value = ' + finalText + ' ÷ ' + powerText + ' = ' + originalText + '.'
+      ]
+    };
+  }
+
   const RP_PLANS = {
     both: [
-      'calcMoneyDec', 'moneyDec', 'calcMoneyInc', 'countInc', 'moneyDec',
+      'calcMoneyDec', 'moneyDec', 'calcCompoundGrowth', 'countInc', 'moneyDec',
       'calcVAT', 'moneyInc', 'calcCountDec', 'moneyDec', 'calcBareDec',
-      'moneyInc', 'calcMoneyDec', 'countDec', 'moneyDec', 'calcCountInc',
+      'moneyInc', 'calcCompoundDecay', 'countDec', 'moneyDec', 'calcCountInc',
       'bareInc', 'moneyInc', 'calcBareInc', 'moneyDec', 'moneyInc'
     ],
     calc: [
-      'calcMoneyDec', 'calcMoneyInc', 'calcCountInc', 'calcMoneyDec', 'calcBareDec',
+      'calcMoneyDec', 'calcMoneyInc', 'calcCountInc', 'calcCompoundGrowth', 'calcBareDec',
       'calcVAT', 'calcMoneyInc', 'calcCountDec', 'calcMoneyDec', 'calcBareInc',
-      'calcMoneyInc', 'calcMoneyDec', 'calcCountInc', 'calcMoneyDec', 'calcMoneyInc',
+      'calcMoneyInc', 'calcMoneyDec', 'calcCountInc', 'calcMoneyDec', 'calcCompoundDecay',
       'calcCountDec', 'calcBareDec', 'calcMoneyDec', 'calcMoneyInc', 'calcMoneyDec'
     ],
     noncalc: [
@@ -1283,6 +1406,7 @@
     const usedCalcBareDec = new Set();
     const usedCalcVatItems = new Set();
     const usedCalcVatTemplates = new Set();
+    const usedCalcCompound = new Set();
     const out = [];
 
     for (const kind of plan) {
@@ -1301,6 +1425,8 @@
         else if (kind === 'calcBareInc')  q = genCalcBareRP('increase', usedCalcBareInc);
         else if (kind === 'calcBareDec')  q = genCalcBareRP('decrease', usedCalcBareDec);
         else if (kind === 'calcVAT')      q = genCalcVAT(usedCalcVatItems, usedCalcVatTemplates);
+        else if (kind === 'calcCompoundGrowth') q = genCalcCompound('growth', usedCalcCompound);
+        else if (kind === 'calcCompoundDecay')  q = genCalcCompound('decay', usedCalcCompound);
         if (q && !usedKeys.has(q.key)) break;
       }
       if (q) {
