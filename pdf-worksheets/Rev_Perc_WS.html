@@ -873,6 +873,20 @@
   const COMPOUND_BANK = (RP_COMPOUND.growth && RP_COMPOUND.growth.length)
     ? RP_COMPOUND : COMPOUND_FALLBACK;
 
+  const RP_READINGS = RP_PERCENTAGES.readings || RP.readings || {};
+  const READING_FALLBACK = {
+    percentages: [5, 8, 10, 12, 15],
+    contexts: [
+      { id: 'thermometer', item: 'thermometer', quantity: 'temperature',
+        unit: '°C', glue: '', min: 15, max: 42, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?'
+        ] }
+    ]
+  };
+  const READING_BANK = (RP_READINGS.contexts && RP_READINGS.contexts.length)
+    ? RP_READINGS : READING_FALLBACK;
+
   const RP_PCT_DEC = [10, 20, 30, 40, 50, 60];
   const RP_PCT_INC = [10, 20, 30, 40, 50, 60];
 
@@ -891,6 +905,14 @@
     if (Math.abs(r - Math.round(r)) < 1e-9) return cur + fmtInt(r);
     const parts = r.toFixed(2).split('.');
     return cur + Number(parts[0]).toLocaleString('en-GB') + '.' + parts[1];
+  }
+  function fmtDecimal(n) {
+    const r = Math.round(n * 100) / 100;
+    if (Math.abs(r - Math.round(r)) < 1e-9) return fmtInt(r);
+    const parts = r.toFixed(2).split('.');
+    let decimals = parts[1].replace(/0+$/, '');
+    if (!decimals) decimals = '0';
+    return Number(parts[0]).toLocaleString('en-GB') + '.' + decimals;
   }
   function fmtPct(p) {
     return String(Number(p.toFixed(2)));
@@ -945,6 +967,10 @@
     if (data.name !== undefined) s = s.replace(/\{Name\}/g, String(data.name));
     if (data.yearsText !== undefined) s = s.replace(/\{yearsText\}/g, String(data.yearsText));
     if (data.years !== undefined) s = s.replace(/\{years\}/g, String(data.years));
+    if (data.direction !== undefined) s = s.replace(/\{direction\}/g, String(data.direction));
+    if (data.quantity !== undefined) s = s.replace(/\{quantity\}/g, String(data.quantity));
+    if (data.reading !== undefined) s = s.replace(/\{reading\}/g, String(data.reading));
+    if (data.actual !== undefined) s = s.replace(/\{actual\}/g, String(data.actual));
     s = s.replace(/\{final\}/g, String(data.final));
     return s;
   }
@@ -1357,6 +1383,72 @@
     };
   }
 
+  function pickReadingContext(list, used) {
+    const free = list.filter(function (c) { return !used.has(c.id); });
+    const pool = free.length ? free : list;
+    return pool[Math.floor(rng() * pool.length)];
+  }
+
+  function genCalcReading(usedContexts) {
+    const list = (READING_BANK && READING_BANK.contexts) ? READING_BANK.contexts : [];
+    if (!list.length) return genCalcMoneyRP('increase', new Set(), new Set());
+
+    const ctx = pickReadingContext(list, usedContexts);
+    usedContexts.add(ctx.id);
+
+    const pct = pick((READING_BANK.percentages && READING_BANK.percentages.length)
+      ? READING_BANK.percentages : [5, 8, 10, 12, 15]);
+    const direction = (rng() < 0.5) ? 'higher' : 'lower';
+    const multRaw = (direction === 'higher') ? 1 + pct / 100 : 1 - pct / 100;
+    const mult = Math.round(multRaw * 1e6) / 1e6;
+    const step = ctx.step || 0.5;
+    const first = Math.ceil(ctx.min / step);
+    const last  = Math.floor(ctx.max / step);
+
+    let actual = null, reading = null;
+    for (let tries = 0; tries < 400; tries++) {
+      const k = first + Math.floor(rng() * Math.max(1, last - first + 1));
+      const a = Math.round(k * step * 100) / 100;
+      const r = Math.round(a * mult * 100) / 100;
+      const back = Math.round((r / mult) * 100) / 100;
+      if (Math.abs(back - a) < 0.005) { actual = a; reading = r; break; }
+    }
+    if (actual === null) {
+      const k = first + Math.floor(rng() * Math.max(1, last - first + 1));
+      actual = Math.round(k * step * 100) / 100;
+      reading = Math.round(actual * mult * 100) / 100;
+    }
+
+    const glue = (ctx.glue !== undefined) ? ctx.glue : ' ';
+    const unit = ctx.unit || '';
+    const readingText = fmtDecimal(reading) + glue + unit;
+    const actualText  = fmtDecimal(actual)  + glue + unit;
+    const multText = fmtMultiplier(mult);
+    const name = pick(COMPOUND_NAME_POOL);
+    const tpl = pick(ctx.templates) ||
+      'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?';
+
+    return {
+      key: 'calcReading|' + ctx.id + '|' + pct + '|' + direction + '|' + actual,
+      theme: 'calcReading',
+      badge: 'CALCULATOR',
+      blocks: [{ type: 'text', text: fillRP(tpl, {
+        name: name,
+        pct: fmtPct(pct),
+        direction: direction,
+        quantity: ctx.quantity,
+        item: ctx.item,
+        reading: readingText
+      }) }],
+      answers: [{ blockIndex: 0, text: actualText }],
+      solution: [
+        'The reading is ' + fmtPct(pct) + '% ' + direction +
+          ' than the actual ' + ctx.quantity + ', so the multiplier is ' + multText + '.',
+        'Actual ' + ctx.quantity + ' = ' + readingText + ' ÷ ' + multText + ' = ' + actualText + '.'
+      ]
+    };
+  }
+
   /* Reject non-calculator questions whose answer is an obviously
      round fifty/hundred (for example £150 -> £100).  Those give the
      answer away and make the 10%-method pointless. */
@@ -1368,15 +1460,15 @@
   const RP_PLANS = {
     both: [
       'calcMoneyDec', 'moneyDec', 'calcCompoundGrowth', 'countInc', 'moneyDec',
-      'calcVAT', 'moneyInc', 'calcCountDec', 'moneyDec', 'calcBareDec',
+      'calcVAT', 'moneyInc', 'calcReading', 'moneyDec', 'calcReading',
       'moneyInc', 'calcCompoundDecay', 'countDec', 'moneyDec', 'calcCountInc',
       'bareInc', 'moneyInc', 'calcBareInc', 'moneyDec', 'moneyInc'
     ],
     calc: [
-      'calcMoneyDec', 'calcMoneyInc', 'calcCountInc', 'calcCompoundGrowth', 'calcBareDec',
+      'calcMoneyDec', 'calcMoneyInc', 'calcCountInc', 'calcCompoundGrowth', 'calcReading',
       'calcVAT', 'calcMoneyInc', 'calcCountDec', 'calcMoneyDec', 'calcBareInc',
       'calcMoneyInc', 'calcMoneyDec', 'calcCountInc', 'calcMoneyDec', 'calcCompoundDecay',
-      'calcCountDec', 'calcBareDec', 'calcMoneyDec', 'calcMoneyInc', 'calcMoneyDec'
+      'calcCountDec', 'calcReading', 'calcMoneyDec', 'calcMoneyInc', 'calcMoneyDec'
     ],
     noncalc: [
       'moneyDec', 'moneyInc', 'countInc', 'moneyDec', 'bareDec',
@@ -1424,7 +1516,9 @@
     const usedCalcVatItems = new Set();
     const usedCalcVatTemplates = new Set();
     const usedCalcCompound = new Set();
+    const usedCalcReading = new Set();
     const out = [];
+    let compoundOnSheet = 0;
 
     for (const kind of plan) {
       let q = null;
@@ -1444,9 +1538,14 @@
         else if (kind === 'calcVAT')      q = genCalcVAT(usedCalcVatItems, usedCalcVatTemplates);
         else if (kind === 'calcCompoundGrowth') q = genCalcCompound('growth', usedCalcCompound);
         else if (kind === 'calcCompoundDecay')  q = genCalcCompound('decay', usedCalcCompound);
+        else if (kind === 'calcReading')        q = genCalcReading(usedCalcReading);
         if (q && !usedKeys.has(q.key) && !isTrivialQuestion(q)) break;
       }
       if (q && isTrivialQuestion(q)) q = null;
+      if (q && q.theme && q.theme.indexOf('calcCompound') === 0) {
+        if (compoundOnSheet >= 2) q = null;
+        else compoundOnSheet++;
+      }
       if (q) {
         usedKeys.add(q.key);
         out.push(q);
@@ -1470,7 +1569,7 @@
   const CALC_BADGE_FS   = 7;
   const CALC_BADGE_PADX = 4;
   const CALC_BADGE_PADY = 2;
-  const CALC_BADGE_H    = 14;
+  const CALC_BADGE_H    = 13;
 
   function columnRuleX() { return MG + (PW - 2 * MG) * 0.60; }
   function promptWidth(fs) {

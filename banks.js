@@ -1352,6 +1352,141 @@ window.BANKS.percentages = {
           'A bee population falls by {rate}% each year. After {yearsText} there are {final} bees. Work out the population {yearsText} ago.'
         ] }
     ]
+  },
+
+  /* ----------------------------------------------------------
+     MEASUREMENT / READING ERRORS
+     ----------------------------------------------------------
+     Contextual single-step reverse percentages.  A gauge, meter
+     or sensor gives a reading that is a percentage higher or
+     lower than the true value; the pupil works back to the
+     actual value.  Shared here so other percentage topics can
+     reuse the same narratives and ranges.
+
+     Placeholders:
+       {Name}       pupil name
+       {pct}        percentage error
+       {direction}  higher / lower
+       {quantity}   what is being measured (temperature, speed...)
+       {item}       the measuring instrument
+       {reading}    displayed value, already formatted with units
+     ---------------------------------------------------------- */
+  readings: {
+    percentages: [3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 18, 22],
+    contexts: [
+      { id: 'thermometer', item: 'thermometer', quantity: 'temperature',
+        unit: '°C', glue: '', min: 15, max: 42, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'scales', item: 'set of scales', quantity: 'weight',
+        unit: 'kg', glue: ' ', min: 40, max: 95, step: 0.1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'speedometer', item: 'speedometer', quantity: 'speed',
+        unit: 'mph', glue: ' ', min: 25, max: 80, step: 1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'fuel-gauge', item: 'fuel gauge', quantity: 'amount of fuel',
+        unit: 'litres', glue: ' ', min: 20, max: 65, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'rain-gauge', item: 'rain gauge', quantity: 'rainfall',
+        unit: 'mm', glue: ' ', min: 10, max: 60, step: 0.2,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'voltmeter', item: 'voltmeter', quantity: 'voltage',
+        unit: 'V', glue: ' ', min: 5, max: 24, step: 0.1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'ammeter', item: 'ammeter', quantity: 'current',
+        unit: 'A', glue: ' ', min: 0.5, max: 5, step: 0.1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'depth-sensor', item: 'depth sensor', quantity: 'depth',
+        unit: 'm', glue: ' ', min: 5, max: 40, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'heart-monitor', item: 'heart-rate monitor', quantity: 'heart rate',
+        unit: 'bpm', glue: ' ', min: 60, max: 160, step: 1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'barometer', item: 'barometer', quantity: 'air pressure',
+        unit: 'hPa', glue: ' ', min: 980, max: 1040, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'laser-measure', item: 'laser measure', quantity: 'length',
+        unit: 'm', glue: ' ', min: 1, max: 12, step: 0.1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'stopwatch', item: 'stopwatch', quantity: 'time',
+        unit: 's', glue: ' ', min: 20, max: 120, step: 0.5,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'altimeter', item: 'altimeter', quantity: 'altitude',
+        unit: 'm', glue: ' ', min: 500, max: 3000, step: 10,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'oven-thermometer', item: 'oven thermometer', quantity: 'temperature',
+        unit: '°C', glue: '', min: 150, max: 220, step: 1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'torque-wrench', item: 'torque wrench', quantity: 'torque',
+        unit: 'Nm', glue: ' ', min: 20, max: 200, step: 1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] },
+      { id: 'anemometer', item: 'anemometer', quantity: 'wind speed',
+        unit: 'm/s', glue: ' ', min: 2, max: 20, step: 0.1,
+        templates: [
+          'The {item} gives a reading that is {pct}% {direction} than the actual {quantity}. What is the actual {quantity} when the {item} shows {reading}?',
+          '{Name} uses the {item}. Its reading is {pct}% {direction} than the actual {quantity}. The reading is {reading}. Work out the actual {quantity}.',
+          'A fault makes the {item} show a value {pct}% {direction} than the actual {quantity}. When it displays {reading}, work out the actual {quantity}.'
+        ] }
+    ]
   }
 };
 
