@@ -1056,6 +1056,7 @@
       theme: 'money:' + type,
       blocks: [{ type: 'text', text: fillRP(tpl, { item, pct, final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
+      meta: { unit: 'money', original: original, final: final, pct: pct, type: type },
       visual: rpVisual(type, pct, percent, N, finalText, tenText, originalText, originalText),
       solution: [
         'The ' + label + ' is ' + percent + '% of the original, so ' + percent + '% = ' + finalText + '.',
@@ -1086,6 +1087,7 @@
       theme: 'count:' + type,
       blocks: [{ type: 'text', text: fillRP(entry.text, { pct, final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
+      meta: { unit: 'count', original: original, final: final, pct: pct, type: type },
       visual: rpVisual(type, pct, percent, N, finalText, tenText,
                        fmtInt(original), originalText),
       solution: [
@@ -1116,6 +1118,7 @@
       theme: 'bare:' + type,
       blocks: [{ type: 'text', text: fillRP(entry.text, { pct, final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
+      meta: { unit: 'bare', original: original, final: final, pct: pct, type: type },
       visual: rpVisual(type, pct, percent, N, finalText, tenText, originalText, originalText),
       solution: [
         'The new value is ' + percent + '% of the original, so ' + percent + '% = ' + finalText + '.',
@@ -1354,6 +1357,14 @@
     };
   }
 
+  /* Reject non-calculator questions whose answer is an obviously
+     round fifty/hundred (for example £150 -> £100).  Those give the
+     answer away and make the 10%-method pointless. */
+  function isTrivialQuestion(q) {
+    if (!q || !q.meta) return false;
+    return q.meta.original % 50 === 0;
+  }
+
   const RP_PLANS = {
     both: [
       'calcMoneyDec', 'moneyDec', 'calcCompoundGrowth', 'countInc', 'moneyDec',
@@ -1417,7 +1428,7 @@
 
     for (const kind of plan) {
       let q = null;
-      for (let tries = 0; tries < 120; tries++) {
+      for (let tries = 0; tries < 400; tries++) {
         if (kind === 'moneyDec')          q = genMoneyRP('decrease', usedMoneyItems, usedMoneyTemplates);
         else if (kind === 'moneyInc')     q = genMoneyRP('increase', usedMoneyItems, usedMoneyTemplates);
         else if (kind === 'countInc')     q = genCountRP('increase', usedCountInc);
@@ -1433,8 +1444,9 @@
         else if (kind === 'calcVAT')      q = genCalcVAT(usedCalcVatItems, usedCalcVatTemplates);
         else if (kind === 'calcCompoundGrowth') q = genCalcCompound('growth', usedCalcCompound);
         else if (kind === 'calcCompoundDecay')  q = genCalcCompound('decay', usedCalcCompound);
-        if (q && !usedKeys.has(q.key)) break;
+        if (q && !usedKeys.has(q.key) && !isTrivialQuestion(q)) break;
       }
+      if (q && isTrivialQuestion(q)) q = null;
       if (q) {
         usedKeys.add(q.key);
         out.push(q);
