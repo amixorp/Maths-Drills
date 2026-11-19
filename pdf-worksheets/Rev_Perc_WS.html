@@ -1269,9 +1269,15 @@
     return { base: base, power: power };
   }
 
-  function pickCompoundContext(list, used) {
+  function pickCompoundContext(list, used, preferFinance) {
     const free = list.filter(function (c) { return !used.has(c.id); });
     const pool = free.length ? free : list;
+    if (preferFinance) {
+      const finance = pool.filter(function (c) { return c.finance; });
+      if (finance.length && rng() < 0.6) {
+        return finance[Math.floor(rng() * finance.length)];
+      }
+    }
     return pool[Math.floor(rng() * pool.length)];
   }
 
@@ -1287,7 +1293,7 @@
                             new Set(), new Set());
     }
 
-    const ctx = pickCompoundContext(list, usedContexts);
+    const ctx = pickCompoundContext(list, usedContexts, type === 'growth');
     usedContexts.add(ctx.id);
 
     const ratePool = (ctx.rates && ctx.rates.length)

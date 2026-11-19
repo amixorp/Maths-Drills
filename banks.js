@@ -1210,13 +1210,13 @@ window.BANKS.percentages = {
     decayRates: [5, 8, 10, 12, 15, 18, 20, 25],
 
     growth: [
-      { id: 'savings', unit: 'money', min: 400, max: 8000,
+      { id: 'savings', unit: 'money', min: 400, max: 8000, finance: true,
         rates: [2, 3, 4, 5, 6],
         templates: [
           '{Name} invests some money in a savings account. The account earns compound interest at a rate of {rate}% per year. After {yearsText} the investment is worth {final}. Work out how much {Name} invested.',
           '{Name} puts some money into a savings account that pays compound interest at {rate}% per year. After {yearsText} the account contains {final}. Work out the amount {Name} put into the account.'
         ] },
-      { id: 'bond', unit: 'money', min: 1000, max: 15000,
+      { id: 'bond', unit: 'money', min: 1000, max: 15000, finance: true,
         rates: [3, 4, 5, 6, 7],
         templates: [
           '{Name} buys an investment bond. The value of the bond increases by {rate}% each year. After {yearsText} the bond is worth {final}. Work out the original value of the bond.',
