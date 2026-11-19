@@ -1204,6 +1204,7 @@
       key: 'calcMoney|' + type + '|' + item + '|' + pct + '|' + data.original,
       theme: 'calcMoney:' + type,
       badge: 'CALCULATOR',
+      meta: { unit: 'money', original: data.original, final: data.final, pct: pct, type: type },
       blocks: [{ type: 'text', text: fillRP(tpl, { item: item, pct: fmtPct(pct), final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
       solution: calcSolutionLines(type, pct, finalText, originalText)
@@ -1228,6 +1229,7 @@
       key: 'calcCount|' + type + '|' + entry.text + '|' + pct + '|' + data.original,
       theme: 'calcCount:' + type,
       badge: 'CALCULATOR',
+      meta: { unit: 'count', original: data.original, final: data.final, pct: pct, type: type },
       blocks: [{ type: 'text', text: fillRP(entry.text, { pct: fmtPct(pct), final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText + ' ' + entry.unit }],
       solution: calcSolutionLines(type, pct, finalText, originalText + ' ' + entry.unit)
@@ -1250,6 +1252,7 @@
       key: 'calcBare|' + type + '|' + pct + '|' + data.original + '|' + entry.text,
       theme: 'calcBare:' + type,
       badge: 'CALCULATOR',
+      meta: { unit: 'bare', original: data.original, final: data.final, pct: pct, type: type },
       blocks: [{ type: 'text', text: fillRP(entry.text, { pct: fmtPct(pct), final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
       solution: calcSolutionLines(type, pct, finalText, originalText)
@@ -1281,6 +1284,7 @@
       key: 'calcVAT|' + item + '|' + rate + '|' + data.original,
       theme: 'calcVAT',
       badge: 'CALCULATOR',
+      meta: { unit: 'money', original: data.original, final: data.final, pct: rate, type: 'increase' },
       blocks: [{ type: 'text', text: fillRP(tpl, { item: item, rate: fmtPct(rate), final: finalText }) }],
       answers: [{ blockIndex: 0, text: originalText }],
       solution: [
@@ -1363,6 +1367,7 @@
       key: 'calcCompound|' + type + '|' + ctx.id + '|' + rate + '|' + years + '|' + principal,
       theme: 'calcCompound:' + type,
       badge: 'CALCULATOR',
+      meta: { unit: 'money', original: principal, final: final, pct: rate, type: type, years: years },
       blocks: [{ type: 'text', text: fillRP(tpl, {
         name: name,
         rate: fmtPct(rate),
@@ -1432,6 +1437,8 @@
       key: 'calcReading|' + ctx.id + '|' + pct + '|' + direction + '|' + actual,
       theme: 'calcReading',
       badge: 'CALCULATOR',
+      meta: { unit: 'reading', original: actual, final: reading, pct: pct,
+              direction: direction, quantity: ctx.quantity },
       blocks: [{ type: 'text', text: fillRP(tpl, {
         name: name,
         pct: fmtPct(pct),
@@ -1449,9 +1456,9 @@
     };
   }
 
-  /* Reject non-calculator questions whose answer is an obviously
-     round fifty/hundred (for example £150 -> £100).  Those give the
-     answer away and make the 10%-method pointless. */
+  /* Reject questions whose answer is an obviously round fifty or
+     hundred (for example £150 -> £100 or £1,060 -> £1,000).  Those
+     give the answer away and make the method pointless. */
   function isTrivialQuestion(q) {
     if (!q || !q.meta) return false;
     return q.meta.original % 50 === 0;
