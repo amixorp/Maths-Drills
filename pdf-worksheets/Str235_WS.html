@@ -150,29 +150,6 @@
   }
   .backdrop.open{ opacity:1; pointer-events:auto; }
 
-    /* Full-screen answers viewer */
-  .answers-modal{
-    position:fixed; inset:0; z-index:200;
-    background:#0f172a;
-    display:none; flex-direction:column;
-  }
-  .answers-modal.open{ display:flex; }
-  .am-bar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:10px 18px; background:#0f172a; color:#f8fafc;
-    box-shadow:0 2px 10px rgba(0,0,0,.3);
-  }
-  .am-title{ font-weight:800; font-size:15px; letter-spacing:.3px; }
-  .am-bar button{
-    padding:8px 15px; border-radius:9px; border:1px solid #334155;
-    background:#1e293b; color:#f8fafc; font:inherit; font-weight:700;
-    cursor:pointer;
-  }
-  .am-bar button:hover{ background:#334155; }
-  .answers-modal iframe{
-    flex:1; width:100%; border:0; background:#fff;
-  }
-
   @page{ size:A4; margin:0; }
   @media print{
     body{background:#fff}
@@ -224,7 +201,7 @@
   <button id="regenBtn" class="primary">🎲 Generate New</button>
   <button id="dlBtn">⬇️ Worksheet PDF</button>
   <button id="dlAnsBtn">⬇️ Answers PDF</button>
-  <button id="viewAnsBtn">🔍 View answers</button>
+  <button id="viewAnsBtn">🔍 View Solutions</button>
   <button id="printBtn">🖨️ Print</button>
 </div>
 
@@ -254,14 +231,6 @@
   <b>Worksheet PDF</b> saves the questions only. <b>Answers PDF</b> saves a separate key.<br>
   Add <kbd>?seed=12345</kbd> to reproduce a sheet, or <kbd>?seed=12345&amp;answers=1</kbd> to open with answers shown.
 </p>
-
-<div class="answers-modal no-print" id="answersModal" aria-hidden="true">
-  <div class="am-bar">
-    <span class="am-title">Worked solutions — on-screen view</span>
-    <button id="amClose">✕ Back to worksheet</button>
-  </div>
-  <iframe id="amFrame" title="Worked solutions" src="about:blank"></iframe>
-</div>
 
 <script src="../banks.js"></script>
 <script>
@@ -486,6 +455,1149 @@ function comparativeFor(noun) {
   }
 
   /* ============================================================
+     COMPOUND INTEREST QUESTION BANK
+     ------------------------------------------------------------
+     GCSE Higher. Each case returns one Q(); the topic picks one
+     case at random. Add further examples to the `cases` array.
+     ============================================================ */
+  function genCompoundInterest() {
+    const sup = function (y) { return '\uE002' + y + '\uE002'; };
+    const roundPenny = function (x) { return Math.round((x + 1e-9) * 100) / 100; };
+    const finalValue = function (p, r, y) {
+      return roundPenny(p * Math.pow(1 + r / 100, y));
+    };
+    const interestFor = function (p, r, y) {
+      return roundPenny(finalValue(p, r, y) - p);
+    };
+    const mult = function (r) {
+      return String(Number((1 + r / 100).toFixed(6)));
+    };
+    const depValue = function (p, r, y) {
+      return roundPenny(p * Math.pow(1 - r / 100, y));
+    };
+    const factorOf = function (r, y) {
+      return String(Number(Math.pow(1 + r / 100, y).toFixed(6)));
+    };
+    const pct1 = function (x) {
+      return String(Number(x.toFixed(1)));
+    };
+    const repeatMul = function (m, y) {
+      const parts = [];
+      for (let k = 0; k < y; k++) parts.push(m);
+      return parts.join(' × ');
+    };
+    const ordinal = function (n) {
+      const s = ['th', 'st', 'nd', 'rd'];
+      const v = n % 100;
+      return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    const nearest = function () {
+      return ' Give your answer correct to the nearest penny.';
+    };
+
+    /* Content bank (banks.js) with inline fallbacks, so the sheet
+       still works if the shared bank is missing or out of date. */
+    const bank = (window.BANKS && window.BANKS.compoundInterest) || null;
+    const fill = function (template, name, p, r, extra) {
+      let out = String(template)
+        .replace(/\{Name\}/g, name)
+        .replace(/\{amount\}/g, money(p))
+        .replace(/\{rate\}/g, String(r));
+      if (extra) {
+        for (const k in extra) {
+          if (Object.prototype.hasOwnProperty.call(extra, k)) {
+            out = out.replace(new RegExp('\\{' + k + '\\}', 'g'),
+                              String(extra[k]));
+          }
+        }
+      }
+      return out;
+    };
+    const templateList = function (key) {
+      return (bank && Array.isArray(bank[key]) && bank[key].length)
+        ? bank[key] : null;
+    };
+
+    function valueSol(p, r, y) {
+      return [
+        T('Multiplier = 1 + ' + r + '/100 = ' + mult(r) + '.'),
+        T('Value after ' + y + ' years = ' + money(p) + ' × ' + mult(r) +
+          sup(y) + ' = ' + money(finalValue(p, r, y)) + '.')
+      ];
+    }
+    function interestSol(p, r, y) {
+      const f = finalValue(p, r, y);
+      return [
+        T('Value after ' + y + ' years = ' + money(p) + ' × ' + mult(r) +
+          sup(y) + ' = ' + money(f) + '.'),
+        T('Interest = ' + money(f) + ' ' + MINUS + ' ' + money(p) + ' = ' +
+          money(roundPenny(f - p)) + '.')
+      ];
+    }
+
+    const cases = [];
+
+    /* 1. The original Claudia question. */
+    cases.push(function () {
+      const p = 25000, r = 2, y = 5;
+      const f = finalValue(p, r, y);
+      return Q('ci|claudia|' + p + '|' + r + '|' + y,
+        [
+          T('Claudia invests ' + money(p) + ' at a rate of ' + r +
+            '% per year compound interest.'),
+          T('Calculate the total amount of interest she will have earned after ' +
+            y + ' years. Give your answer correct to the nearest penny.')
+        ],
+        [{ blockIndex: 0, text: money(interestFor(p, r, y)) }],
+        [
+          T('Multiplier = 1 + ' + r + '/100 = ' + mult(r) + '.'),
+          T('Value after ' + y + ' years = ' + money(p) + ' × ' + mult(r) +
+            sup(y) + '.'),
+          T('= ' + money(f) + ' (to the nearest penny).'),
+          T('Interest = ' + money(f) + ' ' + MINUS + ' ' + money(p) + ' = ' +
+            money(interestFor(p, r, y)) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 2. Compound interest: total value, original settings. */
+    cases.push(function () {
+      const name = randomName();
+      const p = pick([8000, 10000, 12000, 15000, 18000, 20000, 25000]);
+      const r = pick([1.5, 2, 2.5, 3, 3.5, 4]);
+      const y = pick([2, 3, 4, 5, 6]);
+      const contexts = [
+        name + ' invests ' + money(p) + ' in a fixed-rate savings bond. ' +
+          'The bond pays ' + r + '% compound interest each year.',
+        'A community cinema puts ' + money(p) + ' into a savings account ' +
+          'that earns ' + r + '% compound interest each year.',
+        name + ' invests ' + money(p) + ' towards a house deposit. The ' +
+          'investment earns ' + r + '% compound interest each year.',
+        'A small charity invests ' + money(p) + ' in a bond paying ' + r +
+          '% compound interest each year.'
+      ];
+      const list = templateList('savings');
+      const entry = list ? pick(list) : null;
+      const opening = (entry && entry.template)
+        ? fill(entry.template, name, p, r)
+        : pick(contexts);
+      const stem = opening + ' Work out the total value after ' + y +
+        ' years.' + nearest();
+      return Q('ci|value|' + p + '|' + r + '|' + y + '|' + stem,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(finalValue(p, r, y)) }],
+        valueSol(p, r, y),
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 3. Compound interest: interest earned, community angle. */
+    cases.push(function () {
+      const name = randomName();
+      const p = pick([12000, 15000, 18000, 20000, 25000]);
+      const r = pick([2, 2.5, 3, 3.5, 4, 4.5]);
+      const y = pick([3, 4, 5, 6]);
+      const contexts = [
+        'A cycling club invests ' + money(p) + ' in an account paying ' + r +
+          '% compound interest each year.',
+        name + ' leaves ' + money(p) + ' in a savings account that pays ' + r +
+          '% compound interest each year.',
+        'A wildlife trust invests ' + money(p) + ' in a legacy fund paying ' +
+          r + '% compound interest each year.',
+        'A school PTA invests ' + money(p) + ' for new library books. The ' +
+          'account pays ' + r + '% compound interest each year.'
+      ];
+      const list = templateList('interest');
+      const entry = list ? pick(list) : null;
+      const opening = (entry && entry.template)
+        ? fill(entry.template, name, p, r)
+        : pick(contexts);
+      const stem = opening + ' How much interest is earned after ' + y +
+        ' years?' + nearest();
+      return Q('ci|interest|' + p + '|' + r + '|' + y + '|' + stem,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(interestFor(p, r, y)) }],
+        interestSol(p, r, y),
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 4. Compound interest charged on a loan. */
+    cases.push(function () {
+      const name = randomName();
+      const p = pick([6000, 8000, 10000, 12000, 15000, 18000, 25000]);
+      const r = pick([3, 3.5, 4, 4.5, 5, 6]);
+      const y = pick([2, 3, 4, 5]);
+      const contexts = [
+        name + ' borrows ' + money(p) + ' to buy a delivery bike. The loan ' +
+          'charges ' + r + '% compound interest each year.',
+        'A youth club borrows ' + money(p) + ' to replace its roof. The loan ' +
+          'charges ' + r + '% compound interest each year.',
+        'A repair shop borrows ' + money(p) + ' for new equipment. The loan ' +
+          'charges ' + r + '% compound interest each year.'
+      ];
+      const list = templateList('loans');
+      const entry = list ? pick(list) : null;
+      const opening = (entry && entry.template)
+        ? fill(entry.template, name, p, r)
+        : pick(contexts);
+      const stem = opening + ' How much interest will be charged after ' +
+        y + ' years?' + nearest();
+      return Q('ci|loan|' + p + '|' + r + '|' + y + '|' + stem,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(interestFor(p, r, y)) }],
+        interestSol(p, r, y),
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 5. Compound growth of a collectible. */
+    cases.push(function () {
+      const name = randomName();
+      const items = templateList('collectibles') || ['rare vinyl record',
+        'first-edition comic', 'vintage watch',
+        'limited-edition pair of trainers', 'classic arcade machine',
+        'rare stamp'];
+      const item = pick(items);
+      const p = pick([1200, 1800, 2500, 4000, 6000, 8500, 12000]);
+      const r = pick([3, 4, 5, 6, 7, 8, 10]);
+      const y = pick([2, 3, 4, 5]);
+      const stem = name + ' buys a ' + item + ' for ' + money(p) +
+        ' as an investment. Its value increases by ' + r + '% each year, ' +
+        'compounded annually. Work out its value after ' + y + ' years.' +
+        nearest();
+      return Q('ci|collect|' + p + '|' + r + '|' + y + '|' + item,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(finalValue(p, r, y)) }],
+        valueSol(p, r, y),
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 6. Compound versus simple interest. */
+    cases.push(function () {
+      const p = pick([5000, 8000, 10000, 12000, 15000]);
+      const r = pick([2, 2.5, 3, 3.5, 4, 5]);
+      const y = pick([3, 4, 5]);
+      const comp = finalValue(p, r, y);
+      const compInterest = roundPenny(comp - p);
+      const simpleInterest = roundPenny(p * (r / 100) * y);
+      const diff = roundPenny(compInterest - simpleInterest);
+      const stem = money(p) + ' is invested for ' + y + ' years at ' + r +
+        '% compound interest per year. How much more interest is earned ' +
+        'than if the same amount was invested at ' + r + '% simple interest ' +
+        'for ' + y + ' years?' + nearest();
+      return Q('ci|compare|' + p + '|' + r + '|' + y,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(diff) }],
+        [
+          T('Compound interest = ' + money(comp) + ' ' + MINUS + ' ' + money(p) +
+            ' = ' + money(compInterest) + '.'),
+          T('Simple interest = ' + money(p) + ' × ' + r + '/100 × ' + y +
+            ' = ' + money(simpleInterest) + '.'),
+          T('Difference = ' + money(compInterest) + ' ' + MINUS + ' ' +
+            money(simpleInterest) + ' = ' + money(diff) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 7. Two different compound interest rates. */
+    cases.push(function () {
+      const y1 = 2;
+      let p, r1, r2, y2, mid, total;
+      /* Keep the two intermediate values and the exact value in
+         agreement to the penny, so rounding the first stage cannot
+         change the final answer. */
+      for (let attempt = 0; attempt < 200; attempt++) {
+        p = pick([6000, 8000, 10000, 12000, 15000, 20000]);
+        r1 = pick([2, 2.5, 3]);
+        r2 = pick([3.5, 4, 4.5, 5]);
+        y2 = pick([2, 3]);
+        mid = finalValue(p, r1, y1);
+        total = roundPenny(mid * Math.pow(1 + r2 / 100, y2));
+        const exact = roundPenny(p * Math.pow(1 + r1 / 100, y1) *
+                                 Math.pow(1 + r2 / 100, y2));
+        if (total === exact) break;
+      }
+      const stem = money(p) + ' is invested in a savings bond. It earns ' +
+        r1 + '% compound interest in each of the first ' + y1 + ' years ' +
+        'and ' + r2 + '% compound interest in each of the next ' + y2 +
+        ' years. Work out the value of the bond at the end of ' + (y1 + y2) +
+        ' years.' + nearest();
+      return Q('ci|tworate|' + p + '|' + r1 + '|' + r2 + '|' + y2,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Value after ' + y1 + ' years = ' + money(p) + ' × ' + mult(r1) +
+            sup(y1) + ' = ' + money(mid) + '.'),
+          T('Value after ' + y2 + ' more years = ' + money(mid) + ' × ' +
+            mult(r2) + sup(y2) + ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 8. Interest added in one particular year. */
+    cases.push(function () {
+      let p, r, y, before, after, added;
+      /* Choose a case where subtracting the rounded year-end values
+         gives the same penny as the exact final-year interest. */
+      for (let attempt = 0; attempt < 200; attempt++) {
+        p = pick([5000, 8000, 10000, 12000, 15000, 20000]);
+        r = pick([2, 3, 3.5, 4, 4.5, 5]);
+        y = pick([3, 4, 5]);
+        before = finalValue(p, r, y - 1);
+        after = finalValue(p, r, y);
+        added = roundPenny(after - before);
+        const exact = roundPenny(p * Math.pow(1 + r / 100, y) -
+                                 p * Math.pow(1 + r / 100, y - 1));
+        if (added === exact) break;
+      }
+      const stem = money(p) + ' is invested at ' + r + '% compound interest ' +
+        'per year. How much interest is added in the ' + ordinal(y) +
+        ' year?' + nearest();
+      return Q('ci|year|' + p + '|' + r + '|' + y,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(added) }],
+        [
+          T('Value after ' + (y - 1) + ' years = ' + money(p) + ' × ' +
+            mult(r) + sup(y - 1) + ' = ' + money(before) + '.'),
+          T('Value after ' + y + ' years = ' + money(before) + ' × ' +
+            mult(r) + ' = ' + money(after) + '.'),
+          T('Interest in the ' + ordinal(y) + ' year = ' + money(after) +
+            ' ' + MINUS + ' ' + money(before) + ' = ' + money(added) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 9. Reverse: find the original amount. */
+    cases.push(function () {
+      const p = pick([8000, 10000, 12000, 15000, 18000, 20000]);
+      const r = pick([2, 3, 4, 5]);
+      const y = pick([2, 3, 4]);
+      const f = finalValue(p, r, y);
+      const stem = 'After ' + y + ' years at ' + r + '% compound interest ' +
+        'per year, an investment is worth ' + money(f) + '. Work out the ' +
+        'original amount invested.' + nearest();
+      return Q('ci|reverse|' + p + '|' + r + '|' + y,
+        [T(stem)],
+        [{ blockIndex: 0, text: money(p) }],
+        [
+          T('Multiplier = 1 + ' + r + '/100 = ' + mult(r) + '.'),
+          T('Original amount = ' + money(f) + ' ÷ ' + mult(r) + sup(y) +
+            ' = ' + money(p) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 10. Reverse percentage: the Amit example. */
+    cases.push(function () {
+      const p = 1250, r = 4, y = 2;
+      const f = finalValue(p, r, y);
+      const factor = Math.pow(1 + r / 100, y);
+      const factorStr = String(Number(factor.toFixed(6)));
+      return Q('ci|amit|' + p + '|' + r + '|' + y,
+        [
+          T('Amit invests some money at a rate of ' + r +
+            '% per year compound interest.'),
+          T('After ' + y + ' years the value of Amit\'s investment is ' +
+            money(f) + '. Work out how much money Amit invested.')
+        ],
+        [{ blockIndex: 0, text: money(p) }],
+        [
+          T('Multiplier = 1 + ' + r + '/100 = ' + mult(r) + '.'),
+          T('Value after ' + y + ' years = original amount × ' + mult(r) +
+            sup(y) + ' = original amount × ' + factorStr + '.'),
+          T('Original amount = ' + money(f) + ' ÷ ' + factorStr + ' = ' +
+            money(p) + '.'),
+          T('Amit invested ' + money(p) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 11. Find the rate: the Hiro example. */
+    cases.push(function () {
+      const p = 2500, r = 4, y = 2;
+      const f = finalValue(p, r, y);
+      const factor = factorOf(r, y);
+      return Q('ci|findrate|' + p + '|' + r + '|' + y,
+        [
+          T('Hiro invests ' + money(p) + ' for ' + y + ' years in a bank ' +
+            'account paying `r`% per year compound interest.'),
+          T('At the end of ' + y + ' years, the amount in the bank account is ' +
+            money(f) + '. Calculate `r`.')
+        ],
+        [{ blockIndex: 0, text: '`r` = ' + r }],
+        [
+          T('After ' + y + ' years: ' + money(p) + ' × (1 + `r`/100)' + sup(y) +
+            ' = ' + money(f) + '.'),
+          T('(1 + `r`/100)' + sup(y) + ' = ' + money(f) + ' \u00F7 ' + money(p) +
+            ' = ' + factor + '.'),
+          T('1 + `r`/100 = ' + mult(r) + ', because ' + repeatMul(mult(r), y) +
+            ' = ' + factor + '.'),
+          T('`r`/100 = ' + (r / 100) + ', so `r` = ' + r +
+            ' and the rate is ' + r + '% per year.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 12. Find the rate when a statement gives the interest earned, not
+       the closing balance, so the final amount has to be built first. */
+    cases.push(function () {
+      const p = 5000, r = 3, y = 2;
+      const f = finalValue(p, r, y);
+      const earned = roundPenny(f - p);
+      const factor = factorOf(r, y);
+      return Q('ci|findrate-statement|' + p + '|' + r + '|' + y,
+        [
+          T('A savings statement shows that ' + money(p) + ' earned ' +
+            money(earned) + ' in interest over ' + y + ' years.'),
+          T('The account pays compound interest at the same rate each year. ' +
+            'Work out the annual rate.')
+        ],
+        [{ blockIndex: 0, text: r + '%' }],
+        [
+          T('Total after ' + y + ' years = ' + money(p) + ' + ' + money(earned) +
+            ' = ' + money(f) + '.'),
+          T('(1 + `r`/100)' + sup(y) + ' = ' + money(f) + ' \u00F7 ' + money(p) +
+            ' = ' + factor + '.'),
+          T('1 + `r`/100 = ' + mult(r) + ', because ' + repeatMul(mult(r), y) +
+            ' = ' + factor + '.'),
+          T('`r`/100 = ' + (r / 100) + ', so the rate is ' + r + '% per year.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 13. Find the rate needed to reach a savings target. */
+    cases.push(function () {
+      const p = 2000, r = 5, y = 3;
+      const target = finalValue(p, r, y);
+      const factor = factorOf(r, y);
+      return Q('ci|findrate-target|' + p + '|' + r + '|' + y,
+        [
+          T('Zara is saving for a course. She puts ' + money(p) + ' into an ' +
+            'account that pays compound interest at the same rate each year.'),
+          T('She needs ' + money(target) + ' after ' + y + ' years. Work out ' +
+            'the annual rate she needs.')
+        ],
+        [{ blockIndex: 0, text: r + '%' }],
+        [
+          T('After ' + y + ' years: ' + money(p) + ' × (1 + `r`/100)' + sup(y) +
+            ' = ' + money(target) + '.'),
+          T('(1 + `r`/100)' + sup(y) + ' = ' + money(target) + ' \u00F7 ' +
+            money(p) + ' = ' + factor + '.'),
+          T('1 + `r`/100 = ' + mult(r) + ', because ' + repeatMul(mult(r), y) +
+            ' = ' + factor + '.'),
+          T('`r`/100 = ' + (r / 100) + ', so she needs a rate of ' + r +
+            '% per year.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 14. Find a rate of depreciation, with the multiplier below 1. */
+    cases.push(function () {
+      const p = 6000, r = 5, y = 2;
+      const f = depValue(p, r, y);
+      const mStr = String(Number((1 - r / 100).toFixed(6)));
+      const factor = String(Number(Math.pow(1 - r / 100, y).toFixed(6)));
+      return Q('ci|findrate-dep|' + p + '|' + r + '|' + y,
+        [
+          T('A wedding videographer buys a drone for ' + money(p) + '.'),
+          T('After ' + y + ' years its value is ' + money(f) + '. Work out the ' +
+            'annual percentage decrease in its value.')
+        ],
+        [{ blockIndex: 0, text: r + '%' }],
+        [
+          T('After ' + y + ' years: ' + money(p) + ' × (1 ' + MINUS +
+            ' `r`/100)' + sup(y) + ' = ' + money(f) + '.'),
+          T('(1 ' + MINUS + ' `r`/100)' + sup(y) + ' = ' + money(f) +
+            ' \u00F7 ' + money(p) + ' = ' + factor + '.'),
+          T('1 ' + MINUS + ' `r`/100 = ' + mStr + ', because ' +
+            repeatMul(mStr, y) + ' = ' + factor + '.'),
+          T('`r`/100 = ' + (r / 100) + ', so its value falls by ' + r +
+            '% each year.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 15. The same method in a non-financial setting. */
+    cases.push(function () {
+      const p = 1000, r = 10, y = 3;
+      const f = finalValue(p, r, y);
+      const factor = factorOf(r, y);
+      return Q('ci|findrate-wildlife|' + p + '|' + r + '|' + y,
+        [
+          T('A wildlife trust counted ' + p + ' rare orchids on a reserve. ' +
+            y + ' years later it counted ' + f + '.'),
+          T('The number increased by the same percentage each year. Work out ' +
+            'the yearly percentage increase.')
+        ],
+        [{ blockIndex: 0, text: r + '%' }],
+        [
+          T('After ' + y + ' years: ' + p + ' × (1 + `r`/100)' + sup(y) +
+            ' = ' + f + '.'),
+          T('(1 + `r`/100)' + sup(y) + ' = ' + f + ' \u00F7 ' + p +
+            ' = ' + factor + '.'),
+          T('1 + `r`/100 = ' + mult(r) + ', because ' + repeatMul(mult(r), y) +
+            ' = ' + factor + '.'),
+          T('`r`/100 = ' + (r / 100) + ', so the number increases by ' + r +
+            '% each year.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 16. Find the rate from one year, then project to four years. */
+    cases.push(function () {
+      const p = 2448, r = 2, y = 4;
+      const a1 = finalValue(p, r, 1);
+      const total = finalValue(p, r, y);
+      return Q('ci|onerate-exact|' + p + '|' + r + '|' + y,
+        [
+          T(money(p) + ' is invested in an account at a rate of compound ' +
+            'interest.'),
+          T('One year after the investment there is ' + money(a1) +
+            ' in the account.'),
+          T('How much is in the account four years after the investment?')
+        ],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Multiplier = ' + money(a1) + ' \u00F7 ' + money(p) +
+            ' = ' + mult(r) + '.'),
+          T('So the rate is ' + r + '% per year.'),
+          T('Value after four years = ' + money(p) + ' × ' + mult(r) + sup(y) +
+            ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 17. The same two-step method with varied contexts from banks.js. */
+    cases.push(function () {
+      const name = randomName();
+      let p, r, y, a1, total = null;
+      for (let attempt = 0; attempt < 300; attempt++) {
+        p = pick([2500, 3000, 3600, 4000, 4500, 5000, 6000, 7500,
+                  8000, 10000, 12000]);
+        r = pick([2, 3, 4, 5]);
+        y = pick([3, 4, 5]);
+        a1 = finalValue(p, r, 1);
+        const viaYearOne = roundPenny(a1 * Math.pow(1 + r / 100, y - 1));
+        const exact = finalValue(p, r, y);
+        if (viaYearOne === exact) { total = exact; break; }
+      }
+      if (total === null) {
+        total = roundPenny(a1 * Math.pow(1 + r / 100, y - 1));
+      }
+      const list = templateList('oneYear');
+      const entry = list ? pick(list) : null;
+      const fallback = name + ' puts ' + money(p) + ' into a savings account ' +
+        'that pays compound interest at a fixed rate. One year later the ' +
+        'account holds ' + money(a1) + '. Work out the value of the account ' +
+        y + ' years after the money was invested.';
+      const stem = (entry && entry.template)
+        ? fill(entry.template, name, p, r, { oneYear: money(a1), years: y })
+        : fallback;
+      return Q('ci|onerate|' + p + '|' + r + '|' + y + '|' + stem,
+        [T(stem + nearest())],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Multiplier = ' + money(a1) + ' \u00F7 ' + money(p) +
+            ' = ' + mult(r) + '.'),
+          T('So the rate is ' + r + '% per year.'),
+          T('Value after ' + y + ' years = ' + money(p) + ' × ' + mult(r) +
+            sup(y) + ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 18. One year of depreciation, then project four years. */
+    cases.push(function () {
+      const p = 12000, r = 10, y = 4;
+      const a1 = depValue(p, r, 1);
+      const total = depValue(p, r, y);
+      const mStr = String(Number((1 - r / 100).toFixed(6)));
+      return Q('ci|onerate-dep|' + p + '|' + r + '|' + y,
+        [
+          T('A delivery van is bought for ' + money(p) + '.'),
+          T('After one year it is worth ' + money(a1) + '. Its value falls by ' +
+            'the same percentage each year.'),
+          T('Work out its value four years after it was bought.')
+        ],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Multiplier = ' + money(a1) + ' \u00F7 ' + money(p) +
+            ' = ' + mStr + '.'),
+          T('So its value falls by ' + r + '% each year.'),
+          T('Value after four years = ' + money(p) + ' × ' + mStr + sup(y) +
+            ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 19. Non-financial growth with a whole-number answer. */
+    cases.push(function () {
+      const p = 10000, r = 10, y = 4;
+      const a1 = finalValue(p, r, 1);
+      const total = finalValue(p, r, y);
+      return Q('ci|onerate-views|' + p + '|' + r + '|' + y,
+        [
+          T('A video had ' + p + ' views on the day it was posted.'),
+          T('One day later it had ' + a1 + ' views. The number of views keeps ' +
+            'rising by the same percentage each day.'),
+          T('How many views will it have four days after it was posted?')
+        ],
+        [{ blockIndex: 0, text: total + ' views' }],
+        [
+          T('Multiplier = ' + a1 + ' \u00F7 ' + p + ' = ' +
+            mult(r) + '.'),
+          T('So the views rise by ' + r + '% each day.'),
+          T('Views after four days = ' + p + ' × ' + mult(r) + sup(y) + ' = ' +
+            total + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 20. Transfer the rate found from one account to a second amount. */
+    cases.push(function () {
+      const p = 3000, r = 3, y = 4, q = 7000;
+      const a1 = finalValue(p, r, 1);
+      const total = finalValue(q, r, y);
+      return Q('ci|onerate-transfer|' + p + '|' + r + '|' + y + '|' + q,
+        [
+          T('A savings account shows that ' + money(p) + ' grew to ' +
+            money(a1) + ' in its first year.'),
+          T('A second account pays compound interest at the same rate. How ' +
+            'much would ' + money(q) + ' become in the second account after ' +
+            'four years?')
+        ],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Multiplier = ' + money(a1) + ' \u00F7 ' + money(p) +
+            ' = ' + mult(r) + '.'),
+          T('So the rate is ' + r + '% per year.'),
+          T('Value of ' + money(q) + ' after four years = ' + money(q) + ' × ' +
+            mult(r) + sup(y) + ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 21. The first year's interest is given instead of the balance. */
+    cases.push(function () {
+      const p = 4000, r = 3, y = 5;
+      const a1 = finalValue(p, r, 1);
+      const earned = roundPenny(a1 - p);
+      const total = finalValue(p, r, y);
+      return Q('ci|onerate-interest|' + p + '|' + r + '|' + y,
+        [
+          T(money(p) + ' is invested in a savings account. In the first year ' +
+            'it earns ' + money(earned) + ' in interest.'),
+          T('The account pays compound interest at a fixed rate. Work out the ' +
+            'balance five years after the investment.')
+        ],
+        [{ blockIndex: 0, text: money(total) }],
+        [
+          T('Balance after one year = ' + money(p) + ' + ' + money(earned) +
+            ' = ' + money(a1) + '.'),
+          T('Multiplier = ' + money(a1) + ' \u00F7 ' + money(p) + ' = ' +
+            mult(r) + ', so the rate is ' + r + '% per year.'),
+          T('Balance after five years = ' + money(p) + ' × ' + mult(r) +
+            sup(y) + ' = ' + money(total) + '.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 22. Overall percentage decrease over several years. */
+    cases.push(function () {
+      const r = 18, y = 3;
+      const m = 1 - r / 100;
+      const mStr = String(Number(m.toFixed(6)));
+      const decPct = String(Number((100 - 100 * Math.pow(m, y)).toFixed(4)));
+      return Q('ci|overall|18|3|decrease',
+        [T('The value of a secondhand Ford Gerbil decreases by ' + r +
+           '% per year. What is the percentage decrease in its value over ' +
+           y + ' years? Give your answer correct to 1 decimal place.')],
+        [{ blockIndex: 0, text: pct1(100 - 100 * Math.pow(m, y)) + '%' }],
+        [
+          T('Multiplier = 1 ' + MINUS + ' ' + r + '/100 = ' + mStr + '.'),
+          T('After ' + y + ' years: original × ' + mStr + sup(y) + '.'),
+          T('Percentage decrease = (1 ' + MINUS + ' ' + mStr + sup(y) +
+            ') × 100 = ' + decPct + '%.'),
+          T('= ' + pct1(100 - 100 * Math.pow(m, y)) +
+            '% (to 1 decimal place).')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 23. Overall percentage change for a range of items. */
+    cases.push(function () {
+      const who = randomName();
+      const isIncrease = rng() < 0.5;
+      const incItems = templateList('collectibles') ||
+        ['rare vinyl record', 'first-edition comic', 'vintage watch'];
+      const RP = (window.BANKS && window.BANKS.repeatedPercent) || null;
+      const decItems = (RP && RP.depreciationItems) ||
+        ['car', 'laptop', 'phone', 'washing machine'];
+      const item = pick(isIncrease ? incItems : decItems);
+      const r = pick([5, 8, 10, 12, 15, 18, 20]);
+      const y = pick([2, 3, 4]);
+      const m = isIncrease ? 1 + r / 100 : 1 - r / 100;
+      const mStr = String(Number(m.toFixed(6)));
+      const change = isIncrease
+        ? 100 * (Math.pow(m, y) - 1)
+        : 100 * (1 - Math.pow(m, y));
+      const changeStr = String(Number(change.toFixed(4)));
+      const ans = pct1(change) + '%';
+      const stem = isIncrease
+        ? who + ' buys a ' + item + '. Its value increases by ' + r +
+          '% each year. What is the percentage increase in its value over ' +
+          y + ' years? Give your answer correct to 1 decimal place.'
+        : who + ' buys a secondhand ' + item + '. Its value decreases by ' +
+          r + '% each year. What is the percentage decrease in its value ' +
+          'over ' + y + ' years? Give your answer correct to 1 decimal place.';
+      return Q('ci|overall|' + (isIncrease ? 'inc' : 'dec') + '|' + item +
+               '|' + r + '|' + y,
+        [T(stem)],
+        [{ blockIndex: 0, text: ans }],
+        [
+          T('Multiplier = ' + (isIncrease ? '1 + ' : '1 ' + MINUS + ' ') +
+            r + '/100 = ' + mStr + '.'),
+          T('After ' + y + ' years: original × ' + mStr + sup(y) + '.'),
+          T('Percentage ' + (isIncrease ? 'increase' : 'decrease') + ' = ' +
+            (isIncrease
+              ? '(' + mStr + sup(y) + ' ' + MINUS + ' 1)'
+              : '(1 ' + MINUS + ' ' + mStr + sup(y) + ')') +
+            ' × 100 = ' + changeStr + '%.'),
+          T('= ' + ans + ' (to 1 decimal place).')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 24. Successive discounts: 20% off, then another 20% off. */
+    cases.push(function () {
+      const pct = 20;
+      const m = 1 - pct / 100;
+      const mStr = String(Number(m.toFixed(6)));
+      const overall = m * m;
+      const overallStr = String(Number(overall.toFixed(6)));
+      const paidPct = pct1(100 * overall);
+      const reduction = 100 * (1 - overall);
+      return Q('ci|overall|discount|' + pct,
+        [T('A shop reduces the price of a jacket by ' + pct + '% in a sale. ' +
+           'A week later it takes a further ' + pct + '% off the sale price. ' +
+           'What is the overall percentage reduction in the price? ' +
+           'Give your answer correct to 1 decimal place.')],
+        [{ blockIndex: 0, text: pct1(reduction) + '%' }],
+        [
+          T(pct + '% off leaves ' + pct1(100 * m) + '%, so multiplier = ' +
+            mStr + '.'),
+          T('Another ' + pct + '% off: multiplier = ' + mStr + '.'),
+          T('Overall multiplier = ' + mStr + ' × ' + mStr + ' = ' +
+            overallStr + '.'),
+          T('So ' + paidPct + '% of the original price is paid.'),
+          T('Overall reduction = 100% ' + MINUS + ' ' + paidPct + '% = ' +
+            pct1(reduction) + '%.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 25. A rise and a fall of the same percentage do not cancel. */
+    cases.push(function () {
+      const pct = 10;
+      const up = 1 + pct / 100;
+      const down = 1 - pct / 100;
+      const upStr = String(Number(up.toFixed(6)));
+      const downStr = String(Number(down.toFixed(6)));
+      const overall = up * down;
+      const overallStr = String(Number(overall.toFixed(6)));
+      const remainPct = pct1(100 * overall);
+      const change = 100 * (1 - overall);
+      return Q('ci|overall|risefall|' + pct,
+        [T('A house price rises by ' + pct + '% in one year, then falls by ' +
+           pct + '% in the next year. What is the overall percentage change ' +
+           'in the price? Give your answer correct to 1 decimal place.')],
+        [{ blockIndex: 0, text: pct1(change) + '% decrease' }],
+        [
+          T('Rise: multiplier = 1 + ' + pct + '/100 = ' + upStr + '.'),
+          T('Fall: multiplier = 1 ' + MINUS + ' ' + pct + '/100 = ' +
+            downStr + '.'),
+          T('Overall multiplier = ' + upStr + ' × ' + downStr + ' = ' +
+            overallStr + '.'),
+          T('So the price is ' + remainPct + '% of what it was.'),
+          T('Overall change = ' + pct1(change) + '% decrease.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 26. Find the annual rate from an overall percentage fall. */
+    cases.push(function () {
+      const overallPct = 36, y = 2;
+      const remain = 1 - overallPct / 100;
+      const m = Math.sqrt(remain);
+      const mStr = String(Number(m.toFixed(6)));
+      const dec = 1 - m;
+      const decStr = String(Number(dec.toFixed(6)));
+      const annual = 100 * dec;
+      return Q('ci|overall|reverse|' + overallPct + '|' + y,
+        [T('The value of a piece of machinery fell by ' + overallPct +
+           '% over ' + y + ' years. Each year it fell by the same percentage. ' +
+           'Work out the annual percentage decrease.')],
+        [{ blockIndex: 0, text: pct1(annual) + '%' }],
+        [
+          T('After ' + y + ' years the value is 100% ' + MINUS + ' ' +
+            overallPct + '% = ' + (100 - overallPct) + '% of the original.'),
+          T('So the multiplier for ' + y + ' years is ' + remain + '.'),
+          T('Multiplier for one year = square root of ' + remain + ' = ' +
+            mStr + '.'),
+          T('Annual decrease = 1 ' + MINUS + ' ' + mStr + ' = ' + decStr +
+            ' = ' + pct1(annual) + '%.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 27. Find how many complete years to reach a savings target. */
+    cases.push(function () {
+      const p = 2000, r = 4, target = 2500, y = 6;
+      return Q('ci|years|jacqui|' + p + '|' + r + '|' + target,
+        [T('Jacqui invests ' + money(p) + ' in an account that pays ' + r +
+           '% compound interest annually. Find out how many complete years ' +
+           'she will have to leave the money in the account for it to ' +
+           'become at least ' + money(target) + '.')],
+        [{ blockIndex: 0, text: y + ' years' }],
+        [
+          T('Multiplier = 1 + ' + r + '/100 = 1.04.'),
+          T('After 1 year: ' + money(p) + ' × 1.04 = ' + money(2080) + '.'),
+          T('After 2 years: ' + money(2080) + ' × 1.04 = ' + money(2163.20) +
+            '.'),
+          T('After 3 years: ' + money(2163.20) + ' × 1.04 = ' +
+            money(2249.73) + '.'),
+          T('After 4 years: ' + money(2249.73) + ' × 1.04 = ' +
+            money(2339.72) + '.'),
+          T('After 5 years: ' + money(2339.72) + ' × 1.04 = ' +
+            money(2433.31) + ' (below ' + money(target) + ').'),
+          T('After 6 years: ' + money(2433.31) + ' × 1.04 = ' +
+            money(2530.64) + ' (at least ' + money(target) + ').'),
+          T('So she needs ' + y + ' complete years.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 28. Depreciation until the value is less than half. */
+    cases.push(function () {
+      const p = 18000, r = 20, target = 9000, y = 4;
+      return Q('ci|years|half|' + p + '|' + r,
+        [T('A car is bought for ' + money(p) + '. Its value falls by ' + r +
+           '% each year. After how many complete years is it worth less ' +
+           'than half of what it cost?')],
+        [{ blockIndex: 0, text: y + ' years' }],
+        [
+          T('Half of ' + money(p) + ' = ' + money(target) + '.'),
+          T('Multiplier = 1 ' + MINUS + ' ' + r + '/100 = 0.8.'),
+          T('After 1 year: ' + money(p) + ' × 0.8 = ' + money(14400) + '.'),
+          T('After 2 years: ' + money(14400) + ' × 0.8 = ' + money(11520) +
+            '.'),
+          T('After 3 years: ' + money(11520) + ' × 0.8 = ' + money(9216) +
+            ' (still above ' + money(target) + ').'),
+          T('After 4 years: ' + money(9216) + ' × 0.8 = ' + money(7372.80) +
+            ' (below ' + money(target) + ').'),
+          T('So it is worth less than half after ' + y + ' complete years.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* 29. Growth until the investment has at least doubled. */
+    cases.push(function () {
+      const p = 2000, r = 15, target = 4000, y = 5;
+      return Q('ci|years|double|' + p + '|' + r,
+        [T(money(p) + ' is invested at ' + r + '% compound interest per ' +
+           'year. After how many complete years has the investment at ' +
+           'least doubled?')],
+        [{ blockIndex: 0, text: y + ' years' }],
+        [
+          T('Double ' + money(p) + ' = ' + money(target) + '.'),
+          T('Multiplier = 1 + ' + r + '/100 = 1.15.'),
+          T('After 1 year: ' + money(p) + ' × 1.15 = ' + money(2300) + '.'),
+          T('After 2 years: ' + money(2300) + ' × 1.15 = ' + money(2645) +
+            '.'),
+          T('After 3 years: ' + money(2645) + ' × 1.15 = ' + money(3041.75) +
+            '.'),
+          T('After 4 years: ' + money(3041.75) + ' × 1.15 = ' +
+            money(3498.01) + ' (below ' + money(target) + ').'),
+          T('After 5 years: ' + money(3498.01) + ' × 1.15 = ' +
+            money(4022.71) + ' (at least ' + money(target) + ').'),
+          T('So the investment has doubled after ' + y + ' complete years.')
+        ],
+        { badge: 'CALCULATOR' });
+    });
+
+    /* Cases 1-5 are the straightforward forward calculations.
+       Return one of these 80% of the time and a harder variant
+       the other 20%. */
+    const easyCases = cases.slice(0, 5);
+    const hardCases = cases.slice(5);
+    if (rng() < 0.8) return pick(easyCases)();
+    return pick(hardCases)();
+  }
+
+  /* ============================================================
+     INDEX LAWS QUESTION BANK
+     ------------------------------------------------------------
+     Product rule, power of a power, quotient rule (including
+     negative indices), coefficients and multiple variables.
+     All questions are non-calculator and use the same compact
+     notation as the rest of the sheet.
+     ============================================================ */
+  function genIndexLaws() {
+    const X = function (n) {
+      const s = (typeof n === 'number' && n < 0)
+        ? (MINUS + Math.abs(n)) : String(n);
+      return '\uE002' + s + '\uE002';
+    };
+    const v = function (letter) { return '`' + letter + '`'; };
+    const basePool = [2, 3, 4, 5, 6, 7];
+    const letterPool = ['x', 'y', 'a', 'b', 'm', 'n', 'p', 'q', 'k', 't', 'w', 'z'];
+    const cases = [];
+
+    /* 1. Product rule with three factors. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 5), n = ri(2, 5), p = ri(2, 5);
+      const ans = m + n + p;
+      const expr = b + X(m) + ' × ' + b + X(n) + ' × ' + b + X(p);
+      return Q('ix|prod|' + b + '|' + m + '|' + n + '|' + p,
+        [T('Write the following as a single power of ' + b + '.'),
+         T(expr)],
+        [{ blockIndex: 1, text: b + X(ans) }],
+        [
+          T('Add the indices: ' + m + ' + ' + n + ' + ' + p + ' = ' + ans + '.'),
+          T('So ' + expr + ' = ' + b + X(ans) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 2. Power of a power. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 4), n = ri(2, 4);
+      const ans = m * n;
+      const expr = '(' + b + X(m) + ')' + X(n);
+      return Q('ix|pow|' + b + '|' + m + '|' + n,
+        [T('Write the following as a single power of ' + b + '.'),
+         T(expr)],
+        [{ blockIndex: 1, text: b + X(ans) }],
+        [
+          T('Multiply the indices: ' + m + ' × ' + n + ' = ' + ans + '.'),
+          T('So ' + expr + ' = ' + b + X(ans) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 3. Quotient with a negative index. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 6), n = ri(2, 4);
+      const ans = m + n;
+      const expr = b + X(m) + ' ÷ ' + b + X(-n);
+      return Q('ix|negdiv|' + b + '|' + m + '|' + n,
+        [T('Write the following as a single power of ' + b + '.'),
+         T(expr)],
+        [{ blockIndex: 1, text: b + X(ans) }],
+        [
+          T('Subtract the indices: ' + m + ' ' + MINUS + ' (' + MINUS + n +
+            ') = ' + m + ' + ' + n + ' = ' + ans + '.'),
+          T('So ' + expr + ' = ' + b + X(ans) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 4. Division with the same base. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(4, 8);
+      const n = ri(1, m - 2);
+      const ans = m - n;
+      const expr = b + X(m) + ' ÷ ' + b + X(n);
+      return Q('ix|div|' + b + '|' + m + '|' + n,
+        [T('Write the following as a single power of ' + b + '.'),
+         T(expr)],
+        [{ blockIndex: 1, text: b + X(ans) }],
+        [
+          T('Subtract the indices: ' + m + ' ' + MINUS + ' ' + n + ' = ' +
+            ans + '.'),
+          T('So ' + expr + ' = ' + b + X(ans) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 5. Coefficients with one variable and a negative index. */
+    cases.push(function () {
+      const c = pick([2, 3, 4, 5]);
+      const d = pick([2, 3, 4, 5]);
+      const l = pick(letterPool);
+      const m = ri(4, 6), n = ri(1, 2);
+      const coeff = c * d;
+      const ansExp = m - n;
+      const expr = c + v(l) + X(m) + ' × ' + d + v(l) + X(-n);
+      const ans = coeff + v(l) + X(ansExp);
+      return Q('ix|coef|' + c + '|' + d + '|' + l + '|' + m + '|' + n,
+        [T('Simplify the following.'), T(expr)],
+        [{ blockIndex: 1, text: ans }],
+        [
+          T('Multiply the coefficients: ' + c + ' × ' + d + ' = ' + coeff + '.'),
+          T('Add the indices: ' + m + ' + (' + MINUS + n + ') = ' +
+            ansExp + '.'),
+          T('So ' + expr + ' = ' + ans + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 6. Coefficients with two variables. */
+    cases.push(function () {
+      const c = pick([2, 3, 4]);
+      const d = pick([2, 3, 4]);
+      const l1 = pick(['a', 'x', 'm', 'p']);
+      const l2 = pick(['b', 'y', 'n', 'q']);
+      const m = ri(2, 4), p = ri(2, 4), q = ri(2, 4);
+      const coeff = c * d;
+      const e1 = m + p;
+      const e2 = 1 + q;
+      const expr = c + v(l1) + X(m) + v(l2) + ' × ' +
+                   d + v(l1) + X(p) + v(l2) + X(q);
+      const ans = coeff + v(l1) + X(e1) + v(l2) + X(e2);
+      return Q('ix|two|' + c + '|' + d + '|' + l1 + '|' + l2 +
+               '|' + m + '|' + p + '|' + q,
+        [T('Simplify the following.'), T(expr)],
+        [{ blockIndex: 1, text: ans }],
+        [
+          T('Multiply the coefficients: ' + c + ' × ' + d + ' = ' + coeff + '.'),
+          T('For ' + l1 + ': ' + m + ' + ' + p + ' = ' + e1 + '.'),
+          T('For ' + l2 + ': 1 + ' + q + ' = ' + e2 + '.'),
+          T('So ' + expr + ' = ' + ans + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 7. Combined product and quotient. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 5), n = ri(2, 5);
+      const p = ri(1, Math.min(4, m + n - 2));
+      const ans = m + n - p;
+      const expr = b + X(m) + ' × ' + b + X(n) + ' ÷ ' + b + X(p);
+      return Q('ix|mix|' + b + '|' + m + '|' + n + '|' + p,
+        [T('Write the following as a single power of ' + b + '.'),
+         T(expr)],
+        [{ blockIndex: 1, text: b + X(ans) }],
+        [
+          T('Add the first two indices: ' + m + ' + ' + n + ' = ' +
+            (m + n) + '.'),
+          T('Then subtract: ' + (m + n) + ' ' + MINUS + ' ' + p + ' = ' +
+            ans + '.'),
+          T('So ' + expr + ' = ' + b + X(ans) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 8. Missing index. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 6), missing = ri(2, 6);
+      const total = m + missing;
+      const expr = b + X('?') + ' × ' + b + X(m) + ' = ' + b + X(total);
+      return Q('ix|missing|' + b + '|' + m + '|' + missing,
+        [T('Write the missing power.'), T(expr)],
+        [{ blockIndex: 1, text: String(missing) }],
+        [
+          T('The indices must add to ' + total + ': ? + ' + m + ' = ' +
+            total + '.'),
+          T('So the missing power is ' + missing + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 9. Spot the mistake. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 5), n = ri(3, 5);
+      const wrong = m * n;
+      const right = m + n;
+      const expr = b + X(m) + ' × ' + b + X(n);
+      return Q('ix|mistake|' + b + '|' + m + '|' + n,
+        [T('A pupil writes ' + expr + ' = ' + b + X(wrong) + '.'),
+         T('Explain the mistake and write the correct answer.')],
+        [{ blockIndex: 0, text: b + X(right) }],
+        [
+          T('The indices should be added, not multiplied: ' + m + ' + ' +
+            n + ' = ' + right + '.'),
+          T('So ' + expr + ' = ' + b + X(right) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 10. Simplify a quotient with coefficients. */
+    cases.push(function () {
+      const pairs = [[8, 2], [10, 2], [12, 3], [15, 3], [16, 4],
+                     [18, 6], [20, 4], [20, 5], [24, 6], [30, 5]];
+      const pair = pick(pairs);
+      const c1 = pair[0], c2 = pair[1], coeff = c1 / c2;
+      const l = pick(letterPool);
+      const m = ri(5, 7), n = ri(1, 3);
+      const ansExp = m - n;
+      const expr = c1 + v(l) + X(m) + ' ÷ ' + c2 + v(l) + X(n);
+      const ans = coeff + v(l) + X(ansExp);
+      return Q('ix|coefdiv|' + c1 + '|' + c2 + '|' + l + '|' + m + '|' + n,
+        [T('Simplify the following.'), T(expr)],
+        [{ blockIndex: 1, text: ans }],
+        [
+          T('Divide the coefficients: ' + c1 + ' ÷ ' + c2 + ' = ' + coeff + '.'),
+          T('Subtract the indices: ' + m + ' ' + MINUS + ' ' + n + ' = ' +
+            ansExp + '.'),
+          T('So ' + expr + ' = ' + ans + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 11. Compare two expressions. */
+    cases.push(function () {
+      const b = pick(basePool);
+      let m, n, p, q, e1, e2;
+      for (let attempt = 0; attempt < 50; attempt++) {
+        m = ri(2, 4); n = ri(2, 4); p = ri(2, 3); q = ri(2, 3);
+        e1 = m + n; e2 = p * q;
+        if (e1 !== e2) break;
+      }
+      if (e1 === e2) { n = 4; e1 = m + n; }
+      const first = b + X(m) + ' × ' + b + X(n);
+      const second = '(' + b + X(p) + ')' + X(q);
+      const greater = e1 > e2 ? first : second;
+      const greaterExp = Math.max(e1, e2);
+      return Q('ix|compare|' + b + '|' + m + '|' + n + '|' + p + '|' + q,
+        [T('Which is greater, ' + first + ' or ' + second + '?'),
+         T('Write the greater one as a single power.')],
+        [{ blockIndex: 1, text: b + X(greaterExp) }],
+        [
+          T('First: ' + first + ' = ' + b + X(e1) + ' because ' + m +
+            ' + ' + n + ' = ' + e1 + '.'),
+          T('Second: ' + second + ' = ' + b + X(e2) + ' because ' + p +
+            ' × ' + q + ' = ' + e2 + '.'),
+          T('The greater is ' + greater + ' = ' + b + X(greaterExp) + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    /* 12. Zero index. */
+    cases.push(function () {
+      const b = pick(basePool);
+      const m = ri(2, 6);
+      const expr = b + X(m) + ' ÷ ' + b + X(m);
+      return Q('ix|zero|' + b + '|' + m,
+        [T('Work out the value of the following.'),
+         T(expr)],
+        [{ blockIndex: 1, text: '1' }],
+        [
+          T('Subtract the indices: ' + m + ' ' + MINUS + ' ' + m + ' = 0.'),
+          T('Any non-zero number to the power 0 is 1, so ' + expr + ' = 1.')
+        ],
+        { badge: 'NON-CALCULATOR' });
+    });
+
+    return pick(cases)();
+  }
+
+  /* ============================================================
      THE TOPIC BANK
      ============================================================ */
   const TOPICS = [
@@ -597,7 +1709,9 @@ function comparativeFor(noun) {
       return Q('hl|' + a + '|' + b + '|' + wantHcf,
         [T('Find the ' + (wantHcf ? 'highest common factor (HCF)' : 'lowest common multiple (LCM)') +
            ' of ' + a + ' and ' + b + '.')],
-        [{ blockIndex: 0, text: String(wantHcf ? gcd(a, b) : a / gcd(a, b) * b) }]);
+        [{ blockIndex: 0, text: String(wantHcf ? gcd(a, b) : a / gcd(a, b) * b) }],
+        null,
+        { badge: 'NON-CALCULATOR' });
     }
   },
   {
@@ -613,8 +1727,13 @@ function comparativeFor(noun) {
       if (m > 1) fs.push([m, 1]);
       const str = fs.map(function (f) { return f[0] + sup(f[1]); }).join(' × ');
       return Q('pf|' + n,
-        [T('Write ' + n + ' as a product of its prime factors. Give your answer in index form.')],
-        [{ blockIndex: 0, text: str }]);
+        [T('Express ' + n + ' as a product of its prime factors in index form.')],
+        [{ blockIndex: 0, text: str }],
+        [
+          { type: 'factorTree', value: n },
+          T('Answer: ' + n + ' = ' + str + '.')
+        ],
+        { badge: 'NON-CALCULATOR' });
     }
   },
   {
@@ -1006,7 +2125,7 @@ function comparativeFor(noun) {
 
       const parts = [];
 
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 1; i++) {
         const spec = pick(multSpecs);
         const c1 = spec[0], c2 = spec[1];
         const e1 = ri(2, 7);
@@ -1017,7 +2136,7 @@ function comparativeFor(noun) {
         });
       }
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 1; i++) {
         const spec = pick(divSpecs);
         const c1 = spec[0], c2 = spec[1];
         const e1 = ri(-6, 7);
@@ -1358,63 +2477,14 @@ function comparativeFor(noun) {
       /* Compound interest and depreciation share the same technique —
          apply a fixed multiplier repeatedly — so they live in one
          topic.  Sixty per cent compound interest, forty per cent
-         depreciation.  Within each, most variants ask for the final
-         value; the rest ask for the interest earned or the total
-         loss, which adds one subtraction step. */
+         depreciation.  Compound interest draws on the fuller bank in
+         genCompoundInterest(); depreciation keeps its own variants
+         for final value or total loss. */
       const doInterest = rng() < 0.6;
       const who = randomName();
       const supYears = function (y) { return '\uE002' + y + '\uE002'; };
 
-      if (doInterest) {
-        const principal = pick([500, 800, 1000, 1200, 1500, 1800, 2000,
-                                2500, 3000, 3500, 4000, 4500, 5000, 6000]);
-        const rate    = pick([1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6, 7]);
-        const years   = pick([2, 3, 4, 5]);
-
-        const multiplier = 1 + rate / 100;
-        const finalValue = Math.round(principal * Math.pow(multiplier, years) * 100) / 100;
-        const multStr = String(Number(multiplier.toFixed(4)));
-        const sup = supYears(years);
-
-        if (rng() < 0.4) {
-          /* Ask for the interest earned. */
-          const interestEarned = Math.round((finalValue - principal) * 100) / 100;
-          const stem = who + ' invests ' + money(principal) + ' for ' + years +
-                       ' years at ' + rate + '% per year compound interest. ' +
-                       'How much interest does ' + who + ' earn?';
-          return Q('rep|int|' + principal + '|' + rate + '|' + years,
-            [T(stem)],
-            [{ blockIndex: 0, text: money(interestEarned) }],
-            [
-              T('Amount after ' + years + ' years = ' + money(principal) +
-                ' × ' + multStr + sup + ' = ' + money(finalValue)),
-              T('Interest = ' + money(finalValue) + ' ' + MINUS + ' ' +
-                money(principal) + ' = ' + money(interestEarned))
-            ],
-            { badge: 'CALCULATOR' });
-        }
-
-        /* Ask for the total value. */
-        const templates = [
-          who + ' invests ' + money(principal) + ' for ' + years +
-            ' years at ' + rate + '% per year compound interest. ' +
-            'Work out the total value of the investment at the end of the ' +
-            years + ' years.',
-          who + ' leaves ' + money(principal) + ' in a savings account for ' +
-            years + ' years. The account earns compound interest of ' + rate +
-            '% per year. Work out the total amount in the account at the ' +
-            'end of the ' + years + ' years.'
-        ];
-        return Q('rep|intv|' + principal + '|' + rate + '|' + years,
-          [T(pick(templates))],
-          [{ blockIndex: 0, text: money(finalValue) }],
-          [
-            T('Multiplier = 1 + ' + rate + '/100 = ' + multStr),
-            T('Value after ' + years + ' years = ' + money(principal) +
-              ' × ' + multStr + sup + ' = ' + money(finalValue))
-          ],
-          { badge: 'CALCULATOR' });
-      }
+      if (doInterest) return genCompoundInterest();
 
       /* ---- Depreciation variant ---- */
       const item     = pick(depItems);
@@ -1926,14 +2996,7 @@ function comparativeFor(noun) {
   {
     id: 'compound', strand: 'R', diff: 3,
     gen() {
-      const p = pick([1000, 1500, 2000, 2500, 3000, 4000, 5000]);
-      const r = pick([2, 3, 4, 5]);
-      const y = pick([2, 3]);
-      const ans = Math.round(p * Math.pow(1 + r / 100, y) * 100) / 100;
-      return Q('ci|' + p + '|' + r + '|' + y,
-        [T(money(p) + ' is invested at a compound interest rate of ' + r +
-           '% per year. Work out the value of the investment after ' + y + ' years.')],
-        [{ blockIndex: 0, text: money(ans) }]);
+      return genCompoundInterest();
     }
   },
   {
@@ -2567,17 +3630,7 @@ function comparativeFor(noun) {
     {
     id: 'index-laws', strand: 'A', diff: 1,
     gen() {
-      const base = pick(['m','n','x','y','a','b','p','q','k','t','w','z']);
-      const n = ri(4, 9);
-      const parts = [];
-      for (let i = 0; i < n; i++) parts.push('`' + base + '`');
-      const lhs = parts.join(' × ');
-      const rhs = '`' + base + '`' + BOX_MARK;
-      return Q('il|' + base + '|' + n, [
-        T(lhs + '  =  ' + rhs)
-      ], [
-        { blockIndex: 0, text: String(n) }
-      ]);
+      return genIndexLaws();
     }
   },
 
@@ -3090,8 +4143,8 @@ function comparativeFor(noun) {
     gen() {
       const parts = [];
 
-      /* 4 × cm → mm */
-      for (let i = 0; i < 4; i++) {
+      /* 1 × cm → mm */
+      for (let i = 0; i < 1; i++) {
         let v;
         const kind = ri(0, 2);
         if (kind === 0) v = ri(2, 20);
@@ -3103,8 +4156,8 @@ function comparativeFor(noun) {
         parts.push({ q: display + ' cm to mm', a: ansMm + ' mm' });
       }
 
-      /* 4 × mm → cm */
-      for (let i = 0; i < 4; i++) {
+      /* 1 × mm → cm */
+      for (let i = 0; i < 1; i++) {
         let v;
         const kind = ri(0, 2);
         if (kind === 0) v = ri(2, 9) * 10;
@@ -3115,26 +4168,15 @@ function comparativeFor(noun) {
         parts.push({ q: v + ' mm to cm', a: display + ' cm' });
       }
 
-      return Q('ucm|' + parts.map(function (p) { return p.q; }).join('|'), [
-        T('Convert the following.'),
-        T('        (a)  ' + parts[0].q),
-        T('        (b)  ' + parts[1].q),
-        T('        (c)  ' + parts[2].q),
-        T('        (d)  ' + parts[3].q),
-        T('        (e)  ' + parts[4].q),
-        T('        (f)  ' + parts[5].q),
-        T('        (g)  ' + parts[6].q),
-        T('        (h)  ' + parts[7].q)
-      ], [
-        { blockIndex: 1, text: parts[0].a },
-        { blockIndex: 2, text: parts[1].a },
-        { blockIndex: 3, text: parts[2].a },
-        { blockIndex: 4, text: parts[3].a },
-        { blockIndex: 5, text: parts[4].a },
-        { blockIndex: 6, text: parts[5].a },
-        { blockIndex: 7, text: parts[6].a },
-        { blockIndex: 8, text: parts[7].a }
-      ]);
+      const labels = ['(a)', '(b)'];
+      const qs = [T('Convert the following.')];
+      const ans = [];
+      for (let i = 0; i < parts.length; i++) {
+        qs.push(T('        ' + labels[i] + '  ' + parts[i].q));
+        ans.push({ blockIndex: i + 1, text: parts[i].a });
+      }
+      return Q('ucm|' + parts.map(function (p) { return p.q; }).join('|'),
+               qs, ans);
     }
   },
 
@@ -3535,7 +4577,7 @@ function comparativeFor(noun) {
       for (let outerAttempt = 0; outerAttempt < 40; outerAttempt++) {
         const parts = [];
         let ok = true;
-        const gens = [part3, part3, part3, part4, part4, partIndexOuter];
+        const gens = [part3, part4];
 
         for (const g of gens) {
           let result = null;
@@ -3549,22 +4591,15 @@ function comparativeFor(noun) {
 
         if (!ok) continue;
 
-        return Q('ibm|' + parts.map(function (p) { return p.q; }).join('|'), [
-          T('For the following, insert brackets to make the answer correct.'),
-          T('        (a)  ' + parts[0].q),
-          T('        (b)  ' + parts[1].q),
-          T('        (c)  ' + parts[2].q),
-          T('        (d)  ' + parts[3].q),
-          T('        (e)  ' + parts[4].q),
-          T('        (f)  ' + parts[5].q)
-        ], [
-          { blockIndex: 1, text: parts[0].a },
-          { blockIndex: 2, text: parts[1].a },
-          { blockIndex: 3, text: parts[2].a },
-          { blockIndex: 4, text: parts[3].a },
-          { blockIndex: 5, text: parts[4].a },
-          { blockIndex: 6, text: parts[5].a }
-        ]);
+        const labels = ['(a)', '(b)'];
+        const qs = [T('For the following, insert brackets to make the answer correct.')];
+        const ans = [];
+        for (let i = 0; i < parts.length; i++) {
+          qs.push(T('        ' + labels[i] + '  ' + parts[i].q));
+          ans.push({ blockIndex: i + 1, text: parts[i].a });
+        }
+        return Q('ibm|' + parts.map(function (p) { return p.q; }).join('|'),
+                 qs, ans);
       }
 
       return Q('ibm-fail', [T('Insert brackets: please regenerate.')],
@@ -3777,11 +4812,11 @@ function comparativeFor(noun) {
         for (let i = 1; i < 4; i++) t.push(t[t.length - 1] + p.step);
         return t;
       }
-      const parts = [mkPart(), mkPart(), mkPart(), mkPart(), mkPart(), mkPart()];
-      const labels = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)'];
+      const parts = [mkPart(), mkPart()];
+      const labels = ['(a)', '(b)'];
       const qs = [T('Find the first four terms of each of these sequences.')];
       const ans = [];
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < parts.length; i++) {
         qs.push(T('        ' + labels[i] + '  First term ' + nStr(parts[i].first) +
                   ',  term-to-term rule ' + parts[i].rule));
         ans.push({ blockIndex: i + 1, text: termsOf(parts[i]).map(nStr).join(', ') });
@@ -3807,12 +4842,12 @@ function comparativeFor(noun) {
         const s = step > 0 ? ('add ' + step) : ('subtract ' + Math.abs(step));
         return 'start with ' + nStr(first) + ', then ' + s;
       }
-      const parts = [mkPart(), mkPart(), mkPart(), mkPart(), mkPart(), mkPart()];
-      const labels = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)'];
+      const parts = [mkPart(), mkPart()];
+      const labels = ['(a)', '(b)'];
       const qs = [T('Write down the next two terms in each of these sequences and ' +
                     'give the term-to-term rule.')];
       const ans = [];
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < parts.length; i++) {
         qs.push(T('        ' + labels[i] + '  ' + parts[i].t.map(nStr).join(', ') + ', ...'));
         const last = parts[i].t[parts[i].t.length - 1];
         const a = last + parts[i].step;
@@ -3882,10 +4917,10 @@ function comparativeFor(noun) {
         for (let i = 1; i <= 5; i++) t.push(p.a * i + p.b);
         return t;
       }
-      const n = ri(2, 5);              /* was: 6 parts, always */
+      const n = 2;                     /* two parts, to keep questions short */
       const parts = [];
       for (let i = 0; i < n; i++) parts.push(mkPart());
-      const labels = ['(a)', '(b)', '(c)', '(d)', '(e)'];
+      const labels = ['(a)', '(b)'];
       const qs = [T('Write down the first five terms of the sequences with these `n`th terms.')];
       const ans = [];
       for (let i = 0; i < n; i++) {
@@ -3912,11 +4947,11 @@ function comparativeFor(noun) {
       }
       function valueAt(p, n) { return p.a * n + p.b; }
       const parts = [];
-      for (let i = 0; i < 6; i++) parts.push(mkPart());
-      const labels = ['(a)', '(b)', '(c)', '(d)', '(e)', '(f)'];
+      for (let i = 0; i < 2; i++) parts.push(mkPart());
+      const labels = ['(a)', '(b)'];
       const qs = [T('Find the ' + pos + 'th term of the sequences with these `n`th terms.')];
       const ans = [];
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < parts.length; i++) {
         qs.push(T('        ' + labels[i] + '  ' + exprOf(parts[i])));
         ans.push({ blockIndex: i + 1, text: nStr(valueAt(parts[i], pos)) });
       }
@@ -5537,6 +6572,111 @@ function comparativeFor(noun) {
     return { items: [], height: 0 };
   }
 
+  /* ============================================================
+     FACTOR TREE
+     ------------------------------------------------------------
+     Draws a balanced factor tree for a whole number.  Composite
+     nodes are plain numbers; prime leaves sit inside circles.
+     The tree is used by the prime-factors worked solution.
+     ============================================================ */
+  function isPrimeSmall(n) {
+    if (n < 2) return false;
+    for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+    return true;
+  }
+
+  function buildFactorTree(n) {
+    if (isPrimeSmall(n)) {
+      return { value: n, prime: true, left: null, right: null };
+    }
+    let best = 0;
+    for (let d = Math.floor(Math.sqrt(n)); d >= 2; d--) {
+      if (n % d === 0) { best = d; break; }
+    }
+    if (!best) return { value: n, prime: true, left: null, right: null };
+    return { value: n, prime: false,
+             left: buildFactorTree(best),
+             right: buildFactorTree(n / best) };
+  }
+
+  function layoutFactorTree(x, y, block, fs, maxW) {
+    const root = buildFactorTree(block.value);
+    const levelH = fs * 3.0;
+    const leafGap = fs * 3.2;
+    const radius = fs * 1.0;
+    const items = [];
+    let leafCount = 0, maxDepth = 0;
+
+    (function countLeaves(node, depth) {
+      node.depth = depth;
+      if (depth > maxDepth) maxDepth = depth;
+      if (node.prime) { node.leafIndex = leafCount++; }
+      else { countLeaves(node.left, depth + 1);
+             countLeaves(node.right, depth + 1); }
+    })(root, 0);
+
+    const treeW = (leafCount - 1) * leafGap;
+    const startX = x + Math.max(0, (maxW - treeW) / 2);
+    const topY = y + radius + fs * 0.5;
+
+    (function place(node) {
+      node.y = topY + node.depth * levelH;
+      if (node.prime) {
+        node.x = startX + node.leafIndex * leafGap;
+      } else {
+        place(node.left);
+        place(node.right);
+        node.x = (node.left.x + node.right.x) / 2;
+      }
+    })(root);
+
+    function drawCircle(cx, cy) {
+      const steps = 24;
+      let px = cx + radius, py = cy;
+      for (let k = 1; k <= steps; k++) {
+        const a = 2 * Math.PI * k / steps;
+        const nx = cx + radius * Math.cos(a);
+        const ny = cy + radius * Math.sin(a);
+        items.push({ t: 'line', x1: px, y1: py, x2: nx, y2: ny, w: 0.9 });
+        px = nx; py = ny;
+      }
+    }
+
+    function drawLinks(node) {
+      if (node.prime) return;
+      for (const child of [node.left, node.right]) {
+        const sx = node.x;
+        const sy = node.y + fs * 0.5;
+        let ex, ey;
+        if (child.prime) {
+          const dx = child.x - node.x;
+          const dy = child.y - node.y;
+          const len = Math.sqrt(dx * dx + dy * dy) || 1;
+          ex = child.x - (dx / len) * (radius + 1.2);
+          ey = child.y - (dy / len) * (radius + 1.2);
+        } else {
+          ex = child.x;
+          ey = child.y - fs * 0.55;
+        }
+        items.push({ t: 'line', x1: sx, y1: sy, x2: ex, y2: ey, w: 0.9 });
+        drawLinks(child);
+      }
+    }
+
+    function drawLabels(node) {
+      const text = String(node.value);
+      const tw = textWidth(text, fs, false);
+      if (node.prime) drawCircle(node.x, node.y);
+      items.push({ t: 'run', x: node.x - tw / 2, y: node.y + fs * 0.36,
+                   size: fs, bold: false, italic: false, s: text });
+      if (!node.prime) { drawLabels(node.left); drawLabels(node.right); }
+    }
+
+    drawLinks(root);
+    drawLabels(root);
+    return { items: items, height: maxDepth * levelH + 2 * radius + fs * 1.2 };
+  }
+
   function drawQuestionBlocks(blocks, x, y, fs, maxW, items, variant, baselines) {
   const lineH = fs * 1.42;
   let cursor = y;
@@ -5658,18 +6798,21 @@ function comparativeFor(noun) {
   }
 
   if (includeSolutions && q.solution && q.solution.length) {
-    let solLines = 0;
+    let solH = 0;
     for (const b of q.solution) {
       if (b.type === 'text') {
         const lines = wrapTokens(textToTokens(b.text), fs, false, rightW);
-        solLines += lines.length;
+        solH += lines.length * lineH;
+      } else if (b.type === 'factorTree') {
+        const ft = layoutFactorTree(0, 0, b, fs, rightW);
+        solH += ft.height + fs * 0.6;
       }
     }
-    if (solLines > 0) {
+    if (solH > 0) {
       const solStart = rightH > 0
         ? rightH + lineH * 0.9
         : baseOffset + fs * 0.78;
-      rightH = solStart + solLines * lineH - lineH * 0.3;
+      rightH = solStart + solH - lineH * 0.3;
     }
   }
 
@@ -5782,6 +6925,10 @@ if (q.answers && q.answers.length) {
                    fs, items, 'solution');
         }
         solY += lines.length * lineH;
+      } else if (b.type === 'factorTree') {
+        const ft = layoutFactorTree(rightX, solY, b, fs, rightW);
+        for (const it of ft.items) items.push(it);
+        solY += ft.height + fs * 0.6;
       }
     }
     rightBottom = solY - lineH * 0.3;
@@ -6031,8 +7178,7 @@ function layoutWorkedAnswers(opts) {
     const DISABLED = [
     /* NUMBER */
     'bidmas','round-dp','round-sf','frac-add','frac-of','pct-of','pct-change',
-    'hcf-lcm',
-    'compare-round-frac-dec','prime-factors','std-form','compare-round-frac-dec',
+    'compare-round-frac-dec','std-form','compare-round-frac-dec',
     'classify-numbers','frac-of-amount-remaining','dec-to-frac','simplify-fraction',
     'pct-to-frac','add-brackets','mult-div-powers-of-ten','bidmas-four',
     'improper-to-mixed','round-dp-multi','pct-simple-multi','simplify-fraction-multi',
@@ -6040,7 +7186,7 @@ function layoutWorkedAnswers(opts) {
     'insert-brackets-multi',
     /* ALGEBRA */
     'solve-linear','expand-single','expand-double','factorise-single','factorise-quad',
-    'solve-ineq','substitution','nth-term','gradient','midpoint','index-laws',
+    'solve-ineq','substitution','nth-term','gradient','midpoint',
     'expand-single-letter','simplify-product','collect-like-terms','solve-one-step-frac',
     'simplify-terms-mult-div','solve-one-step','function-machine-find',
     'function-machine-equation','function-machine-solve','seq-find-first-terms',
@@ -6161,6 +7307,58 @@ function layoutWorkedAnswers(opts) {
   }
   function rgbColour(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
 
+  function itemsToHTML(items) {
+    const parts = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.t === 'text' || it.t === 'run' || it.t === 'answer' || it.t === 'solution') {
+        const t = it.y - it.size * 0.755;
+        const cls = it.t === 'answer' ? 'tx ans'
+          : it.t === 'solution' ? 'tx sol'
+          : 'tx';
+        /* The layout engine measures text in Helvetica, but the
+           answer style renders in Comic Neue, which is narrower.
+           Superscripts in Comic Neue land too far right; nudge them
+           back so the exponent sits tight against the "10".
+           Question text is Helvetica, measured accurately, so
+           shifting it would push the exponent onto the "0". */
+        const isComic = (it.t === 'answer' || it.t === 'solution');
+        const xPos = (it.isSuper && isComic)
+          ? it.x - it.size * 0.55
+          : it.x;
+        parts.push('<span class="' + cls + '" style="left:' + xPos.toFixed(2) +
+        'pt;top:' + t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
+        (it.bold ? 'font-weight:700;' : '') +
+        (it.italic ? 'font-style:italic;' : '') + '">' + esc(it.s) + '</span>');
+      } else if (it.t === 'line' || it.t === 'answer-line') {
+        const color = it.col ? rgbColour(it.col) : (it.grey ? '#94a3b8' : '#000');
+        const cls = it.t === 'answer-line' ? 'ans' : '';
+        parts.push(
+          '<svg class="' + cls + '" ' +
+          'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
+          'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
+          '<line x1="' + it.x1.toFixed(2) + '" y1="' + it.y1.toFixed(2) +
+          '" x2="' + it.x2.toFixed(2) + '" y2="' + it.y2.toFixed(2) +
+          '" stroke="' + color + '" stroke-width="' + it.w.toFixed(2) +
+          '" stroke-linecap="butt"/></svg>');
+      } else if (it.t === 'rect') {
+        const g = it.grey !== undefined ? it.grey : 0;
+        const bg = it.col ? rgbColour(it.col) : greyToColour(g);
+        parts.push('<span style="position:absolute;left:' + it.x.toFixed(2) +
+          'pt;top:' + it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) +
+          'pt;height:' + it.h.toFixed(2) + 'pt;background:' + bg + ';"></span>');
+      } else if (it.t === 'poly') {
+        const g = it.grey !== undefined ? it.grey : 0;
+        const fill = it.col ? rgbColour(it.col) : greyToColour(g);
+        const ptsStr = it.pts.map(function (p) {
+          return p[0].toFixed(2) + ',' + p[1].toFixed(2);
+        }).join(' ');
+        parts.push('<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg"><polygon points="' + ptsStr + '" fill="' + fill + '"/></svg>');
+      }
+    }
+    return parts.join('');
+  }
+
   function drawHTML(pagesItems) {
     const pagesEl = document.getElementById('pages');
     pagesEl.innerHTML = '';
@@ -6169,55 +7367,7 @@ function layoutWorkedAnswers(opts) {
       wrap.className = 'page-wrap';
       const pg = document.createElement('div');
       pg.className = 'page';
-      const parts = [];
-      for (let i = 0; i < items.length; i++) {
-        const it = items[i];
-                if (it.t === 'text' || it.t === 'run' || it.t === 'answer' || it.t === 'solution') {
-          const t = it.y - it.size * 0.755;
-          const cls = it.t === 'answer' ? 'tx ans'
-            : it.t === 'solution' ? 'tx sol'
-            : 'tx';
-                    /* The layout engine measures text in Helvetica, but the
-             answer style renders in Comic Neue, which is narrower.
-             Superscripts in Comic Neue land too far right; nudge them
-             back so the exponent sits tight against the "10".
-             Question text is Helvetica, measured accurately, so
-             shifting it would push the exponent onto the "0". */
-          const isComic = (it.t === 'answer' || it.t === 'solution');
-          const xPos = (it.isSuper && isComic)
-            ? it.x - it.size * 0.55
-            : it.x;
-          parts.push('<span class="' + cls + '" style="left:' + xPos.toFixed(2) +
-          'pt;top:' + t.toFixed(2) + 'pt;font-size:' + it.size.toFixed(2) + 'pt;' +
-          (it.bold ? 'font-weight:700;' : '') +
-          (it.italic ? 'font-style:italic;' : '') + '">' + esc(it.s) + '</span>');
-        } else if (it.t === 'line' || it.t === 'answer-line') {
-          const color = it.col ? rgbColour(it.col) : (it.grey ? '#94a3b8' : '#000');
-          const cls = it.t === 'answer-line' ? 'ans' : '';
-          parts.push(
-            '<svg class="' + cls + '" ' +
-            'style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" ' +
-            'viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg">' +
-            '<line x1="' + it.x1.toFixed(2) + '" y1="' + it.y1.toFixed(2) +
-            '" x2="' + it.x2.toFixed(2) + '" y2="' + it.y2.toFixed(2) +
-            '" stroke="' + color + '" stroke-width="' + it.w.toFixed(2) +
-            '" stroke-linecap="butt"/></svg>');
-        } else if (it.t === 'rect') {
-          const g = it.grey !== undefined ? it.grey : 0;
-          const bg = it.col ? rgbColour(it.col) : greyToColour(g);
-          parts.push('<span style="position:absolute;left:' + it.x.toFixed(2) +
-            'pt;top:' + it.y.toFixed(2) + 'pt;width:' + it.w.toFixed(2) +
-            'pt;height:' + it.h.toFixed(2) + 'pt;background:' + bg + ';"></span>');
-        } else if (it.t === 'poly') {
-          const g = it.grey !== undefined ? it.grey : 0;
-          const fill = it.col ? rgbColour(it.col) : greyToColour(g);
-          const ptsStr = it.pts.map(function (p) {
-            return p[0].toFixed(2) + ',' + p[1].toFixed(2);
-          }).join(' ');
-          parts.push('<svg style="position:absolute;left:0;top:0;width:595.28pt;height:841.89pt;overflow:visible;pointer-events:none;" viewBox="0 0 595.28 841.89" xmlns="http://www.w3.org/2000/svg"><polygon points="' + ptsStr + '" fill="' + fill + '"/></svg>');
-        }
-      }
-      pg.innerHTML = parts.join('');
+      pg.innerHTML = itemsToHTML(items);
       wrap.appendChild(pg);
       pagesEl.appendChild(wrap);
     }
@@ -6490,34 +7640,101 @@ function renderSheet() {
                  '-ANSWERS-' + seedInput.value + '.pdf',
                  { showAnswers: true });
   });
-    /* ---- On-screen answers viewer ---- */
-  let answersBlobURL = null;
+    /* ---- Worked solutions in a new tab ---- */
+  const SOLUTIONS_CSS = `
+  :root{ --ink:#0f172a; --muted:#64748b; --accent:#2563eb; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{ background:#eef2f7; color:var(--ink); font-family:Helvetica,Arial,sans-serif; }
+  .bar{
+    position:sticky; top:0; z-index:10;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:12px 20px; background:#0f172a; color:#f8fafc;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);
+  }
+  .bar-title{ font-weight:800; font-size:15px; letter-spacing:.3px; }
+  .bar button{
+    padding:9px 20px; border-radius:9px; border:1px solid #334155;
+    background:#2563eb; color:#fff; font:inherit; font-weight:800;
+    cursor:pointer;
+  }
+  .bar button:hover{ background:#1d4ed8; }
+  .sheets{
+    display:flex; flex-direction:column; align-items:center;
+    gap:24px; padding:28px 16px 40px;
+  }
+  .page-wrap{
+    position:relative; width:210mm; height:297mm; flex:none;
+    background:#fff; box-shadow:0 6px 26px rgba(15,23,42,.16);
+    overflow:hidden;
+  }
+  .page{
+    position:absolute; top:0; left:0;
+    width:210mm; height:297mm;
+    background:#fff; color:#000;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .tx{
+    position:absolute; white-space:pre; line-height:1;
+    font-family:Helvetica,Arial,sans-serif;
+  }
+  .page .ans{
+    visibility:visible;
+    color:var(--accent);
+    font-family:'Comic Neue','Comic Sans MS',cursive;
+    font-weight:700;
+  }
+  .page .sol{
+    color:var(--accent);
+    font-family:'Comic Neue','Comic Sans MS',cursive;
+    font-style:italic;
+  }
+  @page{ size:A4; margin:0; }
+  @media print{
+    html,body{ background:#fff; }
+    .bar{ display:none !important; }
+    .sheets{ display:block; padding:0; margin:0; }
+    .page-wrap{
+      width:210mm; height:297mm;
+      box-shadow:none; overflow:visible;
+      page-break-after:always; break-after:page;
+    }
+    .page-wrap:last-child{ page-break-after:auto; break-after:auto; }
+  }
+`;
 
-  function openAnswersViewer() {
+  function buildSolutionsHTML() {
+    const title = sheetTitle() + ' — Worked Solutions';
+    const pagesHTML = lastAnswerPages.map(function (items) {
+      return '<div class="page-wrap"><div class="page">' +
+             itemsToHTML(items) + '</div></div>';
+    }).join('');
+    return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+      '<title>' + esc(title) + '</title>' +
+      '<link rel="preconnect" href="https://fonts.googleapis.com">' +
+      '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+      '<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">' +
+      '<style>' + SOLUTIONS_CSS + '</style></head><body>' +
+      '<div class="bar"><span class="bar-title">' + esc(title) + '</span>' +
+      '<button type="button" onclick="window.print()">Print</button></div>' +
+      '<main class="sheets">' + pagesHTML + '</main></body></html>';
+  }
+
+  function openSolutionsViewer() {
     if (!lastAnswerPages.length) return;
-    const pdfStr = assemblePDF(lastAnswerPages, { showAnswers: true });
-    const bytes = new Uint8Array(pdfStr.length);
-    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xFF;
-    const blob = new Blob([bytes], { type: 'application/pdf' });
-    if (answersBlobURL) URL.revokeObjectURL(answersBlobURL);
-    answersBlobURL = URL.createObjectURL(blob);
-
-    const modal = document.getElementById('answersModal');
-    const frame = document.getElementById('amFrame');
-    frame.src = answersBlobURL;
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
+    const win = window.open('', '_blank');
+    if (!win) {
+      alert('Please allow pop-ups to open the worked solutions.');
+      return;
+    }
+    win.document.open();
+    win.document.write(buildSolutionsHTML());
+    win.document.close();
+    win.focus();
   }
 
-  function closeAnswersViewer() {
-    const modal = document.getElementById('answersModal');
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-    document.getElementById('amFrame').src = 'about:blank';
-  }
-
-  document.getElementById('viewAnsBtn').addEventListener('click', openAnswersViewer);
-  document.getElementById('amClose').addEventListener('click', closeAnswersViewer);
+  document.getElementById('viewAnsBtn').addEventListener('click', openSolutionsViewer);
   document.getElementById('printBtn').addEventListener('click', function () { window.print(); });
   seedInput.addEventListener('change', function () {
     applySeed(); regenerate(); setSeedInURL(seedInput.value);
@@ -6604,7 +7821,6 @@ function renderSheet() {
     window.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       closeTopicsPanel();
-      closeAnswersViewer();
     }
   });
 
